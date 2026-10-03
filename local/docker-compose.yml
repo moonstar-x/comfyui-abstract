@@ -1,0 +1,14 @@
+name: comfyui-abstract
+
+services:
+  postgres:
+    image: postgres:18
+    restart: no
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./volumes/postgres:/var/lib/postgresql
+    environment:
+      POSTGRES_USER: comfyui
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: comfyui
