@@ -1,2 +1,7 @@
 # Local
 local/volumes
+
+# Node Modules
+node_modules
+api/node_modules
+ui/node_modules
