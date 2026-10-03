@@ -1,0 +1,11 @@
+{
+  "extends": "@moonstar-x/tsconfig/react",
+  "include": [
+    "src"
+  ],
+
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "types": ["vite/client"],
+  }
+}
