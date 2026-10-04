@@ -9,6 +9,7 @@ import {
   stylisticJsx,
   typescript
 } from '@moonstar-x/eslint-config';
+import pluginQuery from '@tanstack/eslint-plugin-query';
 
 export default [
   ...ignores,
@@ -20,4 +21,5 @@ export default [
   ...stylistic,
   ...stylisticJsx,
   ...sorted,
+  ...pluginQuery.configs['flat/recommended-strict']
 ];

@@ -1,4 +1,4 @@
-import { RouteDefs } from '@components/router/routes';
+import { RouteDefs } from '@core/router/routes';
 import { lazy, Suspense } from 'react';
 import type { FC } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
