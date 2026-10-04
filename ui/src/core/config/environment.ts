@@ -8,3 +8,4 @@ const getRequired = (key: keyof ImportMetaEnv): string => {
 };
 
 export const API_URL: string = getRequired('VITE_API_URL');
+export const WS_URL: string = getRequired('VITE_WS_URL');
