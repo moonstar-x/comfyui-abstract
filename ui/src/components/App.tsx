@@ -3,6 +3,7 @@ import { WebSocketProvider } from '@components/websocket/WebSocketContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { FC } from 'react';
+import '@styles/main.css';
 
 const queryClient = new QueryClient();
 

@@ -5,7 +5,7 @@ const HomePage: FC = () => {
   const { online } = useWebSocketHealth();
 
   return (
-    <div>
+    <div className="bg-red-500">
       <pre>
         {JSON.stringify(online)}
       </pre>
