@@ -9,3 +9,6 @@ ui/node_modules
 # Environment Secrets
 .env*
 !.env.sample
+
+# Builds
+ui/dist
