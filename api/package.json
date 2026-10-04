@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx ./src/index.ts"
+    "dev": "tsx ./src/index.ts",
+    "build": "",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "dependencies": {
     "@moonstar-x/logger": "^2.0.0",

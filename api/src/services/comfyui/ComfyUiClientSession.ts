@@ -1,3 +1,4 @@
+import { logger } from '@moonstar-x/logger';
 import type { ComfyApi } from '@saintno/comfyui-sdk';
 import { createComfyUiClient } from './client.js';
 
@@ -33,7 +34,7 @@ export class ComfyUiClientSession {
   }
 
   private registerEventHandlers(): void {
-    this._client.on('all', (event) => console.log(event));
+    this._client.on('all', (event) => logger.log(event));
   }
 
   public static create(): ComfyUiClientSession {
