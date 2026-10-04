@@ -3,7 +3,7 @@ import { createApp } from './app/express/app.js';
 import { PORT } from './config/environment.js';
 
 try {
-  const app = await createApp();
+  const app = createApp();
   app.listen(PORT, (): void => {
     logger.info(`Server started on port ${PORT.toString()}`);
   });
