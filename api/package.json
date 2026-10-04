@@ -2,6 +2,7 @@
   "name": "@comfyui-abstract/api",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "tsx ./src/index.ts"
   },
