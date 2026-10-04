@@ -6,5 +6,12 @@ export default [
   ...typescript,
   ...node,
   ...stylistic,
-  ...sorted
+  ...sorted,
+  {
+    name: 'overrides',
+    rules: {
+      'unicorn/consistent-class-member-order': 'off',
+      'unicorn/prefer-event-target': 'off'
+    }
+  }
 ];

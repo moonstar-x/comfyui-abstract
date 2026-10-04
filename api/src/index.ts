@@ -1,7 +1,7 @@
 import { logger } from '@moonstar-x/logger';
 import { createApp } from './app/express/app.js';
 import { PORT } from './config/environment.js';
-import { attachWebSocketServer } from './websocket/server.js';
+import { WebSocketServer } from './websocket/WebSocketServer.js';
 
 try {
   const app = await createApp();
@@ -9,7 +9,7 @@ try {
     logger.info(`Server started on port ${PORT.toString()}`);
   });
 
-  attachWebSocketServer(server);
+  WebSocketServer.create(server);
 } catch (error) {
   logger.error(error);
 }
