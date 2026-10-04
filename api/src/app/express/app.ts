@@ -1,20 +1,21 @@
+import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import type { Express } from 'express';
 import express from 'express';
-import { GetHealthController } from '../../controllers/GetHealthController.js';
 import { handleExpressError, handleRouteNotFound } from '../../middleware/handlers.js';
 import { logRequests } from '../../middleware/logging.js';
-import { ControllerRegistry } from './ControllerRegistry.js';
+import { AutoControllerRegistry } from '../registry/AutoControllerRegistry.js';
 
-export const createApp = (): Express => {
+const CONTROLLERS_DIRECTORY = fileURLToPath(new URL('../../controllers', import.meta.url));
+
+export const createApp = async (): Promise<Express> => {
   const app = express();
   app.use(cors());
   app.use(logRequests);
 
   app.options('*all', cors());
 
-  const registry = new ControllerRegistry()
-    .register(new GetHealthController());
+  const registry = await new AutoControllerRegistry(CONTROLLERS_DIRECTORY).load();
   app.use('/', registry.getRouter());
 
   app.all('*all', handleRouteNotFound);

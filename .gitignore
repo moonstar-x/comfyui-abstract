@@ -5,3 +5,7 @@ local/volumes
 node_modules
 api/node_modules
 ui/node_modules
+
+# Environment Secrets
+.env*
+!.env.sample
