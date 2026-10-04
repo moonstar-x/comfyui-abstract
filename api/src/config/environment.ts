@@ -27,6 +27,8 @@ const getInteger = (key: string, defaultValue: number): number => {
 
 export const PORT: number = getInteger('PORT', 4000);
 
+export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
+
 export const POSTGRES_HOST: string = getRequired('POSTGRES_HOST');
 export const POSTGRES_PORT: number = getInteger('POSTGRES_PORT', 5432);
 export const POSTGRES_USER: string = getRequired('POSTGRES_USER');

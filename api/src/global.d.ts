@@ -1,5 +1,6 @@
 declare namespace NodeJS {
   interface ProcessEnv {
+    COMFYUI_URL?: string;
     PORT?: string;
 
     POSTGRES_DATABASE?: string;
