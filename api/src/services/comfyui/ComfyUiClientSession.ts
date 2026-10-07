@@ -1,5 +1,5 @@
 import { logger } from '@moonstar-x/logger';
-import type { ComfyApi, TMonitorEvent } from '@saintno/comfyui-sdk';
+import type { ComfyApi, QueueItem, TMonitorEvent } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
 
@@ -15,6 +15,22 @@ export interface SystemUsage {
 }
 
 export const EMPTY_SYSTEM_USAGE: SystemUsage = { cpu: null, gpu: null, ram: null, vram: null };
+
+/**
+ * A job in the ComfyUI queue, identified by its prompt ID.
+ * Jobs are ordered with the running ones first, followed by the pending ones in execution order.
+ */
+export interface QueueJob {
+  processing: boolean;
+  promptId: string;
+}
+
+// ComfyUI queue items are tuples of [number, prompt_id, prompt, extra_data, outputs_to_execute].
+const getQueueItemNumber = (item: QueueItem): number => Number(item[0]);
+const getQueueItemPromptId = (item: QueueItem): string => {
+  const promptId = item[1];
+  return typeof promptId === 'string' ? promptId : '';
+};
 
 const toPercentage = (used: number, total: number): Nullable<number> => total > 0 ? (used / total) * 100 : null;
 
@@ -57,6 +73,17 @@ export class ComfyUiClientSession {
     } catch {
       return false;
     }
+  }
+
+  public async getQueue(): Promise<QueueJob[]> {
+    const { queue_running: running, queue_pending: pending } = await this._client.getQueue();
+    // ComfyUI does not guarantee the pending queue is sorted, it's ordered by the item number instead.
+    const sortedPending = pending.toSorted((a, b) => getQueueItemNumber(a) - getQueueItemNumber(b));
+
+    return [
+      ...running.map((item) => ({ processing: true, promptId: getQueueItemPromptId(item) })),
+      ...sortedPending.map((item) => ({ processing: false, promptId: getQueueItemPromptId(item) }))
+    ];
   }
 
   /**

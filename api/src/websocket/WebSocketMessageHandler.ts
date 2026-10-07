@@ -1,4 +1,4 @@
-import type { ComfyUiClientSession } from '../services/comfyui/ComfyUiClientSession.js';
+import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
 import type { Nullable } from '../utils/types.js';
 import type { WSClientMessage } from './messages/client.js';
@@ -10,6 +10,8 @@ export class WebSocketMessageHandler {
 
   public async handle(message: WSClientMessage): Promise<Nullable<WSServerMessage>> {
     switch (message.type) {
+      case 'get_queue':
+        return await this.handleGetQueue(message.payload?.promptId);
       case 'get_status':
         return await this.handleGetStatus();
     }
@@ -17,6 +19,24 @@ export class WebSocketMessageHandler {
 
   public setComfyUiSession(comfyUiSession: ComfyUiClientSession): void {
     this._comfyUiSession = comfyUiSession;
+  }
+
+  private async handleGetQueue(promptId?: string): Promise<WSServerMessage> {
+    const comfyui = this.safeGetComfyUiSession();
+
+    let queue: QueueJob[];
+    try {
+      queue = await comfyui.getQueue();
+    } catch (error) {
+      throw new WebSocketError('Could not retrieve the queue from ComfyUI.', { cause: error });
+    }
+
+    const running = queue.filter((job) => job.processing).length;
+    const index = promptId === undefined ? -1 : queue.findIndex((job) => job.promptId === promptId);
+    const job = queue.at(index);
+    const jobStatus = index !== -1 && job !== undefined ? { ...job, position: index + 1 } : null;
+
+    return { type: 'queue', payload: { size: queue.length, running, pending: queue.length - running, job: jobStatus } };
   }
 
   private async handleGetStatus(): Promise<WSServerMessage> {
