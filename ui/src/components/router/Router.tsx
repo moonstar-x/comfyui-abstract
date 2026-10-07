@@ -1,17 +1,19 @@
-import { RouteDefs } from '@core/router/routes';
-import { lazy, Suspense } from 'react';
+import { AppLayout } from '@components/layout/AppLayout';
+import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
+import { lazy } from 'react';
 import type { FC } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
 const HomePage = lazy(async () => await import('@pages/HomePage'));
+const WorkflowPage = lazy(async () => await import('@pages/WorkflowPage'));
 
-// TODO: Implement a good Suspense fallback.
 export const Router: FC = () => (
   <BrowserRouter>
-    <Suspense fallback={<div>Loading...</div>}>
-      <Routes>
+    <Routes>
+      <Route element={<AppLayout />}>
         <Route element={<HomePage />} path={RouteDefs.home} />
-      </Routes>
-    </Suspense>
+        <Route element={<WorkflowPage />} path={DynamicRouteDefs.workflowById(':id')} />
+      </Route>
+    </Routes>
   </BrowserRouter>
 );

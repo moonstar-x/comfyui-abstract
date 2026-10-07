@@ -13,6 +13,7 @@ export interface UseHealthParams {
 
 export interface UseHealthReturn {
   online: Nullable<boolean>;
+  refresh: () => void;
 }
 
 export const useWebSocketHealth = ({ interval = DEFAULT_HEALTH_POLL_INTERVAL_MS }: UseHealthParams = {}): UseHealthReturn => {
@@ -35,5 +36,5 @@ export const useWebSocketHealth = ({ interval = DEFAULT_HEALTH_POLL_INTERVAL_MS 
     };
   }, [isConnected, requestHealth, interval]);
 
-  return { online };
+  return { online, refresh: requestHealth };
 };

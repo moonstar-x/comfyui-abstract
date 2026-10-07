@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from '@components/ui/third-party/shadcn/tooltip';
-import { useIsMobile } from '@hooks/use-mobile';
+import { useIsMobile } from '@hooks/useMobile';
 import { cva } from 'class-variance-authority';
 import type { VariantProps } from 'class-variance-authority';
 import { cn } from 'cn';
