@@ -1,1 +1,1 @@
-ComfyUI-Crystools
+ComfyUI-Crystools-MonitorOnly
