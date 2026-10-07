@@ -1,3 +1,4 @@
+import path from 'node:path';
 import process from 'node:process';
 // eslint-disable-next-line import-x/no-unassigned-import
 import 'dotenv/config';
@@ -9,6 +10,11 @@ const getRequired = (key: string): string => {
   }
 
   return value;
+};
+
+const getString = (key: string, defaultValue: string): string => {
+  const value = process.env[key];
+  return typeof value === 'string' && value !== '' ? value : defaultValue;
 };
 
 const getInteger = (key: string, defaultValue: number): number => {
@@ -28,6 +34,8 @@ const getInteger = (key: string, defaultValue: number): number => {
 export const PORT: number = getInteger('PORT', 4000);
 
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
+
+export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
 
 export const POSTGRES_HOST: string = getRequired('POSTGRES_HOST');
 export const POSTGRES_PORT: number = getInteger('POSTGRES_PORT', 5432);

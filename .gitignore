@@ -12,3 +12,6 @@ ui/node_modules
 
 # Builds
 ui/dist
+
+# Public Content
+api/public
