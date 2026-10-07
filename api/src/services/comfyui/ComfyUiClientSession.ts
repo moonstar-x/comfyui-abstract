@@ -1,4 +1,4 @@
-import type { ComfyApi, QueueItem } from '@saintno/comfyui-sdk';
+import type { ComfyApi, NodeData, QueueItem } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
 
@@ -122,6 +122,11 @@ export class ComfyUiClientSession {
     return { ...usage, vram: await this.getSystemStatsVramUsage() };
   }
 
+  public async queuePrompt(prompt: NodeData): Promise<string> {
+    const { prompt_id: promptId } = await this._client.appendPrompt(prompt);
+    return promptId;
+  }
+
   public start(): this {
     this._client.init();
     return this;
@@ -147,7 +152,6 @@ export class ComfyUiClientSession {
       }
     });
 
-    // Stale readings should not be reported while ComfyUI is unreachable.
     this._client.on('disconnected', () => {
       this._monitorData = null;
     });

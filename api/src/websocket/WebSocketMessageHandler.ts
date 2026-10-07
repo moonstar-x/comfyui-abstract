@@ -1,7 +1,8 @@
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
 import type { Nullable } from '../utils/types.js';
-import type { WSClientMessage } from './messages/client.js';
+import { makeWorkflow } from '../workflows/factory.js';
+import type { RunWorkflowPayload, WSClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
 import { WebSocketError } from './WebSocketError.js';
 
@@ -14,6 +15,8 @@ export class WebSocketMessageHandler {
         return await this.handleGetQueue(message.payload?.promptId);
       case 'get_status':
         return await this.handleGetStatus();
+      case 'run_workflow':
+        return await this.handleRunWorkflow(message.payload);
     }
   }
 
@@ -45,6 +48,21 @@ export class WebSocketMessageHandler {
     const usage = isOnlineState ? await comfyui.getSystemUsage() : EMPTY_SYSTEM_USAGE;
 
     return { type: 'status', payload: { online: isOnlineState, usage } };
+  }
+
+  private async handleRunWorkflow({ type, model, params }: RunWorkflowPayload): Promise<WSServerMessage> {
+    const comfyui = this.safeGetComfyUiSession();
+    const workflow = makeWorkflow(model === undefined ? { type } : { type, model });
+    const prompt = workflow.makePrompt(params);
+
+    let promptId: string;
+    try {
+      promptId = await comfyui.queuePrompt(prompt);
+    } catch (error) {
+      throw new WebSocketError('Could not queue the workflow in ComfyUI.', { cause: error });
+    }
+
+    return { type: 'workflow_start', payload: { promptId } };
   }
 
   private safeGetComfyUiSession(): ComfyUiClientSession {

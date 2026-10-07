@@ -15,4 +15,5 @@ export type WSServerMessage =
   GenericWSServerMessage<'error', { message: string }> |
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |
-  GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }>;
+  GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |
+  GenericWSServerMessage<'workflow_start', { promptId: string }>;

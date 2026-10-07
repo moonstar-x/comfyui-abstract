@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import type { RawData, WebSocket } from 'ws';
-import type { Nullable } from '../utils/types.js';
+import { z } from 'zod';
 import { ClientMessageSchema } from './messages/client.js';
 import type { WSClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
@@ -38,14 +38,22 @@ export class WebSocketMessenger {
     }
   }
 
-  private static parseIncomingMessage(raw: RawData): Nullable<WSClientMessage> {
+  private static parseIncomingMessage(raw: RawData): WSClientMessage {
     try {
       const buffer = Array.isArray(raw) ? Buffer.concat(raw) : Buffer.from(new Uint8Array(raw));
       const text = buffer.toString('utf8');
       const result = ClientMessageSchema.safeParse(JSON.parse(text));
-      return result.success ? result.data : null;
-    } catch {
-      return null;
+      if (!result.success) {
+        throw new WebSocketError(`Malformed message received. ${z.prettifyError(result.error)}`);
+      }
+
+      return result.data;
+    } catch (error) {
+      if (error instanceof WebSocketError) {
+        throw error;
+      }
+
+      throw new WebSocketError('Malformed message received. Could not parse incoming message, is it JSON?');
     }
   }
 }
