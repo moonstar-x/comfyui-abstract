@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events';
+import path from 'node:path';
 import { logger } from '@moonstar-x/logger';
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
@@ -6,6 +7,7 @@ import type { ComfyUiWorkflow } from '../services/comfyui/ComfyUiWorkflow.js';
 import { saveFileToPublic } from '../services/outputs/storage.js';
 import type { Nullable } from '../utils/types.js';
 import { makeWorkflow } from '../workflows/factory.js';
+import type { WorkflowType } from '../workflows/factory.js';
 import type { RunWorkflowPayload, WSClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
 import { WebSocketError } from './WebSocketError.js';
@@ -73,7 +75,7 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       throw new WebSocketError('Could not queue the workflow in ComfyUI.', { cause: error });
     }
 
-    void this.trackWorkflowCompletion(comfyui, workflow, promptId);
+    void this.trackWorkflowCompletion(comfyui, workflow, request.type, promptId);
     return { type: 'workflow_start', payload: { promptId } };
   }
 
@@ -85,11 +87,11 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     return this._comfyUiSession;
   }
 
-  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, promptId: string): Promise<void> {
+  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, type: WorkflowType, promptId: string): Promise<void> {
     try {
       const images = await comfyui.waitForOutputImages(promptId, workflow.outputNodeId);
-      // Prefixed with the prompt ID so outputs from different runs never overwrite each other.
-      const urls = await Promise.all(images.map(async ({ filename, data }) => await saveFileToPublic(`${promptId}-${filename}`, data)));
+      // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the image with.
+      const urls = await Promise.all(images.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
 
       this.emit('message', { type: 'workflow_complete', payload: { promptId, images: urls } });
     } catch (error) {
