@@ -1,9 +1,8 @@
-import { CATEGORY_TILE_CLASSES, FOOTER_ITEMS, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
+import { CATEGORY_TILE_CLASSES, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
 import type { NavItem } from '@components/ui/app/navigation';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -93,15 +92,6 @@ export const AppSidebar: FC = () => {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="border-t border-sidebar-border">
-        <SidebarMenu>
-          {FOOTER_ITEMS.map((item) => (
-            <NavMenuItem isActive={isNavItemActive(item, pathname)} item={item} key={item.path} />
-          ))}
-        </SidebarMenu>
-      </SidebarFooter>
-
       <SidebarRail />
     </Sidebar>
   );

@@ -1,6 +1,5 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@components/ui/third-party/shadcn/tooltip';
-import { useWebSocketHealth } from '@components/websocket/hooks/useWebSocketHealth';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import type { Nullable } from '@core/utils/types';
 import { cn } from 'cn';
@@ -53,9 +52,13 @@ const resolveStatus = (readyState: ReadyState, online: Nullable<boolean>): Comfy
   return online ? 'online' : 'offline';
 };
 
-export const ComfyUiStatusButton: FC = () => {
+export interface ComfyUiStatusButtonProps {
+  online: Nullable<boolean>;
+  onRefresh: () => void;
+}
+
+export const ComfyUiStatusButton: FC<ComfyUiStatusButtonProps> = ({ online, onRefresh }) => {
   const { readyState } = useAppWebSocket();
-  const { online, refresh } = useWebSocketHealth();
   const status = resolveStatus(readyState, online);
   const meta = STATUS_META[status];
 
@@ -67,7 +70,7 @@ export const ComfyUiStatusButton: FC = () => {
             aria-label={`ComfyUI status: ${status}`}
             className={cn('rounded-full px-3', meta.buttonClassName)}
             variant="outline"
-            onClick={refresh}
+            onClick={onRefresh}
           />
         )}
       >

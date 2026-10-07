@@ -1,4 +1,4 @@
-import { ComfyUiStatusButton } from '@components/comfyui/ComfyUiStatusButton';
+import { ComfyUiStatus } from '@components/comfyui/ComfyUiStatus';
 import { ThemeToggle } from '@components/theme/ThemeToggle';
 import { findNavMatch } from '@components/ui/app/navigation';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@components/ui/third-party/shadcn/breadcrumb';
@@ -31,7 +31,7 @@ export const AppHeader: FC = () => {
       </Breadcrumb>
 
       <div className="ml-auto flex shrink-0 items-center gap-1">
-        <ComfyUiStatusButton />
+        <ComfyUiStatus />
         <ThemeToggle />
       </div>
     </header>

@@ -5,7 +5,7 @@ export type WSSendFunction = (message: string) => void;
 export type WSMessageListener<TMessage extends WSServerMessage = WSServerMessage> = (message: TMessage) => void;
 export type WSUnsubscribe = () => void;
 
-const SERVER_MESSAGE_TYPES: ReadonlySet<string> = new Set<WSServerMessageType>(['error', 'health', 'session']);
+const SERVER_MESSAGE_TYPES: ReadonlySet<string> = new Set<WSServerMessageType>(['error', 'session', 'status']);
 
 const isMessageOfType = <TType extends WSServerMessageType>(message: WSServerMessage, type: TType): message is WSServerMessageOfType<TType> => message.type === type;
 
