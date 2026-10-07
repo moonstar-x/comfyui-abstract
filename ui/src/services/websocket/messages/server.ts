@@ -4,6 +4,7 @@ export interface SystemUsage {
   cpu: Nullable<number>;
   gpu: Nullable<number>;
   ram: Nullable<number>;
+  temperature: Nullable<number>;
   vram: Nullable<number>;
 }
 

@@ -1,20 +1,20 @@
-import { logger } from '@moonstar-x/logger';
 import type { ComfyApi, QueueItem } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
 
 /**
- * Resource usage of the ComfyUI host, in percentages (0-100).
+ * Resource usage of the ComfyUI host, in percentages (0-100), except for temperature which is in degrees Celsius.
  * A metric is null when it cannot be determined.
  */
 export interface SystemUsage {
   cpu: Nullable<number>;
   gpu: Nullable<number>;
   ram: Nullable<number>;
+  temperature: Nullable<number>;
   vram: Nullable<number>;
 }
 
-export const EMPTY_SYSTEM_USAGE: SystemUsage = { cpu: null, gpu: null, ram: null, vram: null };
+export const EMPTY_SYSTEM_USAGE: SystemUsage = { cpu: null, gpu: null, ram: null, temperature: null, vram: null };
 
 const CRYSMONITOR_EVENT = 'crysmonitor.monitor';
 
@@ -25,6 +25,7 @@ const CRYSMONITOR_EVENT = 'crysmonitor.monitor';
 interface CrysMonitorData {
   cpu_utilization: number;
   gpus: Array<{
+    gpu_temperature: number;
     gpu_utilization: number;
     vram_total: number;
     vram_used: number;
@@ -49,15 +50,14 @@ const getQueueItemPromptId = (item: QueueItem): string => {
 };
 
 const toPercentage = (used: number, total: number): Nullable<number> => total > 0 ? (used / total) * 100 : null;
-
 const average = (values: number[]): Nullable<number> => values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
-
+const maximum = (values: number[]): Nullable<number> => values.length > 0 ? Math.max(...values) : null;
 const isCrysMonitorData = (data: unknown): data is CrysMonitorData => typeof data === 'object' && data !== null && 'cpu_utilization' in data && 'ram_used_percent' in data && 'gpus' in data && Array.isArray(data.gpus);
-
 const toMetric = (value: number): Nullable<number> => value >= 0 ? value : null;
 
 const getMonitorUsage = (monitorData: CrysMonitorData): SystemUsage => {
   const gpuUtilizations = monitorData.gpus.map((gpu) => gpu.gpu_utilization).filter((value) => value >= 0);
+  const gpuTemperatures = monitorData.gpus.map((gpu) => gpu.gpu_temperature).filter((value) => value >= 0);
   const vramGpus = monitorData.gpus.filter((gpu) => gpu.vram_total > 0 && gpu.vram_used >= 0);
   const vramTotal = vramGpus.reduce((sum, gpu) => sum + gpu.vram_total, 0);
   const vramUsed = vramGpus.reduce((sum, gpu) => sum + gpu.vram_used, 0);
@@ -66,6 +66,7 @@ const getMonitorUsage = (monitorData: CrysMonitorData): SystemUsage => {
     cpu: toMetric(monitorData.cpu_utilization),
     gpu: average(gpuUtilizations),
     ram: toMetric(monitorData.ram_used_percent),
+    temperature: maximum(gpuTemperatures),
     vram: toPercentage(vramUsed, vramTotal)
   };
 };
@@ -109,7 +110,7 @@ export class ComfyUiClientSession {
   }
 
   /**
-   * CPU, RAM and GPU utilization require the ComfyUI-Crystools-MonitorOnly extension.
+   * CPU, RAM, GPU utilization and GPU temperature require the ComfyUI-Crystools-MonitorOnly extension.
    * When it does not report VRAM usage, it is determined from ComfyUI's system stats instead.
    */
   public async getSystemUsage(): Promise<SystemUsage> {
@@ -139,8 +140,6 @@ export class ComfyUiClientSession {
   }
 
   private registerEventHandlers(): void {
-    this._client.on('all', (event) => logger.log(event));
-
     // The SDK's monitor extension only listens for the original ComfyUI-Crystools event.
     this._client.on('all', ({ detail }) => {
       if (detail.type === CRYSMONITOR_EVENT && isCrysMonitorData(detail.data)) {

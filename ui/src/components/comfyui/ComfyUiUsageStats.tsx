@@ -5,50 +5,55 @@ import { cn } from 'cn';
 import type { FC } from 'react';
 
 interface UsageMetric {
+  description: string;
+  highThreshold: number;
   key: keyof SystemUsage;
   label: string;
+  unit: string;
 }
 
+// Temperature is in degrees Celsius, its bar is drawn on a 0-100°C scale.
 const USAGE_METRICS: UsageMetric[] = [
-  { key: 'cpu', label: 'CPU' },
-  { key: 'ram', label: 'RAM' },
-  { key: 'gpu', label: 'GPU' },
-  { key: 'vram', label: 'VRAM' }
+  { key: 'cpu', label: 'CPU', unit: '%', description: 'usage', highThreshold: 90 },
+  { key: 'ram', label: 'RAM', unit: '%', description: 'usage', highThreshold: 90 },
+  { key: 'gpu', label: 'GPU', unit: '%', description: 'usage', highThreshold: 90 },
+  { key: 'vram', label: 'VRAM', unit: '%', description: 'usage', highThreshold: 90 },
+  { key: 'temperature', label: 'TEMP', unit: '°C', description: 'GPU temperature', highThreshold: 80 }
 ];
-
-const HIGH_USAGE_THRESHOLD = 90;
 
 const clampPercentage = (value: number): number => Math.min(100, Math.max(0, value));
 
 interface UsageStatProps {
-  label: string;
+  metric: UsageMetric;
   value: Nullable<number>;
 }
 
-const UsageStat: FC<UsageStatProps> = ({ label, value }) => {
+const UsageStat: FC<UsageStatProps> = ({ metric, value }) => {
   if (value === null) {
     return null;
   }
 
-  const percentage = Math.round(clampPercentage(value));
-  const percentageText = `${percentage.toString()}%`;
-  const isHigh = percentage >= HIGH_USAGE_THRESHOLD;
+  const { description, highThreshold, label, unit } = metric;
+  const roundedValue = Math.round(value);
+  const valueText = `${roundedValue.toString()}${unit}`;
+  const barWidth = `${clampPercentage(roundedValue).toString()}%`;
+  const isHigh = roundedValue >= highThreshold;
 
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-baseline gap-1.5 text-xs leading-none">
         <span className="font-medium text-muted-foreground">
           {label}
-          <span className="sr-only"> usage</span>
+          <span className="sr-only">{` ${description}`}</span>
         </span>
         <span className={cn('min-w-[3ch] text-right font-medium tabular-nums', isHigh && 'text-status-offline-foreground')}>
-          {percentageText}
+          {valueText}
         </span>
       </div>
       <div aria-hidden="true" className="h-0.5 w-full overflow-hidden rounded-full bg-muted">
         <div
           className={cn('h-full rounded-full transition-[width] duration-500', isHigh ? 'bg-status-offline' : 'bg-foreground/40')}
-          style={{ width: percentageText }}
+          style={{ width: barWidth }}
         />
       </div>
     </div>
@@ -68,7 +73,7 @@ export const ComfyUiUsageStats: FC<ComfyUiUsageStatsProps> = ({ usage }) => {
 
   return (
     <Badge className="hidden h-8 gap-3 rounded-full border-border bg-background px-3 md:inline-flex dark:border-input dark:bg-input/30" variant="outline">
-      {metrics.map(({ key, label }) => <UsageStat key={key} label={label} value={usage[key]} />)}
+      {metrics.map((metric) => <UsageStat key={metric.key} metric={metric} value={usage[metric.key]} />)}
     </Badge>
   );
 };
