@@ -37,6 +37,7 @@ const GenerateImageWithQwenImage21ParamsSchema: z.ZodType<GenerateImageWithQwenI
 });
 
 export default class GenerateImageWithQwenImage21 extends ComfyUiWorkflow<GenerateImageWithQwenImage21Params> {
+  public override readonly outputNodeId = '27';
   protected override readonly schema: z.ZodType<GenerateImageWithQwenImage21Params> = GenerateImageWithQwenImage21ParamsSchema;
 
   protected override buildPrompt(params: GenerateImageWithQwenImage21Params): NodeData {
@@ -57,7 +58,7 @@ export default class GenerateImageWithQwenImage21 extends ComfyUiWorkflow<Genera
       .setInputNode('cfg', '23.inputs.value')
       .setInputNode('sampler', '19.inputs.sampler_name')
       .setInputNode('scheduler', '19.inputs.scheduler')
-      .setOutputNode('images', '27')
+      .setOutputNode('images', this.outputNodeId)
       .input('model', params.model)
       .input('clip', params.clip)
       .input('vae', params.vae)

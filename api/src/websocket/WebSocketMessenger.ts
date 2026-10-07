@@ -14,6 +14,9 @@ export class WebSocketMessenger {
   constructor(socket: WebSocket, handler: WebSocketMessageHandler) {
     this._socket = socket;
     this._handler = handler;
+    this._handler.on('message', (message) => {
+      this.send(message);
+    });
   }
 
   public get handler(): WebSocketMessageHandler {

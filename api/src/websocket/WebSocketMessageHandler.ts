@@ -1,12 +1,23 @@
+import { EventEmitter } from 'node:events';
+import { logger } from '@moonstar-x/logger';
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
+import type { ComfyUiWorkflow } from '../services/comfyui/ComfyUiWorkflow.js';
+import { saveFileToPublic } from '../services/outputs/storage.js';
 import type { Nullable } from '../utils/types.js';
 import { makeWorkflow } from '../workflows/factory.js';
 import type { RunWorkflowPayload, WSClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
 import { WebSocketError } from './WebSocketError.js';
 
-export class WebSocketMessageHandler {
+/**
+ * Emitted for messages that are not a direct response to a client message, such as a workflow finishing.
+ */
+export interface WebSocketMessageHandlerEvents {
+  message: [WSServerMessage];
+}
+
+export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandlerEvents> {
   private _comfyUiSession: Nullable<ComfyUiClientSession> = null;
 
   public async handle(message: WSClientMessage): Promise<Nullable<WSServerMessage>> {
@@ -62,6 +73,7 @@ export class WebSocketMessageHandler {
       throw new WebSocketError('Could not queue the workflow in ComfyUI.', { cause: error });
     }
 
+    void this.trackWorkflowCompletion(comfyui, workflow, promptId);
     return { type: 'workflow_start', payload: { promptId } };
   }
 
@@ -71,5 +83,19 @@ export class WebSocketMessageHandler {
     }
 
     return this._comfyUiSession;
+  }
+
+  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, promptId: string): Promise<void> {
+    try {
+      const images = await comfyui.waitForOutputImages(promptId, workflow.outputNodeId);
+      // Prefixed with the prompt ID so outputs from different runs never overwrite each other.
+      const urls = await Promise.all(images.map(async ({ filename, data }) => await saveFileToPublic(`${promptId}-${filename}`, data)));
+
+      this.emit('message', { type: 'workflow_complete', payload: { promptId, images: urls } });
+    } catch (error) {
+      logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
+      const message = error instanceof Error ? error.message : 'Could not retrieve the workflow outputs.';
+      this.emit('message', { type: 'workflow_error', payload: { promptId, message } });
+    }
   }
 }

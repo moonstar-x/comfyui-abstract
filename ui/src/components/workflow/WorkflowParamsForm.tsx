@@ -2,6 +2,7 @@ import { Button } from '@components/ui/third-party/shadcn/button';
 import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
+import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { WorkflowField, WorkflowFieldGroup, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
@@ -24,7 +25,7 @@ export interface WorkflowParamsFormProps {
 
 export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model }) => {
   const { isConnected } = useAppWebSocket();
-  const { run, reset, isSubmitting, promptId, error } = useRunWorkflow();
+  const { run, reset, isSubmitting, isRunning, promptId, images, error } = useRunWorkflow();
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
 
@@ -106,7 +107,8 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
         {error !== null && (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
-        {promptId !== null && <WorkflowRunStatus promptId={promptId} />}
+        {isRunning && promptId !== null && <WorkflowRunStatus promptId={promptId} />}
+        {images !== null && <WorkflowRunResult images={images} />}
       </div>
     </form>
   );

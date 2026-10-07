@@ -1,4 +1,4 @@
-import type { ComfyApi, NodeData, QueueItem } from '@saintno/comfyui-sdk';
+import type { ComfyApi, ImageInfo, NodeData, QueueItem } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
 
@@ -42,6 +42,16 @@ export interface QueueJob {
   promptId: string;
 }
 
+/**
+ * An image produced by a workflow, downloaded from ComfyUI.
+ */
+export interface OutputImage {
+  data: Uint8Array;
+  filename: string;
+}
+
+type PromptResult = { message: string; status: 'error' } | { status: 'success' };
+
 // ComfyUI queue items are tuples of [number, prompt_id, prompt, extra_data, outputs_to_execute].
 const getQueueItemNumber = (item: QueueItem): number => Number(item[0]);
 const getQueueItemPromptId = (item: QueueItem): string => {
@@ -74,6 +84,8 @@ const getMonitorUsage = (monitorData: CrysMonitorData): SystemUsage => {
 export class ComfyUiClientSession {
   private readonly _client: ComfyApi;
   private _monitorData: Nullable<CrysMonitorData> = null;
+  // Keyed by prompt ID. Created by whichever comes first, the prompt being awaited or ComfyUI reporting its result.
+  private readonly _promptResults = new Map<string, PromiseWithResolvers<PromptResult>>();
 
   constructor(client: ComfyApi) {
     this._client = client;
@@ -85,6 +97,11 @@ export class ComfyUiClientSession {
   }
 
   public destroy(): void {
+    for (const result of this._promptResults.values()) {
+      result.resolve({ status: 'error', message: 'The ComfyUI session was closed.' });
+    }
+    this._promptResults.clear();
+
     this._client.removeAllListeners();
     this._client.destroy();
   }
@@ -132,6 +149,44 @@ export class ComfyUiClientSession {
     return this;
   }
 
+  /**
+   * Waits for a prompt queued by this session to finish executing and downloads the images of the given output node.
+   * ComfyUI only sends execution events to the client that queued the prompt, so this only works for prompts queued with queuePrompt().
+   */
+  public async waitForOutputImages(promptId: string, outputNodeId: string): Promise<OutputImage[]> {
+    const result = await this.getPromptResult(promptId).promise;
+    this._promptResults.delete(promptId);
+    if (result.status === 'error') {
+      throw new Error(result.message);
+    }
+
+    // History is used instead of the executed event since cached nodes do not emit it.
+    const history = await this._client.getHistory(promptId);
+    const images = history?.outputs[outputNodeId]?.images ?? [];
+
+    return await Promise.all(images.map(async (image) => ({ filename: image.filename, data: await this.downloadImage(image) })));
+  }
+
+  private async downloadImage(image: ImageInfo): Promise<Uint8Array> {
+    const query = new URLSearchParams({ filename: image.filename, subfolder: image.subfolder, type: image.type });
+    const response = await this._client.fetchApi(`/view?${query.toString()}`);
+    if (!response.ok) {
+      throw new Error(`Could not download image ${image.filename} from ComfyUI (HTTP ${response.status.toString()}).`);
+    }
+
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
+  private getPromptResult(promptId: string): PromiseWithResolvers<PromptResult> {
+    let result = this._promptResults.get(promptId);
+    if (result === undefined) {
+      result = Promise.withResolvers<PromptResult>();
+      this._promptResults.set(promptId, result);
+    }
+
+    return result;
+  }
+
   private async getSystemStatsVramUsage(): Promise<Nullable<number>> {
     try {
       const { devices } = await this._client.getSystemStats();
@@ -150,6 +205,18 @@ export class ComfyUiClientSession {
       if (detail.type === CRYSMONITOR_EVENT && isCrysMonitorData(detail.data)) {
         this._monitorData = detail.data;
       }
+    });
+
+    this._client.on('execution_success', ({ detail }) => {
+      this.getPromptResult(detail.prompt_id).resolve({ status: 'success' });
+    });
+
+    this._client.on('execution_error', ({ detail }) => {
+      this.getPromptResult(detail.prompt_id).resolve({ status: 'error', message: `${detail.node_type} failed: ${detail.exception_message}` });
+    });
+
+    this._client.on('execution_interrupted', ({ detail }) => {
+      this.getPromptResult(detail.prompt_id).resolve({ status: 'error', message: 'The workflow was interrupted.' });
     });
 
     this._client.on('disconnected', () => {
