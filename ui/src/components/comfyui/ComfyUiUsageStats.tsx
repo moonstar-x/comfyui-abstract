@@ -1,3 +1,4 @@
+import { Badge } from '@components/ui/third-party/shadcn/badge';
 import type { Nullable } from '@core/utils/types';
 import type { SystemUsage } from '@services/websocket/messages/server';
 import { cn } from 'cn';
@@ -66,8 +67,8 @@ export const ComfyUiUsageStats: FC<ComfyUiUsageStatsProps> = ({ usage }) => {
   }
 
   return (
-    <div className="hidden items-center gap-3 md:flex">
+    <Badge className="hidden h-8 gap-3 rounded-full border-border bg-background px-3 md:inline-flex dark:border-input dark:bg-input/30" variant="outline">
       {metrics.map(({ key, label }) => <UsageStat key={key} label={label} value={usage[key]} />)}
-    </div>
+    </Badge>
   );
 };
