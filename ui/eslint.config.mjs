@@ -21,5 +21,14 @@ export default [
   ...stylistic,
   ...stylisticJsx,
   ...sorted,
-  ...pluginQuery.configs['flat/recommended-strict']
+  ...pluginQuery.configs['flat/recommended-strict'],
+  {
+    name: 'ignore-third-party',
+    files: ['src/components/ui/third-party/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      'jsx-a11y/prefer-tag-over-role': 'off'
+    }
+  }
 ];
