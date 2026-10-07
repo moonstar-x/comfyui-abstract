@@ -21,7 +21,7 @@ export type WSServerMessage =
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |
   GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |
-  GenericWSServerMessage<'workflow', { promptId: string }>;
+  GenericWSServerMessage<'workflow_start', { promptId: string }>;
 
 export type WSServerMessageType = WSServerMessage['type'];
 export type WSServerMessageOfType<TType extends WSServerMessageType> = Extract<WSServerMessage, { type: TType }>;
