@@ -50,9 +50,9 @@ export class WebSocketMessageHandler {
     return { type: 'status', payload: { online: isOnlineState, usage } };
   }
 
-  private async handleRunWorkflow({ type, model, params }: RunWorkflowPayload): Promise<WSServerMessage> {
+  private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload): Promise<WSServerMessage> {
     const comfyui = this.safeGetComfyUiSession();
-    const workflow = makeWorkflow(model === undefined ? { type } : { type, model });
+    const workflow = makeWorkflow(request);
     const prompt = workflow.makePrompt(params);
 
     let promptId: string;

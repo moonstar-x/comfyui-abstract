@@ -8,23 +8,23 @@ export const WORKFLOW_TYPES = {
 export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];
 
 export const WORKFLOW_MODELS = {
-  QWEN_IMAGE_2_1: 'qwen-image-2.1'
+  'generate-image': {
+    QWEN_IMAGE_2_1: 'qwen-image-2.1'
+  }
 } as const;
-export type WorkflowModel = typeof WORKFLOW_MODELS[keyof typeof WORKFLOW_MODELS];
+export type WorkflowModel<TType extends WorkflowType = WorkflowType> = Extract<typeof WORKFLOW_MODELS[TType][keyof typeof WORKFLOW_MODELS[TType]], string>;
 
-export interface WorkflowRequestParams {
-  model?: WorkflowModel;
-  type: WorkflowType;
-}
+export type WorkflowRequestParams = { [TType in WorkflowType]: { model?: WorkflowModel<TType>; type: TType } }[WorkflowType];
 
-const WORKFLOWS: Record<WorkflowType, Partial<Record<WorkflowModel, () => ComfyUiWorkflow>>> = {
+const WORKFLOWS: { [TType in WorkflowType]: Partial<Record<WorkflowModel<TType>, () => ComfyUiWorkflow>> } = {
   [WORKFLOW_TYPES.GENERATE_IMAGE]: {
-    [WORKFLOW_MODELS.QWEN_IMAGE_2_1]: () => new GenerateImageWithQwenImage21()
+    [WORKFLOW_MODELS[WORKFLOW_TYPES.GENERATE_IMAGE].QWEN_IMAGE_2_1]: () => new GenerateImageWithQwenImage21()
   }
 };
 
 export const makeWorkflow = (params: WorkflowRequestParams): ComfyUiWorkflow => {
-  const create = params.model === undefined ? undefined : WORKFLOWS[params.type][params.model];
+  const models: Partial<Record<string, () => ComfyUiWorkflow>> = WORKFLOWS[params.type];
+  const create = params.model === undefined ? undefined : models[params.model];
   if (create !== undefined) {
     return create();
   }
