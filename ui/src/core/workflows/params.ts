@@ -1,6 +1,15 @@
-import type { WorkflowField } from '@core/workflows/definitions';
+import type { LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
 
-export type WorkflowFormValues = Record<string, string>;
+// LoRA rows keep their raw input strings so the strength can be edited freely before it's validated.
+export interface LoraFormEntry {
+  // Only used as a stable React key, never sent to the API.
+  id: number;
+  lora: string;
+  strength: string;
+}
+
+export type WorkflowFormValue = LoraFormEntry[] | string;
+export type WorkflowFormValues = Record<string, WorkflowFormValue>;
 export type WorkflowFormErrors = Record<string, string>;
 
 export interface ParsedWorkflowParams {
@@ -8,9 +17,25 @@ export interface ParsedWorkflowParams {
   params: Record<string, unknown>;
 }
 
-export const makeInitialFormValues = (fields: readonly WorkflowField[]): WorkflowFormValues => Object.fromEntries(fields.map((field) => [field.key, field.defaultValue === null ? '' : String(field.defaultValue)]));
+export const DEFAULT_LORA_STRENGTH = 1;
 
-const parseNumber = (field: Extract<WorkflowField, { kind: 'number' }>, raw: string): number | string => {
+const loraEntryIds = { last: 0 };
+export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): LoraFormEntry => {
+  loraEntryIds.last += 1;
+  return { id: loraEntryIds.last, lora, strength: strength.toString() };
+};
+
+const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
+  if (field.kind === 'lora-list') {
+    return field.defaultValue.map(({ lora, strength }) => makeLoraFormEntry(lora, strength));
+  }
+
+  return field.defaultValue === null ? '' : String(field.defaultValue);
+};
+
+export const makeInitialFormValues = (fields: readonly WorkflowField[]): WorkflowFormValues => Object.fromEntries(fields.map((field) => [field.key, makeInitialFormValue(field)]));
+
+const parseNumber = (field: NumberWorkflowField, raw: string): number | string => {
   const value = Number(raw);
   if (!Number.isFinite(value)) {
     return 'Must be a number.';
@@ -28,6 +53,34 @@ const parseNumber = (field: Extract<WorkflowField, { kind: 'number' }>, raw: str
 };
 
 /**
+ * Rows without a LoRA name are ignored, and a blank strength falls back to the default.
+ */
+const parseLoras = (field: LoraListWorkflowField, entries: readonly LoraFormEntry[]): string | WorkflowLora[] => {
+  const loras: WorkflowLora[] = [];
+
+  for (const [index, entry] of entries.entries()) {
+    const lora = entry.lora.trim();
+    if (lora === '') {
+      continue;
+    }
+
+    const rawStrength = entry.strength.trim();
+    const strength = rawStrength === '' ? DEFAULT_LORA_STRENGTH : Number(rawStrength);
+    if (!Number.isFinite(strength) || strength < field.minStrength || strength > field.maxStrength) {
+      return `LoRA ${(index + 1).toString()}: strength must be between ${field.minStrength.toString()} and ${field.maxStrength.toString()}.`;
+    }
+
+    loras.push({ lora, strength });
+  }
+
+  if (field.required === true && loras.length === 0) {
+    return `${field.label} requires at least one LoRA.`;
+  }
+
+  return loras;
+};
+
+/**
  * Converts the raw form values into workflow params. Empty optional fields are left out so the API applies its own defaults.
  */
 export const parseWorkflowParams = (fields: readonly WorkflowField[], values: WorkflowFormValues): ParsedWorkflowParams => {
@@ -35,7 +88,20 @@ export const parseWorkflowParams = (fields: readonly WorkflowField[], values: Wo
   const errors: WorkflowFormErrors = {};
 
   for (const field of fields) {
-    const raw = values[field.key] ?? '';
+    const value = values[field.key];
+
+    if (field.kind === 'lora-list') {
+      const result = parseLoras(field, Array.isArray(value) ? value : []);
+      if (typeof result === 'string') {
+        errors[field.key] = result;
+      } else {
+        params[field.key] = result;
+      }
+
+      continue;
+    }
+
+    const raw = typeof value === 'string' ? value : '';
     const isEmpty = raw.trim() === '';
 
     if (isEmpty) {

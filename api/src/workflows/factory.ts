@@ -1,5 +1,6 @@
 import { BadRequestError } from '../app/http/errors/BadRequestError.js';
 import type { ComfyUiWorkflow } from '../services/comfyui/ComfyUiWorkflow.js';
+import GenerateImageWithKrea2 from './generate-image/GenerateImageWithKrea2.js';
 import GenerateImageWithQwenImage21 from './generate-image/GenerateImageWithQwenImage21.js';
 
 export const WORKFLOW_TYPES = {
@@ -19,7 +20,8 @@ export type WorkflowRequestParams = { [TType in WorkflowType]: { model?: Workflo
 
 const WORKFLOWS: { [TType in WorkflowType]: Partial<Record<WorkflowModel<TType>, () => ComfyUiWorkflow>> } = {
   [WORKFLOW_TYPES.GENERATE_IMAGE]: {
-    [WORKFLOW_MODELS[WORKFLOW_TYPES.GENERATE_IMAGE].QWEN_IMAGE_2_1]: () => new GenerateImageWithQwenImage21()
+    [WORKFLOW_MODELS[WORKFLOW_TYPES.GENERATE_IMAGE].QWEN_IMAGE_2_1]: () => new GenerateImageWithQwenImage21(),
+    [WORKFLOW_MODELS[WORKFLOW_TYPES.GENERATE_IMAGE].KREA2]: () => new GenerateImageWithKrea2()
   }
 };
 

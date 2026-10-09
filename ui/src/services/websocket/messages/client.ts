@@ -1,7 +1,7 @@
 export interface GenericWSClientMessage<TType extends string, TPayload extends object> { payload: TPayload; type: TType }
 
 export interface WorkflowModels {
-  'generate-image': 'qwen-image-2.1';
+  'generate-image': 'krea2' | 'qwen-image-2.1';
 }
 export type WorkflowType = keyof WorkflowModels;
 export type WorkflowModel<TType extends WorkflowType = WorkflowType> = WorkflowModels[TType];

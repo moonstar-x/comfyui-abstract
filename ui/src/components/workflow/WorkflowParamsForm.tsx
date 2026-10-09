@@ -10,7 +10,7 @@ import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowFieldGroup, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
-import type { WorkflowFormErrors, WorkflowFormValues } from '@core/workflows/params';
+import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '@core/workflows/params';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
@@ -35,7 +35,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [viewingUrl, setViewingUrl] = useState<Nullable<string>>(null);
 
-  const handleChange = (key: string, value: string): void => {
+  const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
     setErrors(({ [key]: _removed, ...rest }) => rest);
   };

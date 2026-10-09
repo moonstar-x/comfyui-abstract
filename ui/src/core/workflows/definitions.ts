@@ -34,7 +34,20 @@ export interface SelectWorkflowField extends BaseWorkflowField {
   options: readonly string[];
 }
 
-export type WorkflowField = NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export interface WorkflowLora {
+  lora: string;
+  strength: number;
+}
+
+export interface LoraListWorkflowField extends BaseWorkflowField {
+  defaultValue: readonly WorkflowLora[];
+  kind: 'lora-list';
+  maxStrength: number;
+  minStrength: number;
+  placeholder?: Optional<string>;
+}
+
+export type WorkflowField = LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
 export interface WorkflowModelDefinition<TType extends WorkflowType = WorkflowType> {
   description: string;
@@ -89,6 +102,26 @@ export const WORKFLOW_DEFINITIONS: { [TType in WorkflowType]: WorkflowDefinition
           { group: 'advanced', key: 'model', kind: 'text', label: 'Diffusion Model', defaultValue: String.raw`qwen\qwen_image_2.1_int8_convrot.safetensors` },
           { group: 'advanced', key: 'clip', kind: 'text', label: 'Text Encoder', defaultValue: String.raw`qwen\qwen3vl_8b_int8_convrot.safetensors` },
           { group: 'advanced', key: 'vae', kind: 'text', label: 'VAE', defaultValue: String.raw`qwen\qwen_image_2.1_vae_bf16.safetensors` }
+        ]
+      },
+      {
+        id: 'krea2',
+        label: 'Krea 2',
+        description: 'Text-to-image generation with Krea 2, with optional LoRA models.',
+        fields: [
+          { group: 'prompt', key: 'positivePrompt', kind: 'text', label: 'Prompt', defaultValue: '', multiline: true, required: true, placeholder: 'Describe the image you want to generate…' },
+          { group: 'prompt', key: 'negativePrompt', kind: 'text', label: 'Negative Prompt', defaultValue: '', multiline: true, placeholder: 'What to avoid in the image (optional)' },
+          { group: 'settings', key: 'width', kind: 'number', label: 'Width', defaultValue: 1024, integer: true, min: 64, step: 64 },
+          { group: 'settings', key: 'height', kind: 'number', label: 'Height', defaultValue: 1024, integer: true, min: 64, step: 64 },
+          { group: 'settings', key: 'steps', kind: 'number', label: 'Steps', defaultValue: 8, integer: true, min: 1 },
+          { group: 'settings', key: 'cfg', kind: 'number', label: 'CFG', defaultValue: 1, min: 0.1, step: 0.1 },
+          { group: 'settings', key: 'sampler', kind: 'select', label: 'Sampler', defaultValue: 'euler', options: KSAMPLER_SAMPLERS },
+          { group: 'settings', key: 'scheduler', kind: 'select', label: 'Scheduler', defaultValue: 'simple', options: KSAMPLER_SCHEDULERS },
+          { group: 'settings', key: 'seed', kind: 'number', label: 'Seed', defaultValue: null, integer: true, placeholder: 'Random', description: 'Leave empty for a random seed.' },
+          { group: 'settings', key: 'loras', kind: 'lora-list', label: 'LoRA Models', defaultValue: [], minStrength: 0, maxStrength: 2, placeholder: String.raw`krea2\example.safetensors` },
+          { group: 'advanced', key: 'model', kind: 'text', label: 'Diffusion Model', defaultValue: String.raw`krea2\lustifyNSFWCheckpoint_v10Krea2_2996235.safetensors` },
+          { group: 'advanced', key: 'clip', kind: 'text', label: 'Text Encoder', defaultValue: String.raw`qwen\qwen3vl_4b_fp8_scaled.safetensors` },
+          { group: 'advanced', key: 'vae', kind: 'text', label: 'VAE', defaultValue: String.raw`qwen\qwen_image_vae.safetensors` }
         ]
       }
     ]
