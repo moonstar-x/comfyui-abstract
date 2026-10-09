@@ -1,23 +1,19 @@
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
-import { API_URL } from '@core/config/environment';
 import type { Nullable } from '@core/utils/types';
 import type { RunWorkflowPayload } from '@services/websocket/messages/client';
 import { useCallback, useEffect, useState } from 'react';
 
 type RunState =
   { error: string; status: 'error' } |
-  { images: string[]; promptId: string; status: 'completed' } |
+  { promptId: string; status: 'completed' } |
   { promptId: string; status: 'started' } |
   { status: 'idle' } |
   { status: 'pending' };
 
 const IDLE_STATE: RunState = { status: 'idle' };
 
-const toOutputUrl = (path: string): string => new URL(path, API_URL).href;
-
 export interface UseRunWorkflowReturn {
   error: Nullable<string>;
-  images: Nullable<string[]>;
   isRunning: boolean;
   isSubmitting: boolean;
   promptId: Nullable<string>;
@@ -46,7 +42,8 @@ export const useRunWorkflow = (): UseRunWorkflowReturn => {
       settle({ status: 'error', error: payload.message });
     });
     const unsubscribeComplete = messenger.on('workflow_complete', ({ payload }) => {
-      finish(payload.promptId, { status: 'completed', promptId: payload.promptId, images: payload.images.map((path) => toOutputUrl(path)) });
+      // The images themselves are recorded by the GenerationSessionProvider.
+      finish(payload.promptId, { status: 'completed', promptId: payload.promptId });
     });
     const unsubscribeWorkflowError = messenger.on('workflow_error', ({ payload }) => {
       finish(payload.promptId, { status: 'error', error: payload.message });
@@ -85,7 +82,6 @@ export const useRunWorkflow = (): UseRunWorkflowReturn => {
 
   return {
     error: state.status === 'error' ? state.error : null,
-    images: state.status === 'completed' ? state.images : null,
     isRunning: state.status === 'started',
     isSubmitting: state.status === 'pending',
     promptId: state.status === 'started' || state.status === 'completed' ? state.promptId : null,

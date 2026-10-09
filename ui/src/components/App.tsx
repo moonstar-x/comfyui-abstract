@@ -1,3 +1,4 @@
+import { GenerationSessionProvider } from '@components/generation/GenerationSessionContext';
 import { Router } from '@components/router/Router';
 import { ThemeProvider } from '@components/theme/ThemeContext';
 import { TooltipProvider } from '@components/ui/third-party/shadcn/tooltip';
@@ -15,7 +16,9 @@ export const App: FC = () => (
     <ThemeProvider>
       <TooltipProvider>
         <WebSocketProvider>
-          <Router />
+          <GenerationSessionProvider>
+            <Router />
+          </GenerationSessionProvider>
         </WebSocketProvider>
       </TooltipProvider>
     </ThemeProvider>

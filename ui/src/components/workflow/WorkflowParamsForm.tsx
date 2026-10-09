@@ -1,9 +1,13 @@
+import { useGenerationSession } from '@components/generation/GenerationSessionContext';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
+import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
+import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowFieldGroup, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValues } from '@core/workflows/params';
@@ -25,9 +29,11 @@ export interface WorkflowParamsFormProps {
 
 export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model }) => {
   const { isConnected } = useAppWebSocket();
-  const { run, reset, isSubmitting, isRunning, promptId, images, error } = useRunWorkflow();
+  const { run, reset, isSubmitting, isRunning, promptId, error } = useRunWorkflow();
+  const { current, previous: history } = useGenerationSession();
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
+  const [viewingUrl, setViewingUrl] = useState<Nullable<string>>(null);
 
   const handleChange = (key: string, value: string): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -108,14 +114,17 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
         {isRunning && promptId !== null && <WorkflowRunStatus promptId={promptId} />}
-        {images === null
+        {current === null
           ? (
               <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
                 {isRunning ? 'Generating…' : 'Run the workflow to see the result here'}
               </div>
             )
-          : <WorkflowRunResult images={images} />}
+          : <WorkflowRunResult images={current.images} onOpen={setViewingUrl} />}
+        <WorkflowRunHistory generations={history} onOpen={setViewingUrl} />
       </section>
+
+      <WorkflowImageViewer url={viewingUrl} onClose={() => { setViewingUrl(null); }} />
     </div>
   );
 };
