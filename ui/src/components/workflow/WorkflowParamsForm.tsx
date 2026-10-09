@@ -1,6 +1,6 @@
 import { useGenerationSession } from '@components/generation/GenerationSessionContext';
 import { Button } from '@components/ui/third-party/shadcn/button';
-import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
+import type { UseRunWorkflowReturn } from '@components/websocket/hooks/useRunWorkflow';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
 import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
@@ -15,23 +15,29 @@ import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
-import type { FC, ReactNode, SubmitEvent } from 'react';
+import type { FC, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
 
 // Multiline and list fields span the whole row, see WorkflowFieldInput.
 const FIELDS_LAYOUT_CLASSES = 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4';
 
+// Matches the modifier handleKeyDown accepts on each platform.
+const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
+
 export interface WorkflowParamsFormProps {
   model: WorkflowModelDefinition;
+  runner: UseRunWorkflowReturn;
   type: WorkflowType;
 }
 
-export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model }) => {
+export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, runner }) => {
   const { isConnected } = useAppWebSocket();
-  const { run, reset, isSubmitting, isRunning, promptId, error } = useRunWorkflow();
+  const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
   const { current, previous: history, generations } = useGenerationSession();
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
+  // The form stays locked from submission until the run settles, not just until it is queued.
+  const isBusy = isSubmitting || isRunning;
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -67,11 +73,24 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
     run(payload);
   };
 
+  // Cmd/Ctrl + Enter submits from any field, including multiline ones where Enter inserts a newline.
+  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>): void => {
+    if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey) || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+    // requestSubmit ignores the submit button's disabled state, so mirror it here.
+    if (isConnected && !isBusy) {
+      event.currentTarget.requestSubmit();
+    }
+  };
+
   const renderFields = (fields: WorkflowField[]): ReactNode => (
     <div className={FIELDS_LAYOUT_CLASSES}>
       {fields.map((field) => (
         <WorkflowFieldInput
-          disabled={isSubmitting}
+          disabled={isBusy}
           error={errors[field.key]}
           field={field}
           key={field.key}
@@ -88,7 +107,9 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
 
   return (
     <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
-      <form noValidate className="@container flex min-w-0 flex-col gap-6" onSubmit={handleSubmit}>
+      {/* The key handler only catches shortcuts bubbling up from the fields, the form itself is not interactive. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      <form noValidate className="@container flex min-w-0 flex-col gap-6" onKeyDown={handleKeyDown} onSubmit={handleSubmit}>
         {visibleFields.length > 0 && renderFields(visibleFields)}
 
         {advancedFields.length > 0 && (
@@ -101,11 +122,16 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button disabled={!isConnected || isSubmitting} size="lg" type="submit">
+          <Button disabled={!isConnected || isBusy} size="lg" type="submit">
             <Play data-icon="inline-start" />
-            {isSubmitting ? 'Queueing…' : 'Run Workflow'}
+            {isSubmitting ? 'Queueing…' : (isRunning ? 'Generating…' : 'Run Workflow')}
+            {!isBusy && (
+              <kbd className="ml-1 hidden rounded bg-primary-foreground/15 px-1.5 py-0.5 font-sans text-xs pointer-fine:inline-block">
+                {SUBMIT_SHORTCUT_LABEL}
+              </kbd>
+            )}
           </Button>
-          <Button disabled={isSubmitting} size="lg" type="button" variant="ghost" onClick={handleReset}>
+          <Button disabled={isBusy} size="lg" type="button" variant="ghost" onClick={handleReset}>
             <RotateCcw data-icon="inline-start" />
             Reset
           </Button>

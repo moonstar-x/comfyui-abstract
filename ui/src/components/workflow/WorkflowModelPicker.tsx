@@ -6,19 +6,20 @@ import { useId, useMemo } from 'react';
 import type { FC } from 'react';
 
 export interface WorkflowModelPickerProps {
+  disabled?: boolean;
   models: readonly WorkflowModelDefinition[];
   onChange: (model: Nullable<string>) => void;
   value: Nullable<string>;
 }
 
-export const WorkflowModelPicker: FC<WorkflowModelPickerProps> = ({ models, value, onChange }) => {
+export const WorkflowModelPicker: FC<WorkflowModelPickerProps> = ({ models, value, disabled = false, onChange }) => {
   const id = useId();
   const items = useMemo(() => models.map((model) => ({ value: model.alias, label: model.alias })), [models]);
 
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>Model</Label>
-      <Select<string> items={items} value={value} onValueChange={onChange}>
+      <Select<string> disabled={disabled} items={items} value={value} onValueChange={onChange}>
         <SelectTrigger className="w-full sm:w-72" id={id}>
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>

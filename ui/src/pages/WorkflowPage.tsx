@@ -1,5 +1,6 @@
 import { CATEGORY_TILE_CLASSES, findNavMatch } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
+import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
 import { useWorkflowDefinition } from '@components/workflow/hooks/useWorkflowDefinition';
 import { WorkflowModelPicker } from '@components/workflow/WorkflowModelPicker';
 import { WorkflowParamsForm } from '@components/workflow/WorkflowParamsForm';
@@ -21,15 +22,16 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const { pathname } = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: definition, error, isPending } = useWorkflowDefinition(type);
+  const runner = useRunWorkflow();
 
   const match = findNavMatch(pathname);
   const models = definition?.models ?? [];
-  // Falls back to the first model when the URL doesn't name a valid one.
   const model = definition === undefined
     ? null
     : findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
 
   const handleModelChange = (next: Nullable<string>): void => {
+    runner.reset();
     setSearchParams((previous) => {
       const params = new URLSearchParams(previous);
       if (next === null) {
@@ -57,7 +59,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
     }
 
     // Keyed by model so switching models starts from that model's defaults.
-    return <WorkflowParamsForm key={model.alias} model={model} type={type} />;
+    return <WorkflowParamsForm key={model.alias} model={model} runner={runner} type={type} />;
   };
 
   return (
@@ -70,7 +72,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
           <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? type}</h1>
         </div>
 
-        <WorkflowModelPicker models={models} value={model?.alias ?? null} onChange={handleModelChange} />
+        <WorkflowModelPicker disabled={runner.isSubmitting || runner.isRunning} models={models} value={model?.alias ?? null} onChange={handleModelChange} />
       </div>
 
       {renderContent()}
