@@ -12,7 +12,7 @@ export interface WorkflowImageListInputProps {
   error: Optional<string>;
   field: ImageListWorkflowField;
   onChange: (key: string, value: ImageFormEntry[]) => void;
-  onOpen: (url: string) => void;
+  onOpen: (images: readonly string[], index: number) => void;
   value: readonly ImageFormEntry[];
 }
 
@@ -66,7 +66,7 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
       <ul className={isInvalid ? 'grid grid-cols-3 gap-2 rounded-lg border border-dashed border-destructive p-2 @sm:grid-cols-5' : 'grid grid-cols-3 gap-2 rounded-lg border border-dashed p-2 @sm:grid-cols-5'}>
         {value.map((entry, index) => (
           <li className="group relative aspect-square overflow-hidden rounded-md border bg-muted" key={entry.id}>
-            <button className="size-full cursor-zoom-in" type="button" onClick={() => { onOpen(entry.url); }}>
+            <button className="size-full cursor-zoom-in" type="button" onClick={() => { onOpen(value.map((item) => item.url), index); }}>
               <img alt={entry.name} className="size-full object-cover" src={entry.url} />
             </button>
             <Button

@@ -4,6 +4,7 @@ import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
 import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
@@ -27,14 +28,24 @@ export interface WorkflowParamsFormProps {
 export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model }) => {
   const { isConnected } = useAppWebSocket();
   const { run, reset, isSubmitting, isRunning, promptId, error } = useRunWorkflow();
-  const { current, previous: history } = useGenerationSession();
+  const { current, previous: history, generations } = useGenerationSession();
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
-  const [viewingUrl, setViewingUrl] = useState<Nullable<string>>(null);
+  const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
     setErrors(({ [key]: _removed, ...rest }) => rest);
+  };
+
+  const handleOpenImages = (images: readonly string[], index: number): void => {
+    setGallery({ images, index });
+  };
+
+  // The latest result and the previous generations browse together as one gallery, newest first.
+  const handleOpenSessionImage = (url: string): void => {
+    const images = generations.flatMap((generation) => generation.images);
+    setGallery({ images, index: Math.max(images.indexOf(url), 0) });
   };
 
   const handleReset = (): void => {
@@ -66,7 +77,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
           key={field.key}
           value={values[field.key] ?? ''}
           onChange={handleChange}
-          onOpenImage={setViewingUrl}
+          onOpenImages={handleOpenImages}
         />
       ))}
     </div>
@@ -113,11 +124,11 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
                 {isRunning ? 'Generating…' : 'Run the workflow to see the result here'}
               </div>
             )
-          : <WorkflowRunResult images={current.images} onOpen={setViewingUrl} />}
-        <WorkflowRunHistory generations={history} onOpen={setViewingUrl} />
+          : <WorkflowRunResult images={current.images} onOpen={handleOpenSessionImage} />}
+        <WorkflowRunHistory generations={history} onOpen={handleOpenSessionImage} />
       </section>
 
-      <WorkflowImageViewer url={viewingUrl} onClose={() => { setViewingUrl(null); }} />
+      <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
     </div>
   );
 };

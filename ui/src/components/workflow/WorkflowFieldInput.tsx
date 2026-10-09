@@ -16,11 +16,11 @@ export interface WorkflowFieldInputProps {
   error: Optional<string>;
   field: WorkflowField;
   onChange: (key: string, value: WorkflowFormValue) => void;
-  onOpenImage: (url: string) => void;
+  onOpenImages: (images: readonly string[], index: number) => void;
   value: WorkflowFormValue;
 }
 
-export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: rawValue, error, disabled, onChange, onOpenImage }) => {
+export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: rawValue, error, disabled, onChange, onOpenImages }) => {
   const id = useId();
   const value = typeof rawValue === 'string' ? rawValue : '';
   const hintId = `${id}-hint`;
@@ -36,7 +36,7 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
   switch (field.kind) {
     // A list of inputs has no single control to label, so it renders its own grouped layout.
     case 'image-list':
-      return <WorkflowImageListInput disabled={disabled} error={error} field={field} value={getImageFormEntries(rawValue)} onChange={onChange} onOpen={onOpenImage} />;
+      return <WorkflowImageListInput disabled={disabled} error={error} field={field} value={getImageFormEntries(rawValue)} onChange={onChange} onOpen={onOpenImages} />;
     case 'lora-list':
       return <WorkflowLoraListInput disabled={disabled} error={error} field={field} value={getLoraFormEntries(rawValue)} onChange={onChange} />;
     case 'number':
