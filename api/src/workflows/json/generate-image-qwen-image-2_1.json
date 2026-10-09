@@ -12,7 +12,7 @@
   },
   "12": {
     "inputs": {
-      "unet_name": "qwen\\qwen_image_2.1_int8_convrot.safetensors",
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
       "weight_dtype": "default"
     },
     "class_type": "UNETLoader",
@@ -22,7 +22,7 @@
   },
   "13": {
     "inputs": {
-      "clip_name": "qwen\\qwen3vl_8b_int8_convrot.safetensors",
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
       "type": "qwen_image",
       "device": "default"
     },
@@ -33,7 +33,7 @@
   },
   "14": {
     "inputs": {
-      "vae_name": "qwen\\qwen_image_2.1_vae_bf16.safetensors"
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
     },
     "class_type": "VAELoader",
     "_meta": {

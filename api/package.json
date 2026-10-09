@@ -21,6 +21,7 @@
     "on-finished": "^2.4.1",
     "pg-promise": "^12.7.1",
     "ws": "^8.22.0",
+    "yaml": "^2.9.1",
     "zod": "^4.6.5"
   },
   "devDependencies": {

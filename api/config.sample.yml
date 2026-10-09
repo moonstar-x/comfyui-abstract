@@ -1,0 +1,30 @@
+workflows:
+  - alias: krea2
+    workflow: image-generation-krea2
+    type: image-generation
+    params:
+      visible:
+        - positivePrompt
+        - width
+        - height
+      advanced:
+        - negativePrompt
+        - seed
+        - steps
+        - cfg
+        - sampler
+        - scheduler
+        - loras
+      defaults:
+        width: 1024
+        height: 1024
+        negativePrompt: ''
+        steps: 8
+        cfg: 1
+        sampler: euler
+        scheduler: simple
+        loras: []
+    serverParams:
+      model: krea2.safetensors
+      clip: qwen3vl_4b_fp8_scaled.safetensors
+      vae: qwen_image_vae.safetensors

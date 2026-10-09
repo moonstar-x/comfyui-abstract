@@ -10,6 +10,9 @@ ui/node_modules
 .env*
 !.env.sample
 
+# Config
+api/config.yml
+
 # Builds
 ui/dist
 

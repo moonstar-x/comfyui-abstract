@@ -12,7 +12,7 @@
   },
   "12": {
     "inputs": {
-      "unet_name": "krea2\\lustifyNSFWCheckpoint_v10Krea2_2996235.safetensors",
+      "unet_name": "krea2.safetensors",
       "weight_dtype": "default"
     },
     "class_type": "UNETLoader",
@@ -22,7 +22,7 @@
   },
   "13": {
     "inputs": {
-      "clip_name": "qwen\\qwen3vl_4b_fp8_scaled.safetensors",
+      "clip_name": "qwen3vl_4b_fp8_scaled.safetensors",
       "type": "krea2",
       "device": "default"
     },
@@ -33,7 +33,7 @@
   },
   "14": {
     "inputs": {
-      "vae_name": "qwen\\qwen_image_vae.safetensors"
+      "vae_name": "qwen_image_vae.safetensors"
     },
     "class_type": "VAELoader",
     "_meta": {

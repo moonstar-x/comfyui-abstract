@@ -37,6 +37,8 @@ export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
 
 export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
 
+export const CONFIG_FILE: string = path.resolve(getString('CONFIG_FILE', 'config.yml'));
+
 export const POSTGRES_HOST: string = getRequired('POSTGRES_HOST');
 export const POSTGRES_PORT: number = getInteger('POSTGRES_PORT', 5432);
 export const POSTGRES_USER: string = getRequired('POSTGRES_USER');

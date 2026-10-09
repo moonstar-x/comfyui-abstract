@@ -1,9 +1,12 @@
 import { logger } from '@moonstar-x/logger';
 import { createApp } from './app/express/app.js';
 import { PORT } from './config/environment.js';
+import { loadConfig } from './services/config/config.js';
 import { WebSocketServer } from './websocket/WebSocketServer.js';
 
 try {
+  await loadConfig();
+
   const app = await createApp();
   const server = app.listen(PORT, (): void => {
     logger.info(`Server started on port ${PORT.toString()}`);
