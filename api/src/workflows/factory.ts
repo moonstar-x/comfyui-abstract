@@ -9,7 +9,8 @@ export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];
 
 export const WORKFLOW_MODELS = {
   'generate-image': {
-    QWEN_IMAGE_2_1: 'qwen-image-2.1'
+    QWEN_IMAGE_2_1: 'qwen-image-2.1',
+    KREA2: 'krea2'
   }
 } as const;
 export type WorkflowModel<TType extends WorkflowType = WorkflowType> = Extract<typeof WORKFLOW_MODELS[TType][keyof typeof WORKFLOW_MODELS[TType]], string>;
