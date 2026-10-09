@@ -28,3 +28,27 @@ workflows:
       model: krea2.safetensors
       clip: qwen3vl_4b_fp8_scaled.safetensors
       vae: qwen_image_vae.safetensors
+  - alias: qwen-image-2.1
+    workflow: edit-image-qwen-image-2.1
+    type: edit-image
+    params:
+      visible:
+        - images
+        - positivePrompt
+      advanced:
+        - negativePrompt
+        - seed
+        - steps
+        - cfg
+        - sampler
+        - scheduler
+      defaults:
+        negativePrompt: ''
+        steps: 25
+        cfg: 1
+        sampler: euler
+        scheduler: simple
+    serverParams:
+      model: qwen_image_2.1_int8_convrot.safetensors
+      clip: qwen3vl_8b_int8_convrot.safetensors
+      vae: qwen_image_2.1_vae_bf16.safetensors

@@ -1,5 +1,6 @@
 export const WORKFLOW_TYPES = {
-  GENERATE_IMAGE: 'generate-image'
+  GENERATE_IMAGE: 'generate-image',
+  EDIT_IMAGE: 'edit-image'
 } as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];
 
@@ -36,9 +37,17 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
 }
 
 /**
+ * A list of images uploaded by the client, sent as base64 strings without the data URL prefix.
+ */
+export interface ImageListWorkflowField extends BaseWorkflowField {
+  kind: 'image-list';
+  maxImages: number;
+}
+
+/**
  * Describes how a workflow param is rendered in the client.
  */
-export type WorkflowField = LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export type WorkflowField = ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
 /**
  * Field descriptions of every param a workflow accepts, keyed by param name.

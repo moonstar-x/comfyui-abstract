@@ -1,0 +1,304 @@
+{
+  "4": {
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "5": {
+    "inputs": {
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "6": {
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "7": {
+    "inputs": {
+      "device": "auto",
+      "dtype": "default",
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "QwenImage21Cache",
+    "_meta": {
+      "title": "Qwen Image 2.1 Cache"
+    }
+  },
+  "9": {
+    "inputs": {
+      "prompt": [
+        "11",
+        0
+      ],
+      "negative_prompt": [
+        "12",
+        0
+      ],
+      "resolution": 1024,
+      "clip": [
+        "5",
+        0
+      ],
+      "images.image_1": [
+        "30",
+        0
+      ],
+      "vae": [
+        "6",
+        0
+      ],
+      "images.image_4": [
+        "33",
+        0
+      ],
+      "images.image_5": [
+        "34",
+        0
+      ],
+      "images.image_6": [
+        "35",
+        0
+      ],
+      "images.image_7": [
+        "36",
+        0
+      ],
+      "images.image_8": [
+        "37",
+        0
+      ],
+      "images.image_9": [
+        "38",
+        0
+      ],
+      "images.image_10": [
+        "39",
+        0
+      ],
+      "images.image_2": [
+        "31",
+        0
+      ],
+      "images.image_3": [
+        "32",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImage21",
+    "_meta": {
+      "title": "Text Encode Qwen Image 2.1"
+    }
+  },
+  "11": {
+    "inputs": {
+      "value": "Greyscale fashion editorial portrait of an avant-garde woman tilted upwards in profile, captured with striking high-contrast chiaroscuro lighting. She wears oversized, thick-rimmed circular black sunglasses with matte dark lenses, concealing her upward gaze. Her attire merges high couture with tactical abstraction: a high-necked structural dress tailored from heavyweight fabric featuring a disrupted optical camouflage pattern—interlocking oversized polka dots, pixelated stippling, and organic contour blotches in stark monochrome that mimic military disruptive patterns in a refined runway style. Around her shoulders, asymmetric pleated webbing and tailored cargo straps are integrated seamlessly into the garment’s architecture. In her gloved hand, she clutches a structured matte-leather geometric handbag accented with subtle tactical buckles, utility stitching, and dark brushed-metal hardware. Her skin texture is rendered with hyper-detailed clarity, sculpted by intense, razor-sharp studio key light and deep graphite shadows. The striking background is a vivid mixed-media graphic collage, composed of flat vibrant lime green planes, stark black and white overlapping circles, segmented semi-circles with bold zebra striping, dense micro-halftone dot matrices, and vector topographic contour lines. The clash between monochromatic disruptive camo elements on her clothing and the saturated, retro-futuristic pop-art backdrop creates an intense visual dissonance, emphasizing sharp silhouettes, paper cut-out edges, dynamic compositional balance, and clean graphic novel textures. Absolutely no text, no typography, no letters, no words, no numbers, no logos, no watermark, no captions, pure imagery only."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Input > Positive Prompt"
+    }
+  },
+  "12": {
+    "inputs": {
+      "value": ""
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Input > Negative Prompt"
+    }
+  },
+  "13": {
+    "inputs": {
+      "value": -496892863789271
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Input > Seed"
+    }
+  },
+  "14": {
+    "inputs": {
+      "value": 25
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Input > Steps"
+    }
+  },
+  "15": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Input > CFG"
+    }
+  },
+  "18": {
+    "inputs": {
+      "seed": 0,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "7",
+        0
+      ],
+      "positive": [
+        "9",
+        0
+      ],
+      "negative": [
+        "9",
+        1
+      ],
+      "latent_image": [
+        "9",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "19": {
+    "inputs": {
+      "samples": [
+        "18",
+        0
+      ],
+      "vae": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "20": {
+    "inputs": {
+      "images": [
+        "19",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "30": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 1"
+    }
+  },
+  "31": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 2"
+    }
+  },
+  "32": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 3"
+    }
+  },
+  "33": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 4"
+    }
+  },
+  "34": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 5"
+    }
+  },
+  "35": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 6"
+    }
+  },
+  "36": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 7"
+    }
+  },
+  "37": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 8"
+    }
+  },
+  "38": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 9"
+    }
+  },
+  "39": {
+    "inputs": {
+      "base64": ""
+    },
+    "class_type": "SimpleUtilsBase64ToImage",
+    "_meta": {
+      "title": "Input > Image 10"
+    }
+  }
+}

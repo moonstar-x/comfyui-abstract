@@ -2,6 +2,7 @@ import { BadRequestError } from '../app/http/errors/BadRequestError.js';
 import type { ComfyUiWorkflow, ComfyUiWorkflowClass } from '../services/comfyui/ComfyUiWorkflow.js';
 import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
+import EditImageWithQwenImage21 from './edit-image/EditImageWithQwenImage21.js';
 import GenerateImageWithKrea2 from './generate-image/GenerateImageWithKrea2.js';
 import GenerateImageWithQwenImage21 from './generate-image/GenerateImageWithQwenImage21.js';
 import type { WorkflowField, WorkflowType } from './types.js';
@@ -39,14 +40,11 @@ export interface ConfiguredWorkflow {
 
 const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   GenerateImageWithQwenImage21,
-  GenerateImageWithKrea2
+  GenerateImageWithKrea2,
+  EditImageWithQwenImage21
 ];
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);
-
-// Always true while there is a single workflow type, which the linter would otherwise flag as an unnecessary condition.
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-const isSameType = (a: WorkflowType, b: WorkflowType): boolean => a === b;
 
 const getClientParamKeys = (config: WorkflowConfig): string[] => [...config.params.visible, ...config.params.advanced];
 
@@ -59,7 +57,7 @@ const validateWorkflowConfig = (config: WorkflowConfig): string[] => {
   }
 
   const errors: string[] = [];
-  if (!isSameType(implementation.type, config.type)) {
+  if (implementation.type !== config.type) {
     errors.push(`workflow "${config.workflow}" is of type "${implementation.type}", not "${config.type}".`);
   }
 
@@ -122,7 +120,7 @@ const makeFieldDefinition = (config: WorkflowConfig, implementation: ComfyUiWork
  */
 export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition => {
   const models = getConfig().workflows
-    .filter((config) => isSameType(config.type, type))
+    .filter((config) => config.type === type)
     .map((config) => {
       const implementation = getImplementation(config);
       return {
@@ -138,7 +136,7 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
 };
 
 export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParams: Record<string, unknown>): ConfiguredWorkflow => {
-  const config = getConfig().workflows.find((candidate) => isSameType(candidate.type, type) && candidate.alias === model);
+  const config = getConfig().workflows.find((candidate) => candidate.type === type && candidate.alias === model);
   if (config === undefined) {
     throw new BadRequestError(`There is no ${type} workflow with the model ${model}.`);
   }
