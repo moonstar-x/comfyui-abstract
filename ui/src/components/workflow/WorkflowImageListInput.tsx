@@ -12,6 +12,7 @@ export interface WorkflowImageListInputProps {
   error: Optional<string>;
   field: ImageListWorkflowField;
   onChange: (key: string, value: ImageFormEntry[]) => void;
+  onOpen: (url: string) => void;
   value: readonly ImageFormEntry[];
 }
 
@@ -30,7 +31,7 @@ const readAsDataUrl = async (file: File): Promise<string> => await new Promise((
   reader.readAsDataURL(file);
 });
 
-export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field, value, error, disabled, onChange }) => {
+export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field, value, error, disabled, onChange, onOpen }) => {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const hintId = `${id}-hint`;
@@ -65,7 +66,9 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
       <ul className={isInvalid ? 'grid grid-cols-3 gap-2 rounded-lg border border-dashed border-destructive p-2 @sm:grid-cols-5' : 'grid grid-cols-3 gap-2 rounded-lg border border-dashed p-2 @sm:grid-cols-5'}>
         {value.map((entry, index) => (
           <li className="group relative aspect-square overflow-hidden rounded-md border bg-muted" key={entry.id}>
-            <img alt={entry.name} className="size-full object-cover" src={entry.url} />
+            <button className="size-full cursor-zoom-in" type="button" onClick={() => { onOpen(entry.url); }}>
+              <img alt={entry.name} className="size-full object-cover" src={entry.url} />
+            </button>
             <Button
               aria-label={`Remove ${entry.name}`}
               className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm"

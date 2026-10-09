@@ -66,6 +66,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
           key={field.key}
           value={values[field.key] ?? ''}
           onChange={handleChange}
+          onOpenImage={setViewingUrl}
         />
       ))}
     </div>

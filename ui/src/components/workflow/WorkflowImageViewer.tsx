@@ -35,10 +35,10 @@ export const WorkflowImageViewer: FC<WorkflowImageViewerProps> = ({ url, onClose
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/80 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs" />
         <Dialog.Popup className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 p-4 transition duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 md:p-8" onClick={handlePopupClick}>
-          <Dialog.Title className="sr-only">Workflow output</Dialog.Title>
+          <Dialog.Title className="sr-only">Image preview</Dialog.Title>
           {shownUrl !== null && (
             <>
-              <img alt="Workflow output" className="max-h-[calc(100dvh-7rem)] max-w-full rounded-lg object-contain shadow-2xl" src={shownUrl} />
+              <img alt="Preview" className="max-h-[calc(100dvh-7rem)] max-w-full rounded-lg object-contain shadow-2xl" src={shownUrl} />
               <a download className="inline-flex items-center gap-1.5 text-sm text-white/80 hover:text-white" href={shownUrl}>
                 <Download aria-hidden="true" className="size-4" />
                 Download
