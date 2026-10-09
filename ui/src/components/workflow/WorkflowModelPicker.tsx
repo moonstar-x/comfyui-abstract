@@ -13,7 +13,7 @@ export interface WorkflowModelPickerProps {
 
 export const WorkflowModelPicker: FC<WorkflowModelPickerProps> = ({ models, value, onChange }) => {
   const id = useId();
-  const items = useMemo(() => models.map((model) => ({ value: model.id, label: model.label })), [models]);
+  const items = useMemo(() => models.map((model) => ({ value: model.alias, label: model.alias })), [models]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -24,7 +24,7 @@ export const WorkflowModelPicker: FC<WorkflowModelPickerProps> = ({ models, valu
         </SelectTrigger>
         <SelectContent>
           {models.map((model) => (
-            <SelectItem key={model.id} value={model.id}>{model.label}</SelectItem>
+            <SelectItem key={model.alias} value={model.alias}>{model.alias}</SelectItem>
           ))}
         </SelectContent>
       </Select>

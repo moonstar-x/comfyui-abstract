@@ -1,26 +1,24 @@
 import type { Nullable, Optional } from '@core/utils/types';
-import type { WorkflowModel, WorkflowType } from '@services/websocket/messages/client';
-
-export type WorkflowFieldGroup = 'advanced' | 'prompt' | 'settings';
+import { WORKFLOW_TYPES } from '@services/websocket/messages/client';
+import type { WorkflowType } from '@services/websocket/messages/client';
 
 interface BaseWorkflowField {
+  // Value from the API config used to pre-populate the field. Missing when the API should pick the value (e.g. a random seed).
+  defaultValue?: Optional<unknown>;
   description?: Optional<string>;
-  group: WorkflowFieldGroup;
+  isAdvanced: boolean;
   key: string;
   label: string;
   required?: Optional<boolean>;
 }
 
 export interface TextWorkflowField extends BaseWorkflowField {
-  defaultValue: string;
   kind: 'text';
   multiline?: Optional<boolean>;
   placeholder?: Optional<string>;
 }
 
 export interface NumberWorkflowField extends BaseWorkflowField {
-  // A null default leaves the input empty so the API picks the value (e.g. a random seed).
-  defaultValue: Nullable<number>;
   integer?: Optional<boolean>;
   kind: 'number';
   min?: Optional<number>;
@@ -29,7 +27,6 @@ export interface NumberWorkflowField extends BaseWorkflowField {
 }
 
 export interface SelectWorkflowField extends BaseWorkflowField {
-  defaultValue: string;
   kind: 'select';
   options: readonly string[];
 }
@@ -40,7 +37,6 @@ export interface WorkflowLora {
 }
 
 export interface LoraListWorkflowField extends BaseWorkflowField {
-  defaultValue: readonly WorkflowLora[];
   kind: 'lora-list';
   maxStrength: number;
   minStrength: number;
@@ -49,88 +45,22 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
 
 export type WorkflowField = LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
-export interface WorkflowModelDefinition<TType extends WorkflowType = WorkflowType> {
-  description: string;
+export interface WorkflowModelDefinition {
+  alias: string;
+  // Ordered as listed in the API config, visible fields first.
   fields: readonly WorkflowField[];
-  id: WorkflowModel<TType>;
-  label: string;
 }
 
-export interface WorkflowDefinition<TType extends WorkflowType = WorkflowType> {
-  models: ReadonlyArray<WorkflowModelDefinition<TType>>;
-  type: TType;
+export interface WorkflowDefinition {
+  models: readonly WorkflowModelDefinition[];
+  type: WorkflowType;
 }
 
-const KSAMPLER_SAMPLERS = [
-  'euler',
-  'euler_ancestral',
-  'heun',
-  'dpm_2',
-  'dpm_2_ancestral',
-  'lms',
-  'dpmpp_2s_ancestral',
-  'dpmpp_sde',
-  'dpmpp_2m',
-  'dpmpp_2m_sde',
-  'dpmpp_3m_sde',
-  'ddim',
-  'uni_pc',
-  'res_multistep'
-] as const;
+const WORKFLOW_TYPE_VALUES: readonly string[] = WORKFLOW_TYPES;
 
-const KSAMPLER_SCHEDULERS = ['simple', 'normal', 'karras', 'exponential', 'sgm_uniform', 'beta', 'linear_quadratic', 'kl_optimal', 'ddim_uniform'] as const;
+export const isWorkflowType = (value: Optional<string>): value is WorkflowType => value !== undefined && WORKFLOW_TYPE_VALUES.includes(value);
 
-// TODO: This is dynamic and must come from the backend. Defaults mirror the ones saved in the API workflow JSON.
-export const WORKFLOW_DEFINITIONS: { [TType in WorkflowType]: WorkflowDefinition<TType> } = {
-  'generate-image': {
-    type: 'generate-image',
-    models: [
-      {
-        id: 'qwen-image-2.1',
-        label: 'Qwen Image 2.1',
-        description: 'Text-to-image generation with Qwen Image 2.1.',
-        fields: [
-          { group: 'prompt', key: 'positivePrompt', kind: 'text', label: 'Prompt', defaultValue: '', multiline: true, required: true, placeholder: 'Describe the image you want to generate…' },
-          { group: 'prompt', key: 'negativePrompt', kind: 'text', label: 'Negative Prompt', defaultValue: '', multiline: true, placeholder: 'What to avoid in the image (optional)' },
-          { group: 'settings', key: 'width', kind: 'number', label: 'Width', defaultValue: 1024, integer: true, min: 64, step: 64 },
-          { group: 'settings', key: 'height', kind: 'number', label: 'Height', defaultValue: 1024, integer: true, min: 64, step: 64 },
-          { group: 'settings', key: 'steps', kind: 'number', label: 'Steps', defaultValue: 25, integer: true, min: 1 },
-          { group: 'settings', key: 'cfg', kind: 'number', label: 'CFG', defaultValue: 1, min: 0.1, step: 0.1 },
-          { group: 'settings', key: 'sampler', kind: 'select', label: 'Sampler', defaultValue: 'euler', options: KSAMPLER_SAMPLERS },
-          { group: 'settings', key: 'scheduler', kind: 'select', label: 'Scheduler', defaultValue: 'simple', options: KSAMPLER_SCHEDULERS },
-          { group: 'settings', key: 'seed', kind: 'number', label: 'Seed', defaultValue: null, integer: true, placeholder: 'Random', description: 'Leave empty for a random seed.' },
-          { group: 'advanced', key: 'model', kind: 'text', label: 'Diffusion Model', defaultValue: String.raw`qwen\qwen_image_2.1_int8_convrot.safetensors` },
-          { group: 'advanced', key: 'clip', kind: 'text', label: 'Text Encoder', defaultValue: String.raw`qwen\qwen3vl_8b_int8_convrot.safetensors` },
-          { group: 'advanced', key: 'vae', kind: 'text', label: 'VAE', defaultValue: String.raw`qwen\qwen_image_2.1_vae_bf16.safetensors` }
-        ]
-      },
-      {
-        id: 'krea2',
-        label: 'Krea 2',
-        description: 'Text-to-image generation with Krea 2, with optional LoRA models.',
-        fields: [
-          { group: 'prompt', key: 'positivePrompt', kind: 'text', label: 'Prompt', defaultValue: '', multiline: true, required: true, placeholder: 'Describe the image you want to generate…' },
-          { group: 'prompt', key: 'negativePrompt', kind: 'text', label: 'Negative Prompt', defaultValue: '', multiline: true, placeholder: 'What to avoid in the image (optional)' },
-          { group: 'settings', key: 'width', kind: 'number', label: 'Width', defaultValue: 1024, integer: true, min: 64, step: 64 },
-          { group: 'settings', key: 'height', kind: 'number', label: 'Height', defaultValue: 1024, integer: true, min: 64, step: 64 },
-          { group: 'settings', key: 'steps', kind: 'number', label: 'Steps', defaultValue: 8, integer: true, min: 1 },
-          { group: 'settings', key: 'cfg', kind: 'number', label: 'CFG', defaultValue: 1, min: 0.1, step: 0.1 },
-          { group: 'settings', key: 'sampler', kind: 'select', label: 'Sampler', defaultValue: 'euler', options: KSAMPLER_SAMPLERS },
-          { group: 'settings', key: 'scheduler', kind: 'select', label: 'Scheduler', defaultValue: 'simple', options: KSAMPLER_SCHEDULERS },
-          { group: 'settings', key: 'seed', kind: 'number', label: 'Seed', defaultValue: null, integer: true, placeholder: 'Random', description: 'Leave empty for a random seed.' },
-          { group: 'settings', key: 'loras', kind: 'lora-list', label: 'LoRA Models', defaultValue: [], minStrength: 0, maxStrength: 2, placeholder: String.raw`krea2\example.safetensors` },
-          { group: 'advanced', key: 'model', kind: 'text', label: 'Diffusion Model', defaultValue: String.raw`krea2\lustifyNSFWCheckpoint_v10Krea2_2996235.safetensors` },
-          { group: 'advanced', key: 'clip', kind: 'text', label: 'Text Encoder', defaultValue: String.raw`qwen\qwen3vl_4b_fp8_scaled.safetensors` },
-          { group: 'advanced', key: 'vae', kind: 'text', label: 'VAE', defaultValue: String.raw`qwen\qwen_image_vae.safetensors` }
-        ]
-      }
-    ]
-  }
-};
-
-export const isWorkflowType = (value: Optional<string>): value is WorkflowType => value !== undefined && Object.hasOwn(WORKFLOW_DEFINITIONS, value);
-
-export const findWorkflowModel = <TType extends WorkflowType>(
-  definition: WorkflowDefinition<TType>,
-  model: Nullable<string>
-): Nullable<WorkflowModelDefinition<TType>> => definition.models.find((candidate) => candidate.id === model) ?? null;
+export const findWorkflowModel = (
+  definition: WorkflowDefinition,
+  alias: Nullable<string>
+): Nullable<WorkflowModelDefinition> => definition.models.find((candidate) => candidate.alias === alias) ?? null;

@@ -1,12 +1,14 @@
 export interface GenericWSClientMessage<TType extends string, TPayload extends object> { payload: TPayload; type: TType }
 
-export interface WorkflowModels {
-  'generate-image': 'krea2' | 'qwen-image-2.1';
-}
-export type WorkflowType = keyof WorkflowModels;
-export type WorkflowModel<TType extends WorkflowType = WorkflowType> = WorkflowModels[TType];
+export const WORKFLOW_TYPES = ['generate-image'] as const;
+export type WorkflowType = typeof WORKFLOW_TYPES[number];
 
-export type RunWorkflowPayload = { [TType in WorkflowType]: { model?: WorkflowModel<TType>; params: Record<string, unknown>; type: TType } }[WorkflowType];
+export interface RunWorkflowPayload {
+  // Alias of the workflow model, as defined in the API config.
+  model: string;
+  params: Record<string, unknown>;
+  type: WorkflowType;
+}
 
 export type WSClientMessage =
   GenericWSClientMessage<'get_queue', { promptId: string }> |

@@ -1,34 +1,30 @@
 import { CATEGORY_TILE_CLASSES, findNavMatch } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
+import { useWorkflowDefinition } from '@components/workflow/hooks/useWorkflowDefinition';
 import { WorkflowModelPicker } from '@components/workflow/WorkflowModelPicker';
 import { WorkflowParamsForm } from '@components/workflow/WorkflowParamsForm';
 import type { Nullable } from '@core/utils/types';
-import { findWorkflowModel, isWorkflowType, WORKFLOW_DEFINITIONS } from '@core/workflows/definitions';
-import type { FC } from 'react';
+import { findWorkflowModel, isWorkflowType } from '@core/workflows/definitions';
+import type { WorkflowType } from '@services/websocket/messages/client';
+import type { FC, ReactNode } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
 
 const MODEL_SEARCH_PARAM = 'model';
 
-const WorkflowPage: FC = () => {
+const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
+  <div className="flex min-h-90 flex-1 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
+    {children}
+  </div>
+);
+
+const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const { pathname } = useLocation();
-  const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
-  if (!isWorkflowType(id)) {
-    return (
-      <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Workflow not found</h1>
-        <div className="flex min-h-90 flex-1 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
-          There is no workflow named
-          {' '}
-          {id}
-        </div>
-      </div>
-    );
-  }
+  const { data: definition, error, isPending } = useWorkflowDefinition(type);
 
   const match = findNavMatch(pathname);
-  const definition = WORKFLOW_DEFINITIONS[id];
-  const model = findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM));
+  const models = definition?.models ?? [];
+  const model = definition === undefined ? null : findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM));
 
   const handleModelChange = (next: Nullable<string>): void => {
     setSearchParams((previous) => {
@@ -43,6 +39,27 @@ const WorkflowPage: FC = () => {
     }, { replace: true });
   };
 
+  const renderContent = (): ReactNode => {
+    if (isPending) {
+      return <Placeholder>Loading workflow…</Placeholder>;
+    }
+
+    if (error !== null) {
+      return <Placeholder>{error.message}</Placeholder>;
+    }
+
+    if (models.length === 0) {
+      return <Placeholder>There are no models configured for this workflow</Placeholder>;
+    }
+
+    if (model === null) {
+      return <Placeholder>Select a model to configure the workflow</Placeholder>;
+    }
+
+    // Keyed by model so switching models starts from that model's defaults.
+    return <WorkflowParamsForm key={model.alias} model={model} type={type} />;
+  };
+
   return (
     <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
@@ -50,22 +67,34 @@ const WorkflowPage: FC = () => {
           {match !== null && match.section !== null && (
             <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? id}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? type}</h1>
         </div>
 
-        <WorkflowModelPicker models={definition.models} value={model?.id ?? null} onChange={handleModelChange} />
+        <WorkflowModelPicker models={models} value={model?.alias ?? null} onChange={handleModelChange} />
       </div>
 
-      {model === null
-        ? (
-            <div className="flex min-h-90 flex-1 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
-              Select a model to configure the workflow
-            </div>
-          )
-        // Keyed by model so switching models starts from that model's defaults.
-        : <WorkflowParamsForm key={`${id}:${model.id}`} model={model} type={id} />}
+      {renderContent()}
     </div>
   );
+};
+
+const WorkflowPage: FC = () => {
+  const { id } = useParams();
+  if (!isWorkflowType(id)) {
+    return (
+      <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Workflow not found</h1>
+        <Placeholder>
+          There is no workflow named
+          {' '}
+          {id}
+        </Placeholder>
+      </div>
+    );
+  }
+
+  // Keyed by type so the selected model and form state don't leak between workflows.
+  return <WorkflowPageContent key={id} type={id} />;
 };
 
 export default WorkflowPage;

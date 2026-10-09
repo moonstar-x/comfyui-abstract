@@ -25,12 +25,20 @@ export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): 
   return { id: loraEntryIds.last, lora, strength: strength.toString() };
 };
 
+const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<WorkflowLora, 'lora'> => typeof value === 'object' &&
+  value !== null &&
+  'lora' in value &&
+  typeof value.lora === 'string';
+
+// Defaults come from the API config, so they're not guaranteed to match the field kind.
 const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
+  const { defaultValue } = field;
+
   if (field.kind === 'lora-list') {
-    return field.defaultValue.map(({ lora, strength }) => makeLoraFormEntry(lora, strength));
+    return Array.isArray(defaultValue) ? defaultValue.filter(isWorkflowLora).map(({ lora, strength }) => makeLoraFormEntry(lora, strength)) : [];
   }
 
-  return field.defaultValue === null ? '' : String(field.defaultValue);
+  return typeof defaultValue === 'string' || typeof defaultValue === 'number' ? String(defaultValue) : '';
 };
 
 export const makeInitialFormValues = (fields: readonly WorkflowField[]): WorkflowFormValues => Object.fromEntries(fields.map((field) => [field.key, makeInitialFormValue(field)]));

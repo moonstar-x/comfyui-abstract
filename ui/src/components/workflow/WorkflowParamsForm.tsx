@@ -8,7 +8,7 @@ import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
-import type { WorkflowField, WorkflowFieldGroup, WorkflowModelDefinition } from '@core/workflows/definitions';
+import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '@core/workflows/params';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
@@ -16,11 +16,8 @@ import { Play, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import type { FC, ReactNode, SubmitEvent } from 'react';
 
-const GROUP_LAYOUT_CLASSES: Record<WorkflowFieldGroup, string> = {
-  prompt: 'grid gap-4',
-  settings: 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4',
-  advanced: 'grid gap-4 @2xl:grid-cols-3'
-};
+// Multiline and list fields span the whole row, see WorkflowFieldInput.
+const FIELDS_LAYOUT_CLASSES = 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4';
 
 export interface WorkflowParamsFormProps {
   model: WorkflowModelDefinition;
@@ -55,12 +52,12 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
       return;
     }
 
-    const payload: RunWorkflowPayload = { type, model: model.id, params: parsed.params };
+    const payload: RunWorkflowPayload = { type, model: model.alias, params: parsed.params };
     run(payload);
   };
 
-  const renderGroup = (group: WorkflowFieldGroup, fields: WorkflowField[]): ReactNode => (
-    <div className={GROUP_LAYOUT_CLASSES[group]}>
+  const renderFields = (fields: WorkflowField[]): ReactNode => (
+    <div className={FIELDS_LAYOUT_CLASSES}>
       {fields.map((field) => (
         <WorkflowFieldInput
           disabled={isSubmitting}
@@ -74,24 +71,19 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
     </div>
   );
 
-  const fieldsByGroup = (group: WorkflowFieldGroup): WorkflowField[] => model.fields.filter((field) => field.group === group);
-  const advancedFields = fieldsByGroup('advanced');
+  const visibleFields = model.fields.filter((field) => !field.isAdvanced);
+  const advancedFields = model.fields.filter((field) => field.isAdvanced);
 
   return (
     <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
       <form noValidate className="@container flex min-w-0 flex-col gap-6" onSubmit={handleSubmit}>
-        {renderGroup('prompt', fieldsByGroup('prompt'))}
-
-        <section className="flex flex-col gap-3">
-          <h2 className="text-sm font-semibold">Settings</h2>
-          {renderGroup('settings', fieldsByGroup('settings'))}
-        </section>
+        {visibleFields.length > 0 && renderFields(visibleFields)}
 
         {advancedFields.length > 0 && (
           <details className="group rounded-lg border px-3 py-2">
             <summary className="cursor-pointer text-sm font-semibold select-none">Advanced</summary>
             <div className="pt-3 pb-1">
-              {renderGroup('advanced', advancedFields)}
+              {renderFields(advancedFields)}
             </div>
           </details>
         )}

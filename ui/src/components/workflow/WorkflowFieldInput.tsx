@@ -107,8 +107,10 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
       break;
   }
 
+  const isFullWidth = field.kind === 'text' && field.multiline === true;
+
   return (
-    <div className="flex min-w-0 flex-col gap-2">
+    <div className={isFullWidth ? 'col-span-full flex min-w-0 flex-col gap-2' : 'flex min-w-0 flex-col gap-2'}>
       <Label htmlFor={id}>
         {field.label}
         {field.required === true && <span aria-hidden="true" className="text-destructive">*</span>}
