@@ -1,5 +1,7 @@
 export const RouteDefs = {
   home: '/',
+  login: '/login',
+  signUp: '/signup',
   workflow: '/workflow'
 } as const;
 
