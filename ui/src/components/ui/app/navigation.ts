@@ -1,6 +1,6 @@
 import { DynamicRouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { ImagePlus } from 'lucide-react';
+import { ImagePlus, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -27,7 +27,8 @@ export interface NavMatch {
 export const WORKFLOW_SECTIONS: NavSection[] = [
   {
     items: [
-      { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('generate-image'), title: 'Generate Image' }
+      { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('generate-image'), title: 'Generate Image' },
+      { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('edit-image'), title: 'Edit Image' }
     ],
     title: 'Image Generation'
   }

@@ -1,4 +1,4 @@
-import type { LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
+import type { ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
 
 // LoRA rows keep their raw input strings so the strength can be edited freely before it's validated.
 export interface LoraFormEntry {
@@ -8,7 +8,15 @@ export interface LoraFormEntry {
   strength: string;
 }
 
-export type WorkflowFormValue = LoraFormEntry[] | string;
+export interface ImageFormEntry {
+  // Only used as a stable React key, never sent to the API.
+  id: number;
+  name: string;
+  // Data URL of the file, used for the preview. Only its base64 part is sent to the API.
+  url: string;
+}
+
+export type WorkflowFormValue = ImageFormEntry[] | LoraFormEntry[] | string;
 export type WorkflowFormValues = Record<string, WorkflowFormValue>;
 export type WorkflowFormErrors = Record<string, string>;
 
@@ -19,11 +27,19 @@ export interface ParsedWorkflowParams {
 
 export const DEFAULT_LORA_STRENGTH = 1;
 
-const loraEntryIds = { last: 0 };
-export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): LoraFormEntry => {
-  loraEntryIds.last += 1;
-  return { id: loraEntryIds.last, lora, strength: strength.toString() };
+const formEntryIds = { last: 0 };
+const makeFormEntryId = (): number => {
+  formEntryIds.last += 1;
+  return formEntryIds.last;
 };
+
+export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): LoraFormEntry => ({ id: makeFormEntryId(), lora, strength: strength.toString() });
+
+export const makeImageFormEntry = (name: string, url: string): ImageFormEntry => ({ id: makeFormEntryId(), name, url });
+
+export const getLoraFormEntries = (value: WorkflowFormValue): LoraFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'lora' in entry) : [];
+
+export const getImageFormEntries = (value: WorkflowFormValue): ImageFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'url' in entry) : [];
 
 const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<WorkflowLora, 'lora'> => typeof value === 'object' &&
   value !== null &&
@@ -33,6 +49,11 @@ const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<W
 // Defaults come from the API config, so they're not guaranteed to match the field kind.
 const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
   const { defaultValue } = field;
+
+  // Images can't come from the API config, they're always uploaded by the user.
+  if (field.kind === 'image-list') {
+    return [];
+  }
 
   if (field.kind === 'lora-list') {
     return Array.isArray(defaultValue) ? defaultValue.filter(isWorkflowLora).map(({ lora, strength }) => makeLoraFormEntry(lora, strength)) : [];
@@ -88,6 +109,23 @@ const parseLoras = (field: LoraListWorkflowField, entries: readonly LoraFormEntr
   return loras;
 };
 
+const parseImages = (field: ImageListWorkflowField, entries: readonly ImageFormEntry[]): string | string[] => {
+  if (field.required === true && entries.length === 0) {
+    return `${field.label} requires at least one image.`;
+  }
+
+  if (entries.length > field.maxImages) {
+    return `${field.label} accepts at most ${field.maxImages.toString()} images.`;
+  }
+
+  // The API expects plain base64, without the data URL prefix.
+  return entries.map(({ url }) => url.slice(url.indexOf(',') + 1));
+};
+
+const parseListField = (field: ImageListWorkflowField | LoraListWorkflowField, value: WorkflowFormValue): string | unknown[] => field.kind === 'image-list'
+  ? parseImages(field, getImageFormEntries(value))
+  : parseLoras(field, getLoraFormEntries(value));
+
 /**
  * Converts the raw form values into workflow params. Empty optional fields are left out so the API applies its own defaults.
  */
@@ -98,8 +136,8 @@ export const parseWorkflowParams = (fields: readonly WorkflowField[], values: Wo
   for (const field of fields) {
     const value = values[field.key];
 
-    if (field.kind === 'lora-list') {
-      const result = parseLoras(field, Array.isArray(value) ? value : []);
+    if (field.kind === 'image-list' || field.kind === 'lora-list') {
+      const result = parseListField(field, value ?? []);
       if (typeof result === 'string') {
         errors[field.key] = result;
       } else {

@@ -43,7 +43,12 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
   placeholder?: Optional<string>;
 }
 
-export type WorkflowField = LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export interface ImageListWorkflowField extends BaseWorkflowField {
+  kind: 'image-list';
+  maxImages: number;
+}
+
+export type WorkflowField = ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
 export interface WorkflowModelDefinition {
   alias: string;

@@ -2,9 +2,11 @@ import { Input } from '@components/ui/third-party/shadcn/input';
 import { Label } from '@components/ui/third-party/shadcn/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/third-party/shadcn/select';
 import { Textarea } from '@components/ui/third-party/shadcn/textarea';
+import { WorkflowImageListInput } from '@components/workflow/WorkflowImageListInput';
 import { WorkflowLoraListInput } from '@components/workflow/WorkflowLoraListInput';
 import type { Optional } from '@core/utils/types';
 import type { WorkflowField } from '@core/workflows/definitions';
+import { getImageFormEntries, getLoraFormEntries } from '@core/workflows/params';
 import type { WorkflowFormValue } from '@core/workflows/params';
 import { useId } from 'react';
 import type { FC, ReactNode } from 'react';
@@ -31,9 +33,11 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
 
   let control: ReactNode;
   switch (field.kind) {
+    // A list of inputs has no single control to label, so it renders its own grouped layout.
+    case 'image-list':
+      return <WorkflowImageListInput disabled={disabled} error={error} field={field} value={getImageFormEntries(rawValue)} onChange={onChange} />;
     case 'lora-list':
-      // A list of inputs has no single control to label, so it renders its own grouped layout.
-      return <WorkflowLoraListInput disabled={disabled} error={error} field={field} value={Array.isArray(rawValue) ? rawValue : []} onChange={onChange} />;
+      return <WorkflowLoraListInput disabled={disabled} error={error} field={field} value={getLoraFormEntries(rawValue)} onChange={onChange} />;
     case 'number':
       control = (
         <Input
