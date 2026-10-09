@@ -1,8 +1,7 @@
-import { GenerationSessionProvider } from '@components/generation/GenerationSessionContext';
+import { AuthProvider } from '@components/auth/AuthContext';
 import { Router } from '@components/router/Router';
 import { ThemeProvider } from '@components/theme/ThemeContext';
 import { TooltipProvider } from '@components/ui/third-party/shadcn/tooltip';
-import { WebSocketProvider } from '@components/websocket/WebSocketContext';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import type { FC } from 'react';
@@ -15,11 +14,9 @@ export const App: FC = () => (
     <ReactQueryDevtools buttonPosition="bottom-right" initialIsOpen={false} />
     <ThemeProvider>
       <TooltipProvider>
-        <WebSocketProvider>
-          <GenerationSessionProvider>
-            <Router />
-          </GenerationSessionProvider>
-        </WebSocketProvider>
+        <AuthProvider>
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
