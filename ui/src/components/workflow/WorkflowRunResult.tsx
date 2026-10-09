@@ -15,7 +15,7 @@ export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ images }) => {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className={images.length > 1 ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4'}>
       {images.map((url, index) => (
         <figure className="flex flex-col gap-2" key={url}>
           <a className="overflow-hidden rounded-lg border bg-muted/40" href={url} rel="noreferrer" target="_blank">

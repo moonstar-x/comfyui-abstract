@@ -14,8 +14,8 @@ import type { FC, ReactNode, SubmitEvent } from 'react';
 
 const GROUP_LAYOUT_CLASSES: Record<WorkflowFieldGroup, string> = {
   prompt: 'grid gap-4',
-  settings: 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4',
-  advanced: 'grid gap-4 lg:grid-cols-3'
+  settings: 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4',
+  advanced: 'grid gap-4 @2xl:grid-cols-3'
 };
 
 export interface WorkflowParamsFormProps {
@@ -72,26 +72,24 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
   const advancedFields = fieldsByGroup('advanced');
 
   return (
-    <form noValidate className="flex flex-col gap-6" onSubmit={handleSubmit}>
-      <p className="text-sm text-muted-foreground">{model.description}</p>
+    <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
+      <form noValidate className="@container flex min-w-0 flex-col gap-6" onSubmit={handleSubmit}>
+        {renderGroup('prompt', fieldsByGroup('prompt'))}
 
-      {renderGroup('prompt', fieldsByGroup('prompt'))}
+        <section className="flex flex-col gap-3">
+          <h2 className="text-sm font-semibold">Settings</h2>
+          {renderGroup('settings', fieldsByGroup('settings'))}
+        </section>
 
-      <section className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold">Settings</h2>
-        {renderGroup('settings', fieldsByGroup('settings'))}
-      </section>
+        {advancedFields.length > 0 && (
+          <details className="group rounded-lg border px-3 py-2">
+            <summary className="cursor-pointer text-sm font-semibold select-none">Advanced</summary>
+            <div className="pt-3 pb-1">
+              {renderGroup('advanced', advancedFields)}
+            </div>
+          </details>
+        )}
 
-      {advancedFields.length > 0 && (
-        <details className="group rounded-lg border px-3 py-2">
-          <summary className="cursor-pointer text-sm font-semibold select-none">Advanced</summary>
-          <div className="pt-3 pb-1">
-            {renderGroup('advanced', advancedFields)}
-          </div>
-        </details>
-      )}
-
-      <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={!isConnected || isSubmitting} size="lg" type="submit">
             <Play data-icon="inline-start" />
@@ -103,13 +101,21 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model })
           </Button>
           {!isConnected && <span className="text-sm text-muted-foreground">Waiting for the server connection…</span>}
         </div>
+      </form>
 
+      <section aria-label="Result" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
         {error !== null && (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
         {isRunning && promptId !== null && <WorkflowRunStatus promptId={promptId} />}
-        {images !== null && <WorkflowRunResult images={images} />}
-      </div>
-    </form>
+        {images === null
+          ? (
+              <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
+                {isRunning ? 'Generating…' : 'Run the workflow to see the result here'}
+              </div>
+            )
+          : <WorkflowRunResult images={images} />}
+      </section>
+    </div>
   );
 };

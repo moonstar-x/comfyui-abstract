@@ -45,14 +45,16 @@ const WorkflowPage: FC = () => {
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-      <div className="flex flex-col items-start gap-2">
-        {match !== null && match.section !== null && (
-          <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
-        )}
-        <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? id}</h1>
-      </div>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col items-start gap-2">
+          {match !== null && match.section !== null && (
+            <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
+          )}
+          <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? id}</h1>
+        </div>
 
-      <WorkflowModelPicker models={definition.models} value={model?.id ?? null} onChange={handleModelChange} />
+        <WorkflowModelPicker models={definition.models} value={model?.id ?? null} onChange={handleModelChange} />
+      </div>
 
       {model === null
         ? (
