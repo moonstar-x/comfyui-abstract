@@ -7,7 +7,7 @@ import type { ComfyUiWorkflow } from '../services/comfyui/ComfyUiWorkflow.js';
 import { saveFileToPublic } from '../services/outputs/storage.js';
 import type { Nullable } from '../utils/types.js';
 import { makeWorkflow } from '../workflows/factory.js';
-import type { WorkflowType } from '../workflows/factory.js';
+import type { WorkflowType } from '../workflows/types.js';
 import type { RunWorkflowPayload, WSClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
 import { WebSocketError } from './WebSocketError.js';
@@ -65,8 +65,8 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
 
   private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload): Promise<WSServerMessage> {
     const comfyui = this.safeGetComfyUiSession();
-    const workflow = makeWorkflow(request);
-    const prompt = workflow.makePrompt(params);
+    const { workflow, params: workflowParams } = makeWorkflow(request, params);
+    const prompt = workflow.makePrompt(workflowParams);
 
     let promptId: string;
     try {

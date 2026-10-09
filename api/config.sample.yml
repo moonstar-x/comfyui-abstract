@@ -1,7 +1,7 @@
 workflows:
   - alias: krea2
-    workflow: image-generation-krea2
-    type: image-generation
+    workflow: generate-image-krea2
+    type: generate-image
     params:
       visible:
         - positivePrompt

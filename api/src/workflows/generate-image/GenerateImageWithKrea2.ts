@@ -5,6 +5,9 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
 import prompt from '../json/generate-image-krea2.json' with { type: 'json' };
+import { WORKFLOW_TYPES } from '../types.js';
+import type { WorkflowFields, WorkflowType } from '../types.js';
+import { LORAS_FIELD, TEXT_TO_IMAGE_FIELDS } from './fields.js';
 
 export interface DiffusionLora { lora: string; strength: number }
 
@@ -45,6 +48,10 @@ const GenerateImageWithKrea2ParamsSchema: z.ZodType<GenerateImageWithKrea2Params
 });
 
 export default class GenerateImageWithKrea2 extends ComfyUiWorkflow<GenerateImageWithKrea2Params> {
+  public static readonly fields: WorkflowFields<GenerateImageWithKrea2Params> = { ...TEXT_TO_IMAGE_FIELDS, loras: LORAS_FIELD };
+  public static readonly id: string = 'generate-image-krea2';
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_IMAGE;
+
   public override readonly outputNodeId = '27';
   protected override readonly schema: z.ZodType<GenerateImageWithKrea2Params> = GenerateImageWithKrea2ParamsSchema;
 

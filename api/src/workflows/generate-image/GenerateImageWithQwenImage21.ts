@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
 import prompt from '../json/generate-image-qwen-image-2_1.json' with { type: 'json' };
+import { WORKFLOW_TYPES } from '../types.js';
+import type { WorkflowFields, WorkflowType } from '../types.js';
+import { TEXT_TO_IMAGE_FIELDS } from './fields.js';
 
 export interface GenerateImageWithQwenImage21Params {
   cfg: number;
@@ -37,6 +40,10 @@ const GenerateImageWithQwenImage21ParamsSchema: z.ZodType<GenerateImageWithQwenI
 });
 
 export default class GenerateImageWithQwenImage21 extends ComfyUiWorkflow<GenerateImageWithQwenImage21Params> {
+  public static readonly fields: WorkflowFields<GenerateImageWithQwenImage21Params> = TEXT_TO_IMAGE_FIELDS;
+  public static readonly id: string = 'generate-image-qwen-image-2.1';
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_IMAGE;
+
   public override readonly outputNodeId = '27';
   protected override readonly schema: z.ZodType<GenerateImageWithQwenImage21Params> = GenerateImageWithQwenImage21ParamsSchema;
 

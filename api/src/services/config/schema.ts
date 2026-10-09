@@ -1,5 +1,7 @@
 /* eslint-disable unicorn/max-nested-calls */
 import { z } from 'zod';
+import { WORKFLOW_TYPES } from '../../workflows/types.js';
+import type { WorkflowType } from '../../workflows/types.js';
 
 export interface WorkflowConfig {
   alias: string;
@@ -9,7 +11,7 @@ export interface WorkflowConfig {
     visible: string[];
   };
   serverParams: Record<string, unknown>;
-  type: string;
+  type: WorkflowType;
   workflow: string;
 }
 
@@ -26,7 +28,7 @@ export const AppConfigSchema: z.ZodType<AppConfig> = z.object({
       defaults: z.record(z.string(), z.unknown())
     }),
     serverParams: z.record(z.string(), z.unknown()),
-    type: z.string(),
+    type: z.enum(Object.values(WORKFLOW_TYPES)),
     workflow: z.string()
   }))
 });
