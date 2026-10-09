@@ -24,7 +24,10 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
 
   const match = findNavMatch(pathname);
   const models = definition?.models ?? [];
-  const model = definition === undefined ? null : findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM));
+  // Falls back to the first model when the URL doesn't name a valid one.
+  const model = definition === undefined
+    ? null
+    : findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
 
   const handleModelChange = (next: Nullable<string>): void => {
     setSearchParams((previous) => {
@@ -48,12 +51,9 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
       return <Placeholder>{error.message}</Placeholder>;
     }
 
-    if (models.length === 0) {
-      return <Placeholder>There are no models configured for this workflow</Placeholder>;
-    }
-
+    // Only null once loaded when the workflow has no models, since otherwise it falls back to the first one.
     if (model === null) {
-      return <Placeholder>Select a model to configure the workflow</Placeholder>;
+      return <Placeholder>There are no models configured for this workflow</Placeholder>;
     }
 
     // Keyed by model so switching models starts from that model's defaults.
