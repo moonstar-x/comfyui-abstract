@@ -1,3 +1,4 @@
+import type { ErrorCode } from '../../app/http/errors/ErrorCodes.js';
 import type { SystemUsage } from '../../services/comfyui/ComfyUiClientSession.js';
 import type { Nullable } from '../../utils/types.js';
 
@@ -12,7 +13,7 @@ export interface QueueJobStatus {
 
 export interface GenericWSServerMessage<TType extends string, TData extends object> { payload: TData; type: TType }
 export type WSServerMessage =
-  GenericWSServerMessage<'error', { message: string }> |
+  GenericWSServerMessage<'error', { code?: ErrorCode; message: string }> |
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |
   GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |

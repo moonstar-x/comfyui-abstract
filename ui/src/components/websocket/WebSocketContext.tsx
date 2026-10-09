@@ -1,5 +1,7 @@
 import { WS_URL } from '@core/config/environment';
 import type { Nullable } from '@core/utils/types';
+import { SESSION_ERROR_CODES } from '@services/api/client';
+import { setSession } from '@services/auth/session';
 import { WebSocketMessenger } from '@services/websocket/WebSocketMessenger';
 import { createContext, use, useEffect, useMemo, useState } from 'react';
 import type { Context, FC, ReactNode } from 'react';
@@ -48,6 +50,13 @@ export const WebSocketProvider: FC<Props> = ({ children }) => {
 
   useEffect(() => messenger.on('session', (message) => {
     setClientId(message.payload.clientId);
+  }), [messenger]);
+
+  // Same as the API client, a rejected token sends the user back to the login page.
+  useEffect(() => messenger.on('error', ({ payload }) => {
+    if (payload.code !== undefined && SESSION_ERROR_CODES.has(payload.code)) {
+      setSession(null);
+    }
   }), [messenger]);
 
   const context = useMemo<ContextValue>(() => ({

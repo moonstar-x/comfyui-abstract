@@ -13,7 +13,7 @@ export const ApiErrorCodes = {
   USERNAME_RESERVED: 'USERNAME_RESERVED'
 } as const;
 
-const SESSION_ERROR_CODES: ReadonlySet<string> = new Set([ApiErrorCodes.SESSION_INVALID, ApiErrorCodes.SESSION_NOT_PROVIDED]);
+export const SESSION_ERROR_CODES: ReadonlySet<string> = new Set([ApiErrorCodes.SESSION_INVALID, ApiErrorCodes.SESSION_NOT_PROVIDED]);
 
 export interface ApiErrorOptions extends ErrorOptions {
   code: string;

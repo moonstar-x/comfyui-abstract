@@ -17,7 +17,7 @@ export interface QueueJobStatus {
 export interface GenericWSServerMessage<TType extends string, TData extends object> { payload: TData; type: TType }
 
 export type WSServerMessage =
-  GenericWSServerMessage<'error', { message: string }> |
+  GenericWSServerMessage<'error', { code?: string; message: string }> |
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |
   GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |

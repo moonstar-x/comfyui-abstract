@@ -1,3 +1,4 @@
+import { getSession } from '@services/auth/session';
 import type { WSClientMessage } from '@services/websocket/messages/client';
 import type { WSServerMessage, WSServerMessageOfType, WSServerMessageType } from '@services/websocket/messages/server';
 
@@ -73,7 +74,13 @@ export class WebSocketMessenger {
       throw new Error('Attempted to send a WebSocket message without an attached connection.');
     }
 
-    this._send(JSON.stringify(message));
+    const token = getSession()?.token;
+    if (token === undefined) {
+      throw new Error('Attempted to send a WebSocket message without a session.');
+    }
+
+    // The server authenticates every message on its own, so the token travels with each one.
+    this._send(JSON.stringify({ ...message, token }));
   }
 
   public subscribe(listener: WSMessageListener): WSUnsubscribe {
