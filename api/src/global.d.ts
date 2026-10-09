@@ -1,6 +1,9 @@
 declare namespace NodeJS {
   interface ProcessEnv {
     COMFYUI_URL?: string;
+    ENABLE_SIGNUP?: string;
+    JWT_EXPIRATION?: string;
+    JWT_SECRET?: string;
     PORT?: string;
 
     POSTGRES_DATABASE?: string;

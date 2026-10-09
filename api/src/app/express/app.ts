@@ -14,6 +14,7 @@ export const createApp = async (): Promise<Express> => {
   const app = express();
   app.use(cors());
   app.use(logRequests);
+  app.use(express.json());
 
   app.options('*all', cors());
 

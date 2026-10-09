@@ -31,6 +31,24 @@ const getInteger = (key: string, defaultValue: number): number => {
   return parsed;
 };
 
+const isFlagEnabled = (key: string, isEnabledByDefault: boolean): boolean => {
+  const value = process.env[key];
+  if (typeof value !== 'string' || value === '') {
+    return isEnabledByDefault;
+  }
+
+  const normalized = value.toLowerCase();
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  throw new TypeError(`Environment variable ${key} must be true or false, got "${value}".`);
+};
+
 export const PORT: number = getInteger('PORT', 4000);
 
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
@@ -45,3 +63,8 @@ export const POSTGRES_USER: string = getRequired('POSTGRES_USER');
 export const POSTGRES_PASSWORD: string = getRequired('POSTGRES_PASSWORD');
 export const POSTGRES_DATABASE: string = getRequired('POSTGRES_DATABASE');
 export const POSTGRES_MAX_CONNECTIONS: number = getInteger('POSTGRES_MAX_CONNECTIONS', 25);
+
+export const IS_SIGNUP_ENABLED: boolean = isFlagEnabled('ENABLE_SIGNUP', false);
+
+export const JWT_SECRET: string = getRequired('JWT_SECRET');
+export const JWT_EXPIRATION: string = getString('JWT_EXPIRATION', '7d');

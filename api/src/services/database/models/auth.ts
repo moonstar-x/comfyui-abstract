@@ -1,4 +1,4 @@
-export interface User {
+export interface UserRow {
   created_at: Date;
   password_hash: string;
   picture_url: null | string;
