@@ -1,7 +1,8 @@
 export const WORKFLOW_TYPES = {
   GENERATE_IMAGE: 'generate-image',
   EDIT_IMAGE: 'edit-image',
-  GENERATE_MUSIC: 'generate-music'
+  GENERATE_MUSIC: 'generate-music',
+  COVER_MUSIC: 'cover-music'
 } as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];
 
@@ -51,9 +52,23 @@ export interface ImageListWorkflowField extends BaseWorkflowField {
 }
 
 /**
+ * A single audio file uploaded by the client, sent as a base64 string without the data URL prefix.
+ */
+export interface AudioWorkflowField extends BaseWorkflowField {
+  kind: 'audio';
+}
+
+/**
  * Describes how a workflow param is rendered in the client.
  */
-export type WorkflowField = BooleanWorkflowField | ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export type WorkflowField =
+  | AudioWorkflowField |
+  BooleanWorkflowField |
+  ImageListWorkflowField |
+  LoraListWorkflowField |
+  NumberWorkflowField |
+  SelectWorkflowField |
+  TextWorkflowField;
 
 /**
  * Field descriptions of every param a workflow accepts, keyed by param name.

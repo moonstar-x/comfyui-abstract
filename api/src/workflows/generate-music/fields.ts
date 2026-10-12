@@ -3,13 +3,13 @@ import type { WorkflowField } from '../types.js';
 
 type TextToMusicParam = 'captionPrompt' | 'cfg' | 'clip' | 'lyricsPrompt' | 'maxDuration' | 'model' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'tiledDecode' | 'vae';
 
-type SharedMusicParam = 'cfg' | 'lyricsPrompt' | 'maxDuration' | 'sampler' | 'scheduler' | 'seed' | 'steps';
+export type SharedMusicParam = 'cfg' | 'lyricsPrompt' | 'maxDuration' | 'sampler' | 'scheduler' | 'seed' | 'steps';
 
 const { cfg, clip, model, sampler, scheduler, seed, steps, vae } = TEXT_TO_IMAGE_FIELDS;
 
-const STYLE_PROMPT_FIELD: WorkflowField = { kind: 'text', label: 'Style', multiline: true, required: true, placeholder: 'Describe the genre, mood, instruments and vocals…' };
+export const STYLE_PROMPT_FIELD: WorkflowField = { kind: 'text', label: 'Style', multiline: true, required: true, placeholder: 'Describe the genre, mood, instruments and vocals…' };
 
-const makeSharedMusicFields = (maxDuration: number): Readonly<Record<SharedMusicParam, WorkflowField>> => ({
+export const makeSharedMusicFields = (maxDuration: number): Readonly<Record<SharedMusicParam, WorkflowField>> => ({
   lyricsPrompt: { kind: 'text', label: 'Lyrics', multiline: true, required: true, placeholder: '[Verse]\nWrite the lyrics, split into sections…' },
   maxDuration: { kind: 'number', label: 'Max Duration', min: 1, max: maxDuration, step: 1, description: `In seconds, up to ${maxDuration.toString()}.` },
   steps,

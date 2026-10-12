@@ -1,0 +1,18 @@
+import { makeSharedMusicFields, STYLE_PROMPT_FIELD } from '../generate-music/fields.js';
+import type { SharedMusicParam } from '../generate-music/fields.js';
+import type { WorkflowField } from '../types.js';
+
+type YuE2CoverParam = 'audioEncoder' | 'model' | 'song' | 'stylePrompt' | SharedMusicParam;
+
+export const makeYuE2CoverFields = (maxDuration: number): Readonly<Record<YuE2CoverParam, WorkflowField>> => {
+  const { lyricsPrompt, ...rest } = makeSharedMusicFields(maxDuration);
+
+  return {
+    song: { kind: 'audio', label: 'Song', required: true, description: 'The song whose melody is covered.' },
+    stylePrompt: STYLE_PROMPT_FIELD,
+    lyricsPrompt,
+    ...rest,
+    model: { kind: 'text', label: 'Checkpoint' },
+    audioEncoder: { kind: 'text', label: 'Audio Encoder' }
+  };
+};

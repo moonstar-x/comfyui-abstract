@@ -2,11 +2,12 @@ import { BadRequestError } from '../app/http/errors/BadRequestError.js';
 import type { ComfyUiWorkflow, ComfyUiWorkflowClass } from '../services/comfyui/ComfyUiWorkflow.js';
 import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
+import CoverMusicWithYue2 from './cover-music/CoverMusicWithYue2.js';
 import EditImageWithQwenImage21 from './edit-image/EditImageWithQwenImage21.js';
-import GenerateMusicWithMiniMaxMusic3 from './generate-music/GenerateMusicWithMiniMaxMusic3.js';
-import GenerateMusicWithYue2 from './generate-music/GenerateMusicWithYue2.js';
 import GenerateImageWithKrea2 from './generate-image/GenerateImageWithKrea2.js';
 import GenerateImageWithQwenImage21 from './generate-image/GenerateImageWithQwenImage21.js';
+import GenerateMusicWithMiniMaxMusic3 from './generate-music/GenerateMusicWithMiniMaxMusic3.js';
+import GenerateMusicWithYue2 from './generate-music/GenerateMusicWithYue2.js';
 import type { WorkflowField, WorkflowType } from './types.js';
 
 export interface WorkflowRequestParams {
@@ -45,7 +46,8 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   GenerateImageWithKrea2,
   EditImageWithQwenImage21,
   GenerateMusicWithMiniMaxMusic3,
-  GenerateMusicWithYue2
+  GenerateMusicWithYue2,
+  CoverMusicWithYue2
 ];
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);
