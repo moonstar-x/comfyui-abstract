@@ -1,6 +1,6 @@
 import { DynamicRouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { AudioLines, ImagePlus, WandSparkles } from 'lucide-react';
+import { AudioLines, ImagePlus, Mic, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -34,7 +34,8 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
   },
   {
     items: [
-      { category: 'audio', icon: AudioLines, path: DynamicRouteDefs.workflowById('generate-music'), title: 'Generate Music' }
+      { category: 'audio', icon: AudioLines, path: DynamicRouteDefs.workflowById('generate-music'), title: 'Generate Music' },
+      { category: 'audio', icon: Mic, path: DynamicRouteDefs.workflowById('cover-music'), title: 'Cover Music' }
     ],
     title: 'Audio Generation'
   }

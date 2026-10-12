@@ -1,4 +1,6 @@
-import type { ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
+import { getDataUrlBase64 } from '@core/utils/files';
+import type { Nullable } from '@core/utils/types';
+import type { AudioWorkflowField, ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
 
 // LoRA rows keep their raw input strings so the strength can be edited freely before it's validated.
 export interface LoraFormEntry {
@@ -16,9 +18,21 @@ export interface ImageFormEntry {
   url: string;
 }
 
-export type WorkflowFormValue = boolean | ImageFormEntry[] | LoraFormEntry[] | string;
+export interface AudioFormEntry {
+  // Only used as a stable React key, never sent to the API.
+  id: number;
+  name: string;
+  // Data URL of the file, used for the preview. Only its base64 part is sent to the API.
+  url: string;
+}
+
+// A missing audio file is stored as null, since a single file has no empty list to fall back to.
+export type WorkflowFormValue = AudioFormEntry | boolean | ImageFormEntry[] | LoraFormEntry[] | null | string;
 export type WorkflowFormValues = Record<string, WorkflowFormValue>;
 export type WorkflowFormErrors = Record<string, string>;
+
+// The value is left out of the params when undefined, so the API applies its own default.
+type ParsedFieldResult = { error: string } | { value: unknown };
 
 export interface ParsedWorkflowParams {
   errors: WorkflowFormErrors;
@@ -37,9 +51,13 @@ export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): 
 
 export const makeImageFormEntry = (name: string, url: string): ImageFormEntry => ({ id: makeFormEntryId(), name, url });
 
+export const makeAudioFormEntry = (name: string, url: string): AudioFormEntry => ({ id: makeFormEntryId(), name, url });
+
 export const getLoraFormEntries = (value: WorkflowFormValue): LoraFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'lora' in entry) : [];
 
 export const getImageFormEntries = (value: WorkflowFormValue): ImageFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'url' in entry) : [];
+
+export const getAudioFormEntry = (value: WorkflowFormValue): Nullable<AudioFormEntry> => typeof value === 'object' && value !== null && !Array.isArray(value) ? value : null;
 
 const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<WorkflowLora, 'lora'> => typeof value === 'object' &&
   value !== null &&
@@ -53,6 +71,11 @@ const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
   // Images can't come from the API config, they're always uploaded by the user.
   if (field.kind === 'image-list') {
     return [];
+  }
+
+  // Same goes for audio files.
+  if (field.kind === 'audio') {
+    return null;
   }
 
   // A switch has no empty state, so a missing default leaves it off.
@@ -127,13 +150,36 @@ const parseImages = (field: ImageListWorkflowField, entries: readonly ImageFormE
     return `${field.label} accepts at most ${field.maxImages.toString()} images.`;
   }
 
-  // The API expects plain base64, without the data URL prefix.
-  return entries.map(({ url }) => url.slice(url.indexOf(',') + 1));
+  return entries.map(({ url }) => getDataUrlBase64(url));
 };
 
-const parseListField = (field: ImageListWorkflowField | LoraListWorkflowField, value: WorkflowFormValue): string | unknown[] => field.kind === 'image-list'
-  ? parseImages(field, getImageFormEntries(value))
-  : parseLoras(field, getLoraFormEntries(value));
+const parseAudio = (field: AudioWorkflowField, entry: Nullable<AudioFormEntry>): ParsedFieldResult => {
+  if (entry === null) {
+    return field.required === true ? { error: `${field.label} is required.` } : { value: undefined };
+  }
+
+  return { value: getDataUrlBase64(entry.url) };
+};
+
+const toParsedFieldResult = (result: string | unknown[]): ParsedFieldResult => typeof result === 'string' ? { error: result } : { value: result };
+
+type UploadWorkflowField = AudioWorkflowField | ImageListWorkflowField | LoraListWorkflowField;
+
+// Fields whose values aren't plain strings, each parsed by its own helper.
+const UPLOAD_FIELD_KINDS: ReadonlySet<WorkflowField['kind']> = new Set(['audio', 'image-list', 'lora-list']);
+
+const isUploadField = (field: WorkflowField): field is UploadWorkflowField => UPLOAD_FIELD_KINDS.has(field.kind);
+
+const parseUploadField = (field: UploadWorkflowField, value: WorkflowFormValue): ParsedFieldResult => {
+  switch (field.kind) {
+    case 'audio':
+      return parseAudio(field, getAudioFormEntry(value));
+    case 'image-list':
+      return toParsedFieldResult(parseImages(field, getImageFormEntries(value)));
+    case 'lora-list':
+      return toParsedFieldResult(parseLoras(field, getLoraFormEntries(value)));
+  }
+};
 
 /**
  * Converts the raw form values into workflow params. Empty optional fields are left out so the API applies its own defaults.
@@ -145,12 +191,12 @@ export const parseWorkflowParams = (fields: readonly WorkflowField[], values: Wo
   for (const field of fields) {
     const value = values[field.key];
 
-    if (field.kind === 'image-list' || field.kind === 'lora-list') {
-      const result = parseListField(field, value ?? []);
-      if (typeof result === 'string') {
-        errors[field.key] = result;
-      } else {
-        params[field.key] = result;
+    if (isUploadField(field)) {
+      const result = parseUploadField(field, value ?? null);
+      if ('error' in result) {
+        errors[field.key] = result.error;
+      } else if (result.value !== undefined) {
+        params[field.key] = result.value;
       }
 
       continue;

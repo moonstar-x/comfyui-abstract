@@ -3,11 +3,12 @@ import { Label } from '@components/ui/third-party/shadcn/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/third-party/shadcn/select';
 import { Switch } from '@components/ui/third-party/shadcn/switch';
 import { Textarea } from '@components/ui/third-party/shadcn/textarea';
+import { WorkflowAudioInput } from '@components/workflow/WorkflowAudioInput';
 import { WorkflowImageListInput } from '@components/workflow/WorkflowImageListInput';
 import { WorkflowLoraListInput } from '@components/workflow/WorkflowLoraListInput';
 import type { Optional } from '@core/utils/types';
 import type { WorkflowField } from '@core/workflows/definitions';
-import { getImageFormEntries, getLoraFormEntries } from '@core/workflows/params';
+import { getAudioFormEntry, getImageFormEntries, getLoraFormEntries } from '@core/workflows/params';
 import type { WorkflowFormValue } from '@core/workflows/params';
 import { useId } from 'react';
 import type { FC, ReactNode } from 'react';
@@ -35,6 +36,9 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
 
   let control: ReactNode;
   switch (field.kind) {
+    // A file picker with a preview has no single control to label, so it renders its own grouped layout.
+    case 'audio':
+      return <WorkflowAudioInput disabled={disabled} error={error} field={field} value={getAudioFormEntry(rawValue)} onChange={onChange} />;
     case 'boolean':
       // Matches the height of the other controls so the fields line up in the grid.
       control = (

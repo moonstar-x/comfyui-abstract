@@ -1,4 +1,5 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
+import { readAsDataUrl } from '@core/utils/files';
 import type { Optional } from '@core/utils/types';
 import type { ImageListWorkflowField } from '@core/workflows/definitions';
 import { makeImageFormEntry } from '@core/workflows/params';
@@ -68,21 +69,6 @@ const SortableImage: FC<SortableImageProps> = ({ entry, disabled, onOpen, onRemo
     </li>
   );
 };
-
-const readAsDataUrl = async (file: File): Promise<string> => await new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.addEventListener('load', () => {
-    if (typeof reader.result === 'string') {
-      resolve(reader.result);
-    } else {
-      reject(new Error(`Could not read ${file.name}.`));
-    }
-  });
-  reader.addEventListener('error', () => {
-    reject(reader.error ?? new Error(`Could not read ${file.name}.`));
-  });
-  reader.readAsDataURL(file);
-});
 
 export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field, value, error, disabled, onChange, onOpen }) => {
   const id = useId();

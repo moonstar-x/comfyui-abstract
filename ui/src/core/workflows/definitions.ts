@@ -53,7 +53,19 @@ export interface ImageListWorkflowField extends BaseWorkflowField {
   maxImages: number;
 }
 
-export type WorkflowField = BooleanWorkflowField | ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+// A single audio file uploaded by the user.
+export interface AudioWorkflowField extends BaseWorkflowField {
+  kind: 'audio';
+}
+
+export type WorkflowField =
+  AudioWorkflowField |
+  BooleanWorkflowField |
+  ImageListWorkflowField |
+  LoraListWorkflowField |
+  NumberWorkflowField |
+  SelectWorkflowField |
+  TextWorkflowField;
 
 export interface WorkflowModelDefinition {
   alias: string;

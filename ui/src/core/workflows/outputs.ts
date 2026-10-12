@@ -3,6 +3,7 @@ import type { WorkflowType } from '@services/websocket/messages/client';
 export type WorkflowOutputKind = 'audio' | 'image';
 
 const WORKFLOW_OUTPUT_KINDS: Record<WorkflowType, WorkflowOutputKind> = {
+  'cover-music': 'audio',
   'edit-image': 'image',
   'generate-music': 'audio',
   'generate-image': 'image'
