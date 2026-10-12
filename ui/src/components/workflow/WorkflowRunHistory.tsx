@@ -1,3 +1,4 @@
+import { AudioPlayer } from '@components/audio/AudioPlayer';
 import type { Generation } from '@components/generation/GenerationSessionContext';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { Download } from 'lucide-react';
@@ -23,9 +24,7 @@ export const WorkflowRunHistory: FC<WorkflowRunHistoryProps> = ({ generations, k
             <ul className="flex flex-col gap-2">
               {files.map((url) => (
                 <li className="flex items-center gap-2 rounded-md border bg-muted/40 p-2" key={url}>
-                  {/* Generated audio comes without timed captions to provide. */}
-                  {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                  <audio controls aria-label="Previous workflow output" className="h-10 min-w-0 flex-1" preload="none" src={url} />
+                  <AudioPlayer className="min-w-0 flex-1" label="Previous workflow output" preload="none" src={url} variant="compact" />
                   <a download className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" href={url}>
                     <Download aria-hidden="true" className="size-4" />
                     <span className="sr-only">Download</span>

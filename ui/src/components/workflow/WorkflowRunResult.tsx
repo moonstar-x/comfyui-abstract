@@ -1,3 +1,4 @@
+import { AudioPlayer } from '@components/audio/AudioPlayer';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { cn } from 'cn';
 import { Download } from 'lucide-react';
@@ -59,9 +60,7 @@ const RunResultAudio: FC<RunResultAudioProps> = ({ animate, index, url }) => (
       animate && 'motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-2 motion-safe:fill-mode-both motion-safe:duration-500 motion-safe:ease-out'
     )}
   >
-    {/* Generated audio comes without timed captions to provide. */}
-    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-    <audio controls aria-label={`Workflow output ${(index + 1).toString()}`} className="w-full" preload="metadata" src={url} />
+    <AudioPlayer label={`Workflow output ${(index + 1).toString()}`} src={url} />
     <figcaption>
       <DownloadLink url={url} />
     </figcaption>
