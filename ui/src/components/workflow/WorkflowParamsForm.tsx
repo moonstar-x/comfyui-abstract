@@ -10,6 +10,7 @@ import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
+import { getWorkflowOutputKind } from '@core/workflows/outputs';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '@core/workflows/params';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
@@ -45,7 +46,8 @@ export interface WorkflowParamsFormProps {
 export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, runner }) => {
   const { isConnected } = useAppWebSocket();
   const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
-  const { current, previous: history, generations } = useGenerationSession();
+  const outputKind = getWorkflowOutputKind(type);
+  const { current, previous: history, generations } = useGenerationSession(outputKind);
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
@@ -63,7 +65,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
 
   // The latest result and the previous generations browse together as one gallery, newest first.
   const handleOpenSessionImage = (url: string): void => {
-    const images = generations.flatMap((generation) => generation.images);
+    const images = generations.flatMap((generation) => generation.files);
     setGallery({ images, index: Math.max(images.indexOf(url), 0) });
   };
 
@@ -163,9 +165,9 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.
-          : <WorkflowRunResult animate={current.promptId === promptId} images={current.images} onOpen={handleOpenSessionImage} />}
+          : <WorkflowRunResult animate={current.promptId === promptId} files={current.files} kind={outputKind} onOpen={handleOpenSessionImage} />}
         {/* While a run is in progress the status takes the result's place, so the latest result joins the history. */}
-        <WorkflowRunHistory generations={isBusy ? generations : history} onOpen={handleOpenSessionImage} />
+        <WorkflowRunHistory generations={isBusy ? generations : history} kind={outputKind} onOpen={handleOpenSessionImage} />
       </section>
 
       <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />

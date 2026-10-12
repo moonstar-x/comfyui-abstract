@@ -42,7 +42,7 @@ export const useRunWorkflow = (): UseRunWorkflowReturn => {
       settle({ status: 'error', error: payload.message });
     });
     const unsubscribeComplete = messenger.on('workflow_complete', ({ payload }) => {
-      // The images themselves are recorded by the GenerationSessionProvider.
+      // The files themselves are recorded by the GenerationSessionProvider.
       finish(payload.promptId, { status: 'completed', promptId: payload.promptId });
     });
     const unsubscribeWorkflowError = messenger.on('workflow_error', ({ payload }) => {

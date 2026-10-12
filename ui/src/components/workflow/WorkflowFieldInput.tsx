@@ -1,6 +1,7 @@
 import { Input } from '@components/ui/third-party/shadcn/input';
 import { Label } from '@components/ui/third-party/shadcn/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/third-party/shadcn/select';
+import { Switch } from '@components/ui/third-party/shadcn/switch';
 import { Textarea } from '@components/ui/third-party/shadcn/textarea';
 import { WorkflowImageListInput } from '@components/workflow/WorkflowImageListInput';
 import { WorkflowLoraListInput } from '@components/workflow/WorkflowLoraListInput';
@@ -34,6 +35,23 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
 
   let control: ReactNode;
   switch (field.kind) {
+    case 'boolean':
+      // Matches the height of the other controls so the fields line up in the grid.
+      control = (
+        <div className="flex h-8 items-center">
+          <Switch
+            aria-describedby={describedBy}
+            aria-invalid={isInvalid}
+            checked={rawValue === true}
+            disabled={disabled}
+            id={id}
+            onCheckedChange={(checked) => {
+              onChange(field.key, checked);
+            }}
+          />
+        </div>
+      );
+      break;
     // A list of inputs has no single control to label, so it renders its own grouped layout.
     case 'image-list':
       return <WorkflowImageListInput disabled={disabled} error={error} field={field} value={getImageFormEntries(rawValue)} onChange={onChange} onOpen={onOpenImages} />;
@@ -47,6 +65,7 @@ export const WorkflowFieldInput: FC<WorkflowFieldInputProps> = ({ field, value: 
           disabled={disabled}
           id={id}
           inputMode={field.integer === true ? 'numeric' : 'decimal'}
+          max={field.max}
           min={field.min}
           placeholder={field.placeholder}
           step={field.step ?? (field.integer === true ? 1 : 'any')}

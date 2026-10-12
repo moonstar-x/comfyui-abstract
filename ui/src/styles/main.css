@@ -46,6 +46,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-tile-audio: var(--tile-audio);
+  --color-tile-audio-foreground: var(--tile-audio-foreground);
   --color-tile-general: var(--tile-general);
   --color-tile-general-foreground: var(--tile-general-foreground);
   --color-tile-image: var(--tile-image);
@@ -94,6 +96,8 @@
   --sidebar-accent-foreground: oklch(0.27 0.08 293);
   --sidebar-border: oklch(0.91 0.04 293);
   --sidebar-ring: oklch(0.65 0.18 293);
+  --tile-audio: oklch(0.92 0.06 200);
+  --tile-audio-foreground: oklch(0.42 0.11 200);
   --tile-general: oklch(0.93 0.025 293);
   --tile-general-foreground: oklch(0.4 0.1 293);
   --tile-image: oklch(0.91 0.06 293);
@@ -140,6 +144,8 @@
   --sidebar-accent-foreground: oklch(0.95 0.02 293);
   --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: oklch(0.62 0.18 293);
+  --tile-audio: oklch(0.34 0.08 200);
+  --tile-audio-foreground: oklch(0.87 0.08 200);
   --tile-general: oklch(0.3 0.05 293);
   --tile-general-foreground: oklch(0.9 0.03 293);
   --tile-image: oklch(0.35 0.12 293);

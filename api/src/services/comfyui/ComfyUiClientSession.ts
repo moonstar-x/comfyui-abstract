@@ -1,6 +1,7 @@
 import type { ComfyApi, ImageInfo, NodeData, QueueItem } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
+import type { WorkflowOutputKind } from './ComfyUiWorkflow.js';
 
 /**
  * Resource usage of the ComfyUI host, in percentages (0-100), except for temperature which is in degrees Celsius.
@@ -43,9 +44,9 @@ export interface QueueJob {
 }
 
 /**
- * An image produced by a workflow, downloaded from ComfyUI.
+ * A file produced by a workflow, such as an image or audio, downloaded from ComfyUI.
  */
-export interface OutputImage {
+export interface OutputFile {
   data: Uint8Array;
   filename: string;
 }
@@ -222,10 +223,10 @@ export class ComfyUiClientSession {
   }
 
   /**
-   * Waits for a prompt queued by this session to finish executing and downloads the images of the given output node.
+   * Waits for a prompt queued by this session to finish executing and downloads the files of the given kind of the given output node.
    * ComfyUI only sends execution events to the client that queued the prompt, so this only works for prompts queued with queuePrompt().
    */
-  public async waitForOutputImages(promptId: string, outputNodeId: string): Promise<OutputImage[]> {
+  public async waitForOutputFiles(promptId: string, outputNodeId: string, outputKind: WorkflowOutputKind): Promise<OutputFile[]> {
     const result = await this.getPromptResult(promptId).promise;
     this._promptResults.delete(promptId);
     if (result.status === 'error') {
@@ -234,16 +235,18 @@ export class ComfyUiClientSession {
 
     // History is used instead of the executed event since cached nodes do not emit it.
     const history = await this._client.getHistory(promptId);
-    const images = history?.outputs[outputNodeId]?.images ?? [];
+    // The SDK only types the images key, but every output kind is listed with the same shape.
+    const output = history?.outputs[outputNodeId] as Partial<Record<WorkflowOutputKind, ImageInfo[]>> | undefined;
+    const files = output?.[outputKind] ?? [];
 
-    return await Promise.all(images.map(async (image) => ({ filename: image.filename, data: await this.downloadImage(image) })));
+    return await Promise.all(files.map(async (file) => ({ filename: file.filename, data: await this.downloadFile(file) })));
   }
 
-  private async downloadImage(image: ImageInfo): Promise<Uint8Array> {
-    const query = new URLSearchParams({ filename: image.filename, subfolder: image.subfolder, type: image.type });
+  private async downloadFile(file: ImageInfo): Promise<Uint8Array> {
+    const query = new URLSearchParams({ filename: file.filename, subfolder: file.subfolder, type: file.type });
     const response = await this._client.fetchApi(`/view?${query.toString()}`);
     if (!response.ok) {
-      throw new Error(`Could not download image ${image.filename} from ComfyUI (HTTP ${response.status.toString()}).`);
+      throw new Error(`Could not download file ${file.filename} from ComfyUI (HTTP ${response.status.toString()}).`);
     }
 
     return new Uint8Array(await response.arrayBuffer());

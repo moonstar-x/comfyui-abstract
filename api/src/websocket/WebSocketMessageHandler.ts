@@ -100,11 +100,11 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     });
 
     try {
-      const images = await comfyui.waitForOutputImages(promptId, workflow.outputNodeId);
-      // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the image with.
-      const urls = await Promise.all(images.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
+      const files = await comfyui.waitForOutputFiles(promptId, workflow.outputNodeId, workflow.outputKind);
+      // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the file with.
+      const urls = await Promise.all(files.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
 
-      this.emit('message', { type: 'workflow_complete', payload: { promptId, images: urls } });
+      this.emit('message', { type: 'workflow_complete', payload: { promptId, files: urls } });
     } catch (error) {
       logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
       const message = error instanceof Error ? error.message : 'Could not retrieve the workflow outputs.';

@@ -1,6 +1,7 @@
 export const WORKFLOW_TYPES = {
   GENERATE_IMAGE: 'generate-image',
-  EDIT_IMAGE: 'edit-image'
+  EDIT_IMAGE: 'edit-image',
+  GENERATE_AUDIO: 'generate-audio'
 } as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];
 
@@ -19,9 +20,14 @@ export interface TextWorkflowField extends BaseWorkflowField {
 export interface NumberWorkflowField extends BaseWorkflowField {
   integer?: boolean;
   kind: 'number';
+  max?: number;
   min?: number;
   placeholder?: string;
   step?: number;
+}
+
+export interface BooleanWorkflowField extends BaseWorkflowField {
+  kind: 'boolean';
 }
 
 export interface SelectWorkflowField extends BaseWorkflowField {
@@ -47,7 +53,7 @@ export interface ImageListWorkflowField extends BaseWorkflowField {
 /**
  * Describes how a workflow param is rendered in the client.
  */
-export type WorkflowField = ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export type WorkflowField = BooleanWorkflowField | ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
 /**
  * Field descriptions of every param a workflow accepts, keyed by param name.

@@ -1,6 +1,8 @@
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { API_URL } from '@core/config/environment';
 import type { Nullable } from '@core/utils/types';
+import { getOutputKind } from '@core/workflows/outputs';
+import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Context, FC, ReactNode } from 'react';
 
@@ -8,11 +10,17 @@ const toOutputUrl = (path: string): string => new URL(path, API_URL).href;
 
 export interface Generation {
   createdAt: number;
-  images: string[];
+  files: string[];
+  kind: WorkflowOutputKind;
   promptId: string;
 }
 
 interface ContextValue {
+  clear: () => void;
+  generations: Generation[];
+}
+
+export interface UseGenerationSessionReturn {
   clear: () => void;
   current: Nullable<Generation>;
   generations: Generation[];
@@ -32,9 +40,12 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
 
   // The server only sends completions for runs started by this connection, so every one belongs to this session.
   useEffect(() => messenger.on('workflow_complete', ({ payload }) => {
+    const files = payload.files.map((path) => toOutputUrl(path));
     const generation: Generation = {
       createdAt: Date.now(),
-      images: payload.images.map((path) => toOutputUrl(path)),
+      files,
+      // A run only ever produces one kind of file. An empty run has nothing to show, so its kind doesn't matter.
+      kind: files[0] === undefined ? 'image' : getOutputKind(files[0]),
       promptId: payload.promptId
     };
 
@@ -45,12 +56,7 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     setGenerations([]);
   }, []);
 
-  const context = useMemo<ContextValue>(() => ({
-    clear,
-    current: generations[0] ?? null,
-    generations,
-    previous: generations.slice(1)
-  }), [clear, generations]);
+  const context = useMemo<ContextValue>(() => ({ clear, generations }), [clear, generations]);
 
   return (
     <GenerationSessionContext value={context}>
@@ -59,11 +65,25 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
   );
 };
 
-export const useGenerationSession = (): ContextValue => {
+/**
+ * Only the generations of the given kind, so images and audio don't show up on each other's pages.
+ */
+export const useGenerationSession = (kind: WorkflowOutputKind): UseGenerationSessionReturn => {
   const context = use(GenerationSessionContext);
   if (context === null) {
     throw new Error('You must call useGenerationSession inside of a GenerationSessionProvider.');
   }
 
-  return context;
+  const { clear, generations: allGenerations } = context;
+
+  return useMemo(() => {
+    const generations = allGenerations.filter((generation) => generation.kind === kind);
+
+    return {
+      clear,
+      current: generations[0] ?? null,
+      generations,
+      previous: generations.slice(1)
+    };
+  }, [allGenerations, clear, kind]);
 };

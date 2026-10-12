@@ -2,9 +2,15 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import type { WorkflowField, WorkflowType } from '../../workflows/types.js';
 
+/**
+ * Key ComfyUI lists the files of an output node under in the prompt history, such as images for SaveImage and audio for SaveAudio.
+ */
+export type WorkflowOutputKind = 'audio' | 'images';
+
 export abstract class ComfyUiWorkflow<TParams extends object = object> {
+  public readonly outputKind: WorkflowOutputKind = 'images';
   /**
-   * ID of the node in the workflow whose images are the result of the workflow.
+   * ID of the node in the workflow whose files are the result of the workflow.
    */
   public abstract readonly outputNodeId: string;
   protected abstract readonly schema: z.ZodType<TParams>;

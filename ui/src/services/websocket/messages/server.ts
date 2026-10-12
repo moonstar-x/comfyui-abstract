@@ -35,7 +35,7 @@ export type WSServerMessage =
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |
   GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |
-  GenericWSServerMessage<'workflow_complete', { images: string[]; promptId: string }> |
+  GenericWSServerMessage<'workflow_complete', { files: string[]; promptId: string }> |
   GenericWSServerMessage<'workflow_error', { message: string; promptId: string }> |
   GenericWSServerMessage<'workflow_progress', WorkflowProgress & { promptId: string }> |
   GenericWSServerMessage<'workflow_start', { promptId: string }>;

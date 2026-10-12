@@ -1,10 +1,10 @@
 import { DynamicRouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { ImagePlus, WandSparkles } from 'lucide-react';
+import { AudioLines, ImagePlus, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
-export type NavCategory = 'general' | 'image' | 'video';
+export type NavCategory = 'audio' | 'general' | 'image' | 'video';
 
 export interface NavItem {
   category: NavCategory;
@@ -31,10 +31,17 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
       { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('edit-image'), title: 'Edit Image' }
     ],
     title: 'Image Generation'
+  },
+  {
+    items: [
+      { category: 'audio', icon: AudioLines, path: DynamicRouteDefs.workflowById('generate-audio'), title: 'Generate Audio' }
+    ],
+    title: 'Audio Generation'
   }
 ];
 
 export const CATEGORY_TILE_CLASSES: Record<NavCategory, string> = {
+  audio: 'bg-tile-audio text-tile-audio-foreground',
   general: 'bg-tile-general text-tile-general-foreground',
   image: 'bg-tile-image text-tile-image-foreground',
   video: 'bg-tile-video text-tile-video-foreground'

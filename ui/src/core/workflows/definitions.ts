@@ -21,9 +21,14 @@ export interface TextWorkflowField extends BaseWorkflowField {
 export interface NumberWorkflowField extends BaseWorkflowField {
   integer?: Optional<boolean>;
   kind: 'number';
+  max?: Optional<number>;
   min?: Optional<number>;
   placeholder?: Optional<string>;
   step?: Optional<number>;
+}
+
+export interface BooleanWorkflowField extends BaseWorkflowField {
+  kind: 'boolean';
 }
 
 export interface SelectWorkflowField extends BaseWorkflowField {
@@ -48,7 +53,7 @@ export interface ImageListWorkflowField extends BaseWorkflowField {
   maxImages: number;
 }
 
-export type WorkflowField = ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
+export type WorkflowField = BooleanWorkflowField | ImageListWorkflowField | LoraListWorkflowField | NumberWorkflowField | SelectWorkflowField | TextWorkflowField;
 
 export interface WorkflowModelDefinition {
   alias: string;

@@ -16,7 +16,7 @@ export interface ImageFormEntry {
   url: string;
 }
 
-export type WorkflowFormValue = ImageFormEntry[] | LoraFormEntry[] | string;
+export type WorkflowFormValue = boolean | ImageFormEntry[] | LoraFormEntry[] | string;
 export type WorkflowFormValues = Record<string, WorkflowFormValue>;
 export type WorkflowFormErrors = Record<string, string>;
 
@@ -55,6 +55,11 @@ const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
     return [];
   }
 
+  // A switch has no empty state, so a missing default leaves it off.
+  if (field.kind === 'boolean') {
+    return defaultValue === true;
+  }
+
   if (field.kind === 'lora-list') {
     return Array.isArray(defaultValue) ? defaultValue.filter(isWorkflowLora).map(({ lora, strength }) => makeLoraFormEntry(lora, strength)) : [];
   }
@@ -76,6 +81,10 @@ const parseNumber = (field: NumberWorkflowField, raw: string): number | string =
 
   if (field.min !== undefined && value < field.min) {
     return `Must be at least ${field.min.toString()}.`;
+  }
+
+  if (field.max !== undefined && value > field.max) {
+    return `Must be at most ${field.max.toString()}.`;
   }
 
   return value;
@@ -144,6 +153,11 @@ export const parseWorkflowParams = (fields: readonly WorkflowField[], values: Wo
         params[field.key] = result;
       }
 
+      continue;
+    }
+
+    if (field.kind === 'boolean') {
+      params[field.key] = value === true;
       continue;
     }
 
