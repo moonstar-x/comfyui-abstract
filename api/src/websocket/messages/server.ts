@@ -1,5 +1,5 @@
 import type { ErrorCode } from '../../app/http/errors/ErrorCodes.js';
-import type { SystemUsage } from '../../services/comfyui/ComfyUiClientSession.js';
+import type { PromptProgress, SystemUsage } from '../../services/comfyui/ComfyUiClientSession.js';
 import type { Nullable } from '../../utils/types.js';
 
 /**
@@ -19,4 +19,5 @@ export type WSServerMessage =
   GenericWSServerMessage<'status', { online: boolean; usage: SystemUsage }> |
   GenericWSServerMessage<'workflow_complete', { images: string[]; promptId: string }> |
   GenericWSServerMessage<'workflow_error', { message: string; promptId: string }> |
+  GenericWSServerMessage<'workflow_progress', PromptProgress & { promptId: string }> |
   GenericWSServerMessage<'workflow_start', { promptId: string }>;

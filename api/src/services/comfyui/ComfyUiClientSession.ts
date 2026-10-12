@@ -50,6 +50,24 @@ export interface OutputImage {
   filename: string;
 }
 
+/**
+ * Progress of the node currently executing in a prompt, such as the steps of a sampler.
+ */
+export interface NodeProgress {
+  max: number;
+  value: number;
+}
+
+/**
+ * Progress of a whole prompt, counted in nodes. Cached nodes count as completed.
+ * The step is the progress of the node currently executing, null when it does not report any.
+ */
+export interface PromptProgress {
+  completed: number;
+  step: Nullable<NodeProgress>;
+  total: number;
+}
+
 type PromptResult = { message: string; status: 'error' } | { status: 'success' };
 
 // ComfyUI queue items are tuples of [number, prompt_id, prompt, extra_data, outputs_to_execute].
@@ -137,6 +155,60 @@ export class ComfyUiClientSession {
     }
 
     return { ...usage, vram: await this.getSystemStatsVramUsage() };
+  }
+
+  /**
+   * Listens for the progress of a prompt queued by this session, out of the given number of nodes in it.
+   * Returns a function that stops listening.
+   */
+  public onPromptProgress(promptId: string, total: number, listener: (progress: PromptProgress) => void): () => void {
+    const completed = new Set<string>();
+    let current: Nullable<string> = null;
+    let step: Nullable<NodeProgress> = null;
+
+    const notify = (): void => {
+      listener({ completed: Math.min(completed.size, total), step, total });
+    };
+
+    const unsubscribers = [
+      this._client.on('execution_cached', ({ detail }) => {
+        if (detail.prompt_id !== promptId) {
+          return;
+        }
+
+        for (const node of detail.nodes) {
+          completed.add(node);
+        }
+        notify();
+      }),
+      // ComfyUI runs one node at a time, so a node starting means the previous one finished. A null node means the prompt is done.
+      this._client.on('executing', ({ detail }) => {
+        if (detail.prompt_id !== promptId) {
+          return;
+        }
+
+        if (current !== null) {
+          completed.add(current);
+        }
+        current = detail.node;
+        step = null;
+        notify();
+      }),
+      this._client.on('progress', ({ detail }) => {
+        if (detail.prompt_id !== promptId) {
+          return;
+        }
+
+        step = { value: detail.value, max: detail.max };
+        notify();
+      })
+    ];
+
+    return (): void => {
+      for (const unsubscribe of unsubscribers) {
+        unsubscribe();
+      }
+    };
   }
 
   public async queuePrompt(prompt: NodeData): Promise<string> {

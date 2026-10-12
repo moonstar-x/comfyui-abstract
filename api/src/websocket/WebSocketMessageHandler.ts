@@ -19,6 +19,13 @@ export interface WebSocketMessageHandlerEvents {
   message: [WSServerMessage];
 }
 
+interface TrackedRun {
+  // Number of nodes in the queued prompt, which the progress is counted against.
+  nodeCount: number;
+  promptId: string;
+  type: WorkflowType;
+}
+
 export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandlerEvents> {
   private _comfyUiSession: Nullable<ComfyUiClientSession> = null;
 
@@ -75,7 +82,7 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       throw new WebSocketError('Could not queue the workflow in ComfyUI.', { cause: error });
     }
 
-    void this.trackWorkflowCompletion(comfyui, workflow, request.type, promptId);
+    void this.trackWorkflowCompletion(comfyui, workflow, { promptId, type: request.type, nodeCount: Object.keys(prompt).length });
     return { type: 'workflow_start', payload: { promptId } };
   }
 
@@ -87,7 +94,11 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     return this._comfyUiSession;
   }
 
-  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, type: WorkflowType, promptId: string): Promise<void> {
+  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, { promptId, type, nodeCount }: TrackedRun): Promise<void> {
+    const stopProgress = comfyui.onPromptProgress(promptId, nodeCount, (progress) => {
+      this.emit('message', { type: 'workflow_progress', payload: { promptId, ...progress } });
+    });
+
     try {
       const images = await comfyui.waitForOutputImages(promptId, workflow.outputNodeId);
       // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the image with.
@@ -98,6 +109,8 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
       const message = error instanceof Error ? error.message : 'Could not retrieve the workflow outputs.';
       this.emit('message', { type: 'workflow_error', payload: { promptId, message } });
+    } finally {
+      stopProgress();
     }
   }
 }

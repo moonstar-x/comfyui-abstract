@@ -23,6 +23,19 @@ const FIELDS_LAYOUT_CLASSES = 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4';
 // Matches the modifier handleKeyDown accepts on each platform.
 const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
 
+interface ResultPlaceholderContentProps {
+  isSubmitting: boolean;
+  promptId: Nullable<string>;
+}
+
+const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, promptId }) => {
+  if (promptId !== null) {
+    return <WorkflowRunStatus promptId={promptId} />;
+  }
+
+  return isSubmitting ? 'Queueing…' : 'Run the workflow to see the result here';
+};
+
 export interface WorkflowParamsFormProps {
   model: WorkflowModelDefinition;
   runner: UseRunWorkflowReturn;
@@ -143,15 +156,16 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
         {error !== null && (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
-        {isRunning && promptId !== null && <WorkflowRunStatus promptId={promptId} />}
-        {current === null
+        {isBusy || current === null
           ? (
-              <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
-                {isRunning ? 'Generating…' : 'Run the workflow to see the result here'}
+              <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
+                <ResultPlaceholderContent isSubmitting={isSubmitting} promptId={isRunning ? promptId : null} />
               </div>
             )
-          : <WorkflowRunResult images={current.images} onOpen={handleOpenSessionImage} />}
-        <WorkflowRunHistory generations={history} onOpen={handleOpenSessionImage} />
+          // Only the run started from this page animates in, results already there when it opens appear as they are.
+          : <WorkflowRunResult animate={current.promptId === promptId} images={current.images} onOpen={handleOpenSessionImage} />}
+        {/* While a run is in progress the status takes the result's place, so the latest result joins the history. */}
+        <WorkflowRunHistory generations={isBusy ? generations : history} onOpen={handleOpenSessionImage} />
       </section>
 
       <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
