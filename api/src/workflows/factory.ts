@@ -4,6 +4,7 @@ import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
 import EditImageWithQwenImage21 from './edit-image/EditImageWithQwenImage21.js';
 import GenerateAudioWithMiniMaxMusic3 from './generate-audio/GenerateAudioWithMiniMaxMusic3.js';
+import GenerateAudioWithYue2 from './generate-audio/GenerateAudioWithYue2.js';
 import GenerateImageWithKrea2 from './generate-image/GenerateImageWithKrea2.js';
 import GenerateImageWithQwenImage21 from './generate-image/GenerateImageWithQwenImage21.js';
 import type { WorkflowField, WorkflowType } from './types.js';
@@ -43,7 +44,8 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   GenerateImageWithQwenImage21,
   GenerateImageWithKrea2,
   EditImageWithQwenImage21,
-  GenerateAudioWithMiniMaxMusic3
+  GenerateAudioWithMiniMaxMusic3,
+  GenerateAudioWithYue2
 ];
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);

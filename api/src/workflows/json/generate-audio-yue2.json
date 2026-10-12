@@ -1,0 +1,267 @@
+{
+  "16": {
+    "inputs": {
+      "value": "Upbeat indie pop with warm female vocals, bright electric guitars, punchy drums, melodic bass, and subtle synth layers. Catchy and energetic, with an uplifting summer atmosphere, a memorable chorus, and polished modern production.\nVocal Details: Soft androgynous vocal, hushed half-sung half-spoken delivery, sitting low in the mix like another instrument, lazy behind-the-beat phrasing, gentle breathy timbre. Sparse murmured double-tracked harmonies, occasional wordless \"mmm\" and \"ooh\" hums drenched in tape delay and warm spring reverb. Long stretches with no vocals at all.\n\nArrangement: Dusty boom-bap drums with a soft thumping kick, cracked snare with lazy swing, brushed hi-hats, low round sub bass. Warm Rhodes piano chords with slow chorus wobble as the harmonic bed, mellow jazzy guitar licks answering the vocal lines, constant vinyl crackle as texture. Intro: rain and vinyl noise, solo Rhodes chords fading in, drums slipping in halfway. Verses: minimal — drums, bass, Rhodes, soft guitar fills between lines. Instrumental sections: guitar and Rhodes trade relaxed jazzy phrases over the beat, occasional muted trumpet ghost notes far in the background. Bridge: drums drop away to rain, crackle, and floating detuned Rhodes, then the beat eases back in. Outro: elements fade one by one until only vinyl crackle and a last unresolved Rhodes chord remain."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Input > Style Prompt"
+    }
+  },
+  "17": {
+    "inputs": {
+      "value": "[Verse]\nMorning light across the window\nCity waking down below\nI can hear the streets are calling\nFeels like somewhere we should go\n\n[Chorus]\nRun with me into the sunlight\nLeave the shadows far behind\nWe don't need to know tomorrow\nTonight the whole world feels alive\n\n[Verse]\nRadio playing through the open door\nLaughing like we did before\nEvery mile becomes a memory\nAnd I just want a little more\n\n[Chorus]\nRun with me into the sunlight\nLeave the shadows far behind\nWe don't need to know tomorrow\nTonight the whole world feels alive"
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Input > Lyrics Prompt"
+    }
+  },
+  "21": {
+    "inputs": {
+      "value": 578707356974991
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Input > Seed"
+    }
+  },
+  "23": {
+    "inputs": {
+      "value": 1
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Input > CFG"
+    }
+  },
+  "33": {
+    "inputs": {
+      "value": true
+    },
+    "class_type": "PrimitiveBoolean",
+    "_meta": {
+      "title": "Input > ABC Planning"
+    }
+  },
+  "36": {
+    "inputs": {
+      "value": 120
+    },
+    "class_type": "PrimitiveFloat",
+    "_meta": {
+      "title": "Input > Max Duration"
+    }
+  },
+  "44": {
+    "inputs": {
+      "ckpt_name": "yue2_3b_int8_convrot.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "45": {
+    "inputs": {
+      "style": [
+        "16",
+        0
+      ],
+      "lyrics": [
+        "17",
+        0
+      ],
+      "seed": [
+        "21",
+        0
+      ],
+      "mode": "full",
+      "max_abc_tokens": 8192,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 30,
+      "repetition_penalty": 1.005,
+      "penalty_window": 100,
+      "clip": [
+        "44",
+        1
+      ]
+    },
+    "class_type": "YuE2GenerateABC",
+    "_meta": {
+      "title": "YuE2 Generate ABC"
+    }
+  },
+  "47": {
+    "inputs": {
+      "switch": [
+        "33",
+        0
+      ],
+      "on_false": [
+        "48",
+        0
+      ],
+      "on_true": [
+        "45",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "Generate ABC (If/Else)"
+    }
+  },
+  "48": {
+    "inputs": {
+      "value": ""
+    },
+    "class_type": "PrimitiveString",
+    "_meta": {
+      "title": "Empty ABC"
+    }
+  },
+  "49": {
+    "inputs": {
+      "style": [
+        "16",
+        0
+      ],
+      "lyrics": [
+        "17",
+        0
+      ],
+      "abc": [
+        "47",
+        0
+      ],
+      "seed": [
+        "21",
+        0
+      ],
+      "mode": "full",
+      "max_duration": [
+        "36",
+        0
+      ],
+      "temperature": 1,
+      "top_p": 0.95,
+      "top_k": 100,
+      "repetition_penalty": 1.2,
+      "cfg_scale": [
+        "23",
+        0
+      ],
+      "clip": [
+        "44",
+        1
+      ]
+    },
+    "class_type": "YuE2GenerateMusic",
+    "_meta": {
+      "title": "YuE2 Generate Music"
+    }
+  },
+  "50": {
+    "inputs": {
+      "conditioning": [
+        "49",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Conditioning Zero Out"
+    }
+  },
+  "51": {
+    "inputs": {
+      "seed": [
+        "21",
+        0
+      ],
+      "steps": [
+        "52",
+        0
+      ],
+      "cfg": [
+        "23",
+        0
+      ],
+      "sampler_name": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "44",
+        0
+      ],
+      "positive": [
+        "49",
+        0
+      ],
+      "negative": [
+        "50",
+        0
+      ],
+      "latent_image": [
+        "55",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "52": {
+    "inputs": {
+      "value": 32
+    },
+    "class_type": "PrimitiveInt",
+    "_meta": {
+      "title": "Input > Steps"
+    }
+  },
+  "55": {
+    "inputs": {
+      "seconds": [
+        "49",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyYuE2LatentAudio",
+    "_meta": {
+      "title": "Empty YuE2 Latent Audio"
+    }
+  },
+  "56": {
+    "inputs": {
+      "samples": [
+        "51",
+        0
+      ],
+      "vae": [
+        "44",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE Decode Audio"
+    }
+  },
+  "57": {
+    "inputs": {
+      "audio": [
+        "56",
+        0
+      ]
+    },
+    "class_type": "PreviewAudio",
+    "_meta": {
+      "title": "Preview Audio"
+    }
+  }
+}
