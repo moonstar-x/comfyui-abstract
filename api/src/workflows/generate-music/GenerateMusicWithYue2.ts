@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
-import prompt from '../json/generate-audio-yue2.json' with { type: 'json' };
+import prompt from '../json/generate-music-yue2.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { makeYuE2MusicFields, YUE2_MODES } from './fields.js';
 
 const YUE2_MAX_DURATION = 900;
 
-export interface GenerateAudioWithYue2Params {
+export interface GenerateMusicWithYue2Params {
   abcPlanning: boolean;
   cfg: number;
   lyricsPrompt: string;
@@ -26,7 +26,7 @@ export interface GenerateAudioWithYue2Params {
 }
 
 // Everything except the style and lyrics prompt defaults to the values saved in the workflow.
-const GenerateAudioWithYue2ParamsSchema: z.ZodType<GenerateAudioWithYue2Params> = z.object({
+const GenerateMusicWithYue2ParamsSchema: z.ZodType<GenerateMusicWithYue2Params> = z.object({
   abcPlanning: z.boolean().default(prompt['33'].inputs.value),
   cfg: z.number().positive().default(prompt['23'].inputs.value),
   lyricsPrompt: z.string().min(1),
@@ -40,16 +40,16 @@ const GenerateAudioWithYue2ParamsSchema: z.ZodType<GenerateAudioWithYue2Params> 
   steps: z.number().int().positive().default(prompt['52'].inputs.value)
 });
 
-export default class GenerateAudioWithYue2 extends ComfyUiWorkflow<GenerateAudioWithYue2Params> {
-  public static readonly fields: WorkflowFields<GenerateAudioWithYue2Params> = makeYuE2MusicFields(YUE2_MAX_DURATION);
-  public static readonly id: string = 'generate-audio-yue2';
-  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_AUDIO;
+export default class GenerateMusicWithYue2 extends ComfyUiWorkflow<GenerateMusicWithYue2Params> {
+  public static readonly fields: WorkflowFields<GenerateMusicWithYue2Params> = makeYuE2MusicFields(YUE2_MAX_DURATION);
+  public static readonly id: string = 'generate-music-yue2';
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_MUSIC;
 
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '57';
-  protected override readonly schema: z.ZodType<GenerateAudioWithYue2Params> = GenerateAudioWithYue2ParamsSchema;
+  protected override readonly schema: z.ZodType<GenerateMusicWithYue2Params> = GenerateMusicWithYue2ParamsSchema;
 
-  protected override buildPrompt(params: GenerateAudioWithYue2Params): NodeData {
+  protected override buildPrompt(params: GenerateMusicWithYue2Params): NodeData {
     return new PromptBuilder(
       prompt,
       ['model', 'stylePrompt', 'lyricsPrompt', 'cfg', 'sampler', 'scheduler', 'seed', 'steps', 'maxDuration', 'abcPlanning', 'mode'],

@@ -4,14 +4,14 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
-import prompt from '../json/generate-audio-minimax-music3.json' with { type: 'json' };
+import prompt from '../json/generate-music-minimax-music3.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { makeTextToMusicFields } from './fields.js';
 
 const MINIMAX_MUSIC3_MAX_DURATION = 300;
 
-export interface GenerateAudioWithMiniMaxMusic3Params {
+export interface GenerateMusicWithMiniMaxMusic3Params {
   captionPrompt: string;
   cfg: number;
   clip: string;
@@ -27,7 +27,7 @@ export interface GenerateAudioWithMiniMaxMusic3Params {
 }
 
 // Everything except the captions and lyrics prompt defaults to the values saved in the workflow.
-const GenerateAudioWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateAudioWithMiniMaxMusic3Params> = z.object({
+const GenerateMusicWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateMusicWithMiniMaxMusic3Params> = z.object({
   model: z.string().min(1).default(prompt['12'].inputs.unet_name),
   clip: z.string().min(1).default(prompt['13'].inputs.clip_name),
   vae: z.string().min(1).default(prompt['14'].inputs.vae_name),
@@ -42,16 +42,16 @@ const GenerateAudioWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateAudioWithMin
   tiledDecode: z.boolean().default(prompt['33'].inputs.value)
 });
 
-export default class GenerateAudioWithMiniMaxMusic3 extends ComfyUiWorkflow<GenerateAudioWithMiniMaxMusic3Params> {
-  public static readonly fields: WorkflowFields<GenerateAudioWithMiniMaxMusic3Params> = makeTextToMusicFields(MINIMAX_MUSIC3_MAX_DURATION);
-  public static readonly id: string = 'generate-audio-minimax-music3';
-  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_AUDIO;
+export default class GenerateMusicWithMiniMaxMusic3 extends ComfyUiWorkflow<GenerateMusicWithMiniMaxMusic3Params> {
+  public static readonly fields: WorkflowFields<GenerateMusicWithMiniMaxMusic3Params> = makeTextToMusicFields(MINIMAX_MUSIC3_MAX_DURATION);
+  public static readonly id: string = 'generate-music-minimax-music3';
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_MUSIC;
 
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '43';
-  protected override readonly schema: z.ZodType<GenerateAudioWithMiniMaxMusic3Params> = GenerateAudioWithMiniMaxMusic3ParamsSchema;
+  protected override readonly schema: z.ZodType<GenerateMusicWithMiniMaxMusic3Params> = GenerateMusicWithMiniMaxMusic3ParamsSchema;
 
-  protected override buildPrompt(params: GenerateAudioWithMiniMaxMusic3Params): NodeData {
+  protected override buildPrompt(params: GenerateMusicWithMiniMaxMusic3Params): NodeData {
     return new PromptBuilder(
       prompt,
       ['model', 'clip', 'vae', 'captionPrompt', 'lyricsPrompt', 'cfg', 'sampler', 'scheduler', 'seed', 'steps', 'maxDuration', 'tiledDecode'],

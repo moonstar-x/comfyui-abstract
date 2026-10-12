@@ -34,7 +34,7 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
   },
   {
     items: [
-      { category: 'audio', icon: AudioLines, path: DynamicRouteDefs.workflowById('generate-audio'), title: 'Generate Audio' }
+      { category: 'audio', icon: AudioLines, path: DynamicRouteDefs.workflowById('generate-music'), title: 'Generate Music' }
     ],
     title: 'Audio Generation'
   }
