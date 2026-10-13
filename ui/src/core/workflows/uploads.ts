@@ -18,9 +18,10 @@ export const uploadWorkflowFiles = async (fields: readonly WorkflowField[], para
         return [field.key, await uploadFile('audio', value)];
       }
 
+      // Images picked from earlier uploads are already references, and keep their place in the list.
       if (field.kind === 'image-list' && Array.isArray(value)) {
-        const files = value.filter((item) => item instanceof File);
-        return [field.key, await Promise.all(files.map(async (file) => await uploadFile('image', file)))];
+        const images = value.filter((item) => item instanceof File || typeof item === 'string');
+        return [field.key, await Promise.all(images.map(async (image) => typeof image === 'string' ? image : await uploadFile('image', image)))];
       }
     } catch (error) {
       errors[field.key] = getErrorMessage(error, `Could not upload the files of ${field.label}.`);

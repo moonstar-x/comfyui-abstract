@@ -1,45 +1,18 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
 import { Button } from '@components/ui/third-party/shadcn/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@components/ui/third-party/shadcn/dropdown-menu';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
 import { useUploadFileUrl } from '@components/uploads/hooks/useUploads';
 import { UploadPickerDialog } from '@components/uploads/UploadPickerDialog';
+import { WorkflowFileSourceMenu } from '@components/workflow/WorkflowFileSourceMenu';
 import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
 import type { Nullable, Optional } from '@core/utils/types';
 import type { AudioWorkflowField } from '@core/workflows/definitions';
 import { makeAudioFormEntry, makeUploadAudioFormEntry } from '@core/workflows/params';
 import type { AudioFormEntry, UploadAudioFormEntry } from '@core/workflows/params';
 import { cn } from 'cn';
-import { FileAudio, FolderOpen, History, Upload, X } from 'lucide-react';
+import { FileAudio, Upload, X } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
-import type { FC, ReactElement, ReactNode } from 'react';
-
-interface AudioSourceMenuProps {
-  children: ReactNode;
-  disabled: boolean;
-  onBrowse: () => void;
-  onPickUpload: () => void;
-  trigger: ReactElement;
-}
-
-// Lets the audio come from a file on the device or from an earlier upload.
-const AudioSourceMenu: FC<AudioSourceMenuProps> = ({ children, disabled, onBrowse, onPickUpload, trigger }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger disabled={disabled} render={trigger}>
-      {children}
-    </DropdownMenuTrigger>
-    <DropdownMenuContent className="w-auto min-w-44">
-      <DropdownMenuItem onClick={onBrowse}>
-        <FolderOpen />
-        Browse file
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={onPickUpload}>
-        <History />
-        From uploads
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+import type { FC } from 'react';
 
 // The file of an earlier upload is fetched with the session, since the API doesn't serve it publicly.
 const UploadAudioPlayer: FC<{ entry: UploadAudioFormEntry }> = ({ entry }) => {
@@ -96,7 +69,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
       <div className={cn('rounded-lg border border-dashed p-2', isInvalid && 'border-destructive')}>
         {value === null
           ? (
-              <AudioSourceMenu
+              <WorkflowFileSourceMenu
                 disabled={disabled}
                 onBrowse={() => inputRef.current?.click()}
                 onPickUpload={() => { setIsPickerOpen(true); }}
@@ -111,21 +84,21 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
               >
                 <FileAudio className="size-5" />
                 Add audio
-              </AudioSourceMenu>
+              </WorkflowFileSourceMenu>
             )
           : (
               <div className="flex flex-col gap-2 p-1">
                 <div className="flex items-center gap-2">
                   <FileAudio aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
                   <span className="min-w-0 flex-1 truncate text-sm" title={value.name}>{value.name}</span>
-                  <AudioSourceMenu
+                  <WorkflowFileSourceMenu
                     disabled={disabled}
                     trigger={<Button aria-label={`Replace ${value.name}`} size="icon-xs" type="button" variant="ghost" />}
                     onBrowse={() => inputRef.current?.click()}
                     onPickUpload={() => { setIsPickerOpen(true); }}
                   >
                     <Upload />
-                  </AudioSourceMenu>
+                  </WorkflowFileSourceMenu>
                   <Button
                     aria-label={`Remove ${value.name}`}
                     disabled={disabled}

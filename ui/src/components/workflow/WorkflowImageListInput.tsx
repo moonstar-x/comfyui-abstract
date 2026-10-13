@@ -1,13 +1,17 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
+import { useFetchUploadFile } from '@components/uploads/hooks/useUploads';
+import { UploadPickerDialog } from '@components/uploads/UploadPickerDialog';
+import { WorkflowFileSourceMenu } from '@components/workflow/WorkflowFileSourceMenu';
 import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
 import type { Nullable, Optional } from '@core/utils/types';
 import type { ImageListWorkflowField } from '@core/workflows/definitions';
-import { makeImageFormEntry } from '@core/workflows/params';
+import { makeImageFormEntry, makeUploadImageFormEntry } from '@core/workflows/params';
 import type { ImageFormEntry } from '@core/workflows/params';
 import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import type { UploadRecord } from '@services/api/uploads';
 import { cn } from 'cn';
 import { ImagePlus, X } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
@@ -75,6 +79,8 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
   const inputRef = useRef<HTMLInputElement>(null);
   // Set when some of the selected files are rejected, the rest are still added.
   const [selectionError, setSelectionError] = useState<Nullable<string>>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const fetchUploadFile = useFetchUploadFile();
   const hintId = `${id}-hint`;
   const shownError = selectionError ?? error;
   const hint = shownError ?? field.description ?? `Up to ${field.maxImages.toString()} images, ${formatMegabytes(field.maxBytes)} each.`;
@@ -105,6 +111,20 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
 
     const entries = await Promise.all(images.map(async (file) => makeImageFormEntry(file, await readAsDataUrl(file))));
     onChange(field.key, [...value, ...entries]);
+  };
+
+  // Read as data URLs like the files from the device, so the previews don't depend on the upload grid that loaded them.
+  const handleUploads = async (uploads: readonly UploadRecord[]): Promise<void> => {
+    setSelectionError(null);
+    try {
+      const entries = await Promise.all(uploads.slice(0, field.maxImages - value.length).map(async (upload) => {
+        const blob = await fetchUploadFile(upload.id);
+        return makeUploadImageFormEntry(upload, await readAsDataUrl(new File([blob], upload.id, { type: blob.type })));
+      }));
+      onChange(field.key, [...value, ...entries]);
+    } catch {
+      setSelectionError('Could not load the selected uploads.');
+    }
   };
 
   const handleRemove = (index: number): void => {
@@ -150,15 +170,22 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
 
         {!isFull && (
           <li className="aspect-square">
-            <button
-              className="flex size-full flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+            <WorkflowFileSourceMenu
               disabled={disabled}
-              type="button"
-              onClick={() => inputRef.current?.click()}
+              onBrowse={() => inputRef.current?.click()}
+              onPickUpload={() => { setIsPickerOpen(true); }}
+              trigger={(
+                // Labelled by the children of the menu trigger, which replace its own.
+                // eslint-disable-next-line jsx-a11y/control-has-associated-label
+                <button
+                  className="flex size-full flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-accent data-popup-open:text-accent-foreground"
+                  type="button"
+                />
+              )}
             >
               <ImagePlus className="size-5" />
               {value.length === 0 ? 'Add images' : 'Add more'}
-            </button>
+            </WorkflowFileSourceMenu>
           </li>
         )}
       </ul>
@@ -181,6 +208,16 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
             inputRef.current.value = '';
           }
         }}
+      />
+
+      <UploadPickerDialog
+        emptyMessage="You have not uploaded any images yet"
+        maxSelected={Math.max(field.maxImages - value.length, 1)}
+        mediaType="image"
+        open={isPickerOpen}
+        title={`Pick ${field.label.toLowerCase()} from your uploads`}
+        onClose={() => { setIsPickerOpen(false); }}
+        onSelect={(uploads) => { void handleUploads(uploads); }}
       />
 
       <p className={isInvalid ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} id={hintId}>{hint}</p>

@@ -1,6 +1,6 @@
 import { fetchUploadFile, fetchUploads } from '@services/api/uploads';
 import type { UploadsFilter, UploadsPage } from '@services/api/uploads';
-import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -15,6 +15,21 @@ export const useUploads = ({ mediaType }: UploadsFilter): UseInfiniteQueryResult
   getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.uploads.length : undefined
 }));
 
+// Uploads never change, so the file is never refetched while it is cached.
+const makeUploadFileQuery = (id: string): { queryFn: () => Promise<Blob>; queryKey: string[]; staleTime: number } => ({
+  queryKey: [UPLOADS_QUERY_KEY, 'file', id],
+  queryFn: async () => await fetchUploadFile(id),
+  staleTime: Infinity
+});
+
+/**
+ * Returns the file of an upload, from the cache when a tile already loaded it.
+ */
+export const useFetchUploadFile = (): (id: string) => Promise<Blob> => {
+  const queryClient = useQueryClient();
+  return async (id) => await queryClient.query(makeUploadFileQuery(id));
+};
+
 export interface UploadFileUrl {
   hasError: boolean;
   url: string | undefined;
@@ -22,14 +37,10 @@ export interface UploadFileUrl {
 
 /**
  * An object URL of the file of an upload, which is fetched with the session since the API doesn't serve it publicly.
- * Uploads never change, so the file is never refetched while it is cached. The URL is revoked once it is no longer shown.
+ * The URL is revoked once it is no longer shown.
  */
 export const useUploadFileUrl = (id: string): UploadFileUrl => {
-  const { data: blob, isError } = useQuery(queryOptions({
-    queryKey: [UPLOADS_QUERY_KEY, 'file', id],
-    queryFn: async () => await fetchUploadFile(id),
-    staleTime: Infinity
-  }));
+  const { data: blob, isError } = useQuery(queryOptions(makeUploadFileQuery(id)));
   const [url, setUrl] = useState<string>();
 
   useEffect(() => {
