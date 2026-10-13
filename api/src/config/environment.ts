@@ -58,9 +58,23 @@ const isFlagEnabled = (key: string, isEnabledByDefault: boolean): boolean => {
   throw new TypeError(`Environment variable ${key} must be true or false, got "${value}".`);
 };
 
+/**
+ * Accepts a path relative to another directory made of letters, digits, underscores and dashes, such as "uploads/app",
+ * so it can't escape that directory and is safe to use in a regex.
+ */
+const getRelativePath = (key: string, defaultValue: string): string => {
+  const value = getString(key, defaultValue);
+  if (!/^[\w-]+(?:\/[\w-]+)*$/u.test(value)) {
+    throw new TypeError(`Environment variable ${key} must be a relative path of letters, digits, underscores and dashes, got "${value}".`);
+  }
+
+  return value;
+};
+
 export const PORT: number = getInteger('PORT', 4000);
 
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
+export const COMFYUI_UPLOAD_SUBFOLDER: string = getRelativePath('COMFYUI_UPLOAD_SUBFOLDER', 'comfyui-abstract');
 
 export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
 

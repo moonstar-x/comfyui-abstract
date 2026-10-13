@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { MAX_AUDIO_UPLOAD_MB, MAX_IMAGE_UPLOAD_MB } from '../../config/environment.js';
+import { COMFYUI_UPLOAD_SUBFOLDER, MAX_AUDIO_UPLOAD_MB, MAX_IMAGE_UPLOAD_MB } from '../../config/environment.js';
 import { connectComfyUiClient, createComfyUiClient } from '../comfyui/client.js';
 import { deleteInputFile } from '../comfyui/utility/delete-input-file/workflow.js';
 import { database } from '../database/client/postgres.js';
@@ -51,11 +51,6 @@ export const UPLOAD_KIND_CONFIGS: Readonly<Record<UploadKind, UploadKindConfig>>
   }
 };
 
-/**
- * Subfolder of the ComfyUI input directory that uploads are stored in, kept apart from the files added through ComfyUI itself.
- */
-const UPLOAD_SUBFOLDER = 'comfyui-abstract';
-
 // Deleting a file takes ComfyUI no time, so this only stops a request from hanging when it can't be reached or the workflow never finishes.
 const DELETE_UPLOAD_FILE_TIMEOUT_MS = 30_000;
 
@@ -78,7 +73,7 @@ export interface StoreUploadData {
  * Stores the file in the ComfyUI input directory and returns the reference workflows load it with.
  */
 const uploadToComfyUi = async (data: Uint8Array, filename: string): Promise<string> => {
-  const result = await comfyui.uploadImage(data, filename, { subfolder: UPLOAD_SUBFOLDER });
+  const result = await comfyui.uploadImage(data, filename, { subfolder: COMFYUI_UPLOAD_SUBFOLDER });
   if (result === false) {
     throw new Error('Could not upload the file to ComfyUI.');
   }
@@ -94,7 +89,7 @@ export const storeUpload = async ({ username, kind, mimeType, extension, data }:
   const filename = `${randomUUID()}.${extension}`;
   const upload = await createUpload({
     username,
-    comfyFilename: `${UPLOAD_SUBFOLDER}/${filename}`,
+    comfyFilename: `${COMFYUI_UPLOAD_SUBFOLDER}/${filename}`,
     mediaType: kind,
     mimeType,
     sizeBytes: data.byteLength,
@@ -150,11 +145,11 @@ export const deleteUploadFile = async (upload: UploadRow): Promise<void> => {
 
 /**
  * Accepts only references stored by storeUpload for the given kind, so a client can't point a workflow at any other file.
- * The subfolder and extensions contain no regex special characters, so they need no escaping.
+ * The subfolder (validated when read from the environment) and extensions contain no regex special characters, so they need no escaping.
  */
 export const makeUploadReferenceSchema = (kind: UploadKind): z.ZodString => {
   const extensions = [...new Set(Object.values(UPLOAD_KIND_CONFIGS[kind].extensions))].join('|');
-  const pattern = new RegExp(String.raw`^${UPLOAD_SUBFOLDER}/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\.(?:${extensions})$`, 'u');
+  const pattern = new RegExp(String.raw`^${COMFYUI_UPLOAD_SUBFOLDER}/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\.(?:${extensions})$`, 'u');
 
   return z.string().regex(pattern, `Must be a reference to an ${kind} uploaded through /uploads/${kind}.`);
 };
