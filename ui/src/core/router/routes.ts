@@ -5,6 +5,7 @@ export const RouteDefs = {
   login: '/login',
   settings: '/settings',
   signUp: '/signup',
+  uploads: '/uploads',
   workflow: '/workflow'
 } as const;
 

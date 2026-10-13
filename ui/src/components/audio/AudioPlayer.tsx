@@ -33,6 +33,14 @@ const formatTime = (seconds: number): string => {
   return `${minutes.toString()}:${(total % 60).toString().padStart(2, '0')}`;
 };
 
+type AudioPlayerVariant = 'compact' | 'full' | 'tile';
+
+const VISUALIZER_CLASSES: Record<AudioPlayerVariant, string> = {
+  compact: 'h-6',
+  full: 'h-24',
+  tile: 'min-h-0 flex-1'
+};
+
 export interface AudioPlayerProps {
   className?: string;
   label: string;
@@ -40,8 +48,9 @@ export interface AudioPlayerProps {
   src: string;
   /**
    * The compact variant fits in a list row, the full one gives the visualizer room to breathe.
+   * The tile variant stretches the visualizer to fill a fixed-size container and leaves out the volume bar to fit narrow ones.
    */
-  variant?: 'compact' | 'full';
+  variant?: AudioPlayerVariant;
 }
 
 export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 'metadata', src, variant = 'full' }) => {
@@ -179,6 +188,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
   const position = seekValue ?? currentTime;
   const VolumeIcon = level === 0 ? VolumeX : (level < 0.5 ? Volume1 : Volume2);
   const isCompact = variant === 'compact';
+  const isTile = variant === 'tile';
 
   const seekBar = (
     <Slider
@@ -247,7 +257,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
             <div className="flex items-center gap-2">
               {playButton}
               <div className="flex min-w-0 flex-1 flex-col">
-                <AudioVisualizer analyser={analyser} className="h-6" isPlaying={isPlaying} />
+                <AudioVisualizer analyser={analyser} className={VISUALIZER_CLASSES[variant]} isPlaying={isPlaying} />
                 {seekBar}
               </div>
               {time}
@@ -260,15 +270,19 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
           )
         : (
             <>
-              <AudioVisualizer analyser={analyser} className="h-24" isPlaying={isPlaying} />
+              <AudioVisualizer analyser={analyser} className={VISUALIZER_CLASSES[variant]} isPlaying={isPlaying} />
               {seekBar}
               <div className="flex items-center gap-3">
                 {playButton}
                 {time}
-                <div className="ml-auto flex w-32 items-center gap-1">
-                  {muteButton}
-                  {volumeBar}
-                </div>
+                {isTile
+                  ? <div className="ml-auto">{muteButton}</div>
+                  : (
+                      <div className="ml-auto flex w-32 items-center gap-1">
+                        {muteButton}
+                        {volumeBar}
+                      </div>
+                    )}
               </div>
             </>
           )}

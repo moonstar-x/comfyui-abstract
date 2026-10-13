@@ -1,6 +1,6 @@
 import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { AudioLines, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
+import { AudioLines, FolderUp, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -44,6 +44,14 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
 // Shown first in the sidebar, outside of any section. The dashboard is the homepage.
 export const DASHBOARD_NAV_ITEM: NavItem = { category: 'general', icon: LayoutDashboard, path: RouteDefs.home, title: 'Dashboard' };
 export const FEED_NAV_ITEM: NavItem = { category: 'general', icon: Newspaper, path: RouteDefs.feed, title: 'Feed' };
+
+// Shown last in the sidebar, after the workflow sections.
+export const ASSETS_SECTION: NavSection = {
+  items: [
+    { category: 'general', icon: FolderUp, path: RouteDefs.uploads, title: 'My Uploads' }
+  ],
+  title: 'Assets'
+};
 
 export const CATEGORY_TILE_CLASSES: Record<NavCategory, string> = {
   audio: 'bg-tile-audio text-tile-audio-foreground',

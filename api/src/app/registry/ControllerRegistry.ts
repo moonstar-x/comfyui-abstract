@@ -1,9 +1,16 @@
+import { Buffer } from 'node:buffer';
 import type { RequestHandler } from 'express';
 import { Router } from 'express';
 import type { Controller } from '../controller/Controller.js';
 
 const wrapController = (controller: Controller): RequestHandler => async (req, res) => {
   const response = await controller.handle(req, res);
+  const { file } = response;
+  if (file !== undefined) {
+    res.status(response.statusCode).type(file.contentType).send(Buffer.from(file.data.buffer, file.data.byteOffset, file.data.byteLength));
+    return;
+  }
+
   res.status(response.statusCode).send(response.build());
 };
 

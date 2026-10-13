@@ -1,6 +1,6 @@
 import { UserMenu } from '@components/auth/UserMenu';
-import { CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
-import type { NavItem } from '@components/ui/app/navigation';
+import { ASSETS_SECTION, CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
+import type { NavItem, NavSection } from '@components/ui/app/navigation';
 import {
   Sidebar,
   SidebarContent,
@@ -54,6 +54,24 @@ const NavMenuItem: FC<NavMenuItemProps> = ({ isActive, item }) => {
   );
 };
 
+interface NavMenuSectionProps {
+  pathname: string;
+  section: NavSection;
+}
+
+const NavMenuSection: FC<NavMenuSectionProps> = ({ pathname, section }) => (
+  <SidebarGroup>
+    <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
+    <SidebarGroupContent>
+      <SidebarMenu className="gap-0.5">
+        {section.items.map((item) => (
+          <NavMenuItem isActive={isNavItemActive(item, pathname)} item={item} key={item.path} />
+        ))}
+      </SidebarMenu>
+    </SidebarGroupContent>
+  </SidebarGroup>
+);
+
 export const AppSidebar: FC = () => {
   const { pathname } = useLocation();
 
@@ -89,17 +107,8 @@ export const AppSidebar: FC = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {WORKFLOW_SECTIONS.map((section) => (
-          <SidebarGroup key={section.title}>
-            <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
-                {section.items.map((item) => (
-                  <NavMenuItem isActive={isNavItemActive(item, pathname)} item={item} key={item.path} />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+        {[...WORKFLOW_SECTIONS, ASSETS_SECTION].map((section) => (
+          <NavMenuSection key={section.title} pathname={pathname} section={section} />
         ))}
       </SidebarContent>
 

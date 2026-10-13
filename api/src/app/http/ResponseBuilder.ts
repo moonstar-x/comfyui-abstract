@@ -4,9 +4,18 @@ import type { ApiResponseError } from './errors/ApiResponseError.js';
 export type ResponseData = boolean | null | number | object | string;
 export type ResponseMeta = Record<string, unknown>;
 
+/**
+ * A raw file sent as the response body instead of the JSON envelope.
+ */
+export interface ResponseFile {
+  contentType: string;
+  data: Uint8Array;
+}
+
 export class ResponseBuilder {
   private _data: ResponseData | undefined;
   private _error: object | undefined;
+  private _file: ResponseFile | undefined;
   private _meta: ResponseMeta | undefined;
   private _status: number;
 
@@ -14,7 +23,12 @@ export class ResponseBuilder {
     this._status = StatusCodes.OK;
     this._data = undefined;
     this._error = undefined;
+    this._file = undefined;
     this._meta = {};
+  }
+
+  public get file(): ResponseFile | undefined {
+    return this._file;
   }
 
   public get statusCode(): number {
@@ -51,6 +65,15 @@ export class ResponseBuilder {
 
     this._error = error.getResponsePayload();
     return this.withStatus(error.status);
+  }
+
+  public withFile(file: ResponseFile): this {
+    if (this._data !== undefined || this._error !== undefined) {
+      throw new Error('Body already has data or error.');
+    }
+
+    this._file = file;
+    return this;
   }
 
   public withMeta(meta: ResponseMeta): this {

@@ -107,6 +107,25 @@ export const storeUpload = async ({ username, kind, mimeType, extension, data }:
 });
 
 /**
+ * Downloads the file of an upload from the ComfyUI input directory.
+ */
+export const readUploadFile = async (upload: UploadRow): Promise<Uint8Array> => {
+  const separator = upload.comfy_filename.lastIndexOf('/');
+  const query = new URLSearchParams({
+    filename: upload.comfy_filename.slice(separator + 1),
+    subfolder: upload.comfy_filename.slice(0, Math.max(0, separator)),
+    type: 'input'
+  });
+
+  const response = await comfyui.fetchApi(`/view?${query.toString()}`);
+  if (!response.ok) {
+    throw new Error(`Could not download upload ${upload.id} from ComfyUI (HTTP ${response.status.toString()}).`);
+  }
+
+  return new Uint8Array(await response.arrayBuffer());
+};
+
+/**
  * Accepts only references stored by storeUpload for the given kind, so a client can't point a workflow at any other file.
  * The subfolder and extensions contain no regex special characters, so they need no escaping.
  */

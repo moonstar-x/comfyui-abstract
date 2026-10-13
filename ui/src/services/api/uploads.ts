@@ -1,4 +1,7 @@
-import { apiRequest } from '@services/api/client';
+import { isMediaType } from '@core/generations/generations';
+import type { MediaType } from '@core/generations/generations';
+import { apiRequest, apiRequestFile, apiRequestWithMeta } from '@services/api/client';
+import { CURRENT_USER } from '@services/api/generations';
 
 export type UploadKind = 'audio' | 'image';
 
@@ -38,3 +41,61 @@ export const uploadFile = async (kind: UploadKind, file: File): Promise<string> 
     throw error;
   }
 };
+
+/**
+ * A file the current user uploaded to use in workflows.
+ */
+export interface UploadRecord {
+  createdAt: string;
+  id: string;
+  mediaType: MediaType;
+  mimeType: string;
+  sizeBytes: number;
+}
+
+export interface UploadsFilter {
+  mediaType?: MediaType | undefined;
+}
+
+export interface UploadsPage {
+  hasMore: boolean;
+  offset: number;
+  uploads: UploadRecord[];
+}
+
+const isUploadRecord = (value: unknown): value is UploadRecord => typeof value === 'object' &&
+  value !== null &&
+  'id' in value &&
+  typeof value.id === 'string' &&
+  'mediaType' in value &&
+  isMediaType(value.mediaType) &&
+  'mimeType' in value &&
+  typeof value.mimeType === 'string' &&
+  'sizeBytes' in value &&
+  typeof value.sizeBytes === 'number' &&
+  'createdAt' in value &&
+  typeof value.createdAt === 'string';
+
+const isUploadRecordList = (value: unknown): value is UploadRecord[] => Array.isArray(value) && value.every((item) => isUploadRecord(item));
+
+/**
+ * Returns a page of the current user's uploads, newest first.
+ */
+export const fetchUploads = async ({ mediaType }: UploadsFilter, offset: number, limit: number): Promise<UploadsPage> => {
+  const search = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
+  if (mediaType !== undefined) {
+    search.set('mediaType', mediaType);
+  }
+
+  const { data, meta } = await apiRequestWithMeta(`/users/${CURRENT_USER}/uploads?${search.toString()}`, { isAuthenticated: true });
+  if (!isUploadRecordList(data)) {
+    throw new Error('The server returned an invalid list of uploads.');
+  }
+
+  return { hasMore: meta['hasMore'] === true, offset, uploads: data };
+};
+
+/**
+ * Downloads the file of an upload. It can't be linked to directly since the API only serves it to its authenticated owner.
+ */
+export const fetchUploadFile = async (id: string): Promise<Blob> => await apiRequestFile(`/uploads/${encodeURIComponent(id)}/file`, { isAuthenticated: true });

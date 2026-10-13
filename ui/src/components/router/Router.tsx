@@ -11,6 +11,7 @@ const HistoryPage = lazy(async () => await import('@pages/HistoryPage'));
 const LoginPage = lazy(async () => await import('@pages/LoginPage'));
 const SettingsPage = lazy(async () => await import('@pages/SettingsPage'));
 const SignUpPage = lazy(async () => await import('@pages/SignUpPage'));
+const UploadsPage = lazy(async () => await import('@pages/UploadsPage'));
 const WorkflowPage = lazy(async () => await import('@pages/WorkflowPage'));
 
 export const Router: FC = () => (
@@ -30,6 +31,7 @@ export const Router: FC = () => (
           <Route element={<HistoryPage />} path={RouteDefs.feed} />
           {/* Not built with historyByUser(), which would encode the colon of the param. */}
           <Route element={<HistoryPage />} path={`${RouteDefs.history}/:username`} />
+          <Route element={<UploadsPage />} path={RouteDefs.uploads} />
           <Route element={<SettingsPage />} path={RouteDefs.settings} />
         </Route>
       </Route>

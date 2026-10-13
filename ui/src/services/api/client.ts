@@ -102,8 +102,22 @@ export interface ApiResponse {
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 /**
- * Sends a request to the API and returns the data and meta fields of the response body.
  * Authenticated requests clear the stored session when the API rejects the token, which sends the user back to the login page.
+ */
+const throwApiError = (response: Response, body: unknown, options: ApiRequestOptions): never => {
+  const { code, message } = getErrorPayload(body);
+  if (code !== null && options.isAuthenticated === true && SESSION_ERROR_CODES.has(code)) {
+    setSession(null);
+  }
+
+  throw new ApiError(message ?? `Request failed (HTTP ${response.status.toString()}).`, {
+    code: code ?? ApiErrorCodes.UNKNOWN_ERROR,
+    status: response.status
+  });
+};
+
+/**
+ * Sends a request to the API and returns the data and meta fields of the response body.
  */
 export const apiRequestWithMeta = async (path: string, options: ApiRequestOptions = {}): Promise<ApiResponse> => {
   const response = await send(path, buildRequestInit(options));
@@ -115,15 +129,19 @@ export const apiRequestWithMeta = async (path: string, options: ApiRequestOption
     };
   }
 
-  const { code, message } = getErrorPayload(body);
-  if (code !== null && options.isAuthenticated === true && SESSION_ERROR_CODES.has(code)) {
-    setSession(null);
+  return throwApiError(response, body, options);
+};
+
+/**
+ * Sends a request to an API endpoint that responds with a raw file instead of JSON, and returns the file.
+ */
+export const apiRequestFile = async (path: string, options: ApiRequestOptions = {}): Promise<Blob> => {
+  const response = await send(path, buildRequestInit(options));
+  if (response.ok) {
+    return await response.blob();
   }
 
-  throw new ApiError(message ?? `Request failed (HTTP ${response.status.toString()}).`, {
-    code: code ?? ApiErrorCodes.UNKNOWN_ERROR,
-    status: response.status
-  });
+  return throwApiError(response, await readJson(response), options);
 };
 
 /**
