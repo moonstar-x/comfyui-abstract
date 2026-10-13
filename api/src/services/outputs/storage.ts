@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PUBLIC_DIRECTORY } from '../../config/environment.js';
 
@@ -42,14 +42,26 @@ export const saveFileToPublic = async (folder: string, filename: string, data: U
 export const isPublicFileInFolder = (urlPath: string, folder: string): boolean => urlPath.startsWith(`${PUBLIC_ROUTE}/${folder}/`);
 
 /**
- * Deletes a file previously saved with saveFileToPublic, given the URL path it is served at. Missing files are ignored.
+ * Resolves the URL path a file saved with saveFileToPublic is served at to its path on disk, rejecting any that could escape the public directory.
  */
-export const deleteFileFromPublic = async (urlPath: string): Promise<void> => {
+const toPublicFilePath = (urlPath: string): string => {
   const prefix = `${PUBLIC_ROUTE}/`;
   const segments = urlPath.startsWith(prefix) ? urlPath.slice(prefix.length).split('/').map((segment) => decodeURIComponent(segment)) : [];
   if (segments.length < 2 || segments.some((segment) => !isSafeSegment(segment))) {
     throw new Error(`Invalid public file path ${urlPath}.`);
   }
 
-  await rm(path.join(PUBLIC_DIRECTORY, ...segments), { force: true });
+  return path.join(PUBLIC_DIRECTORY, ...segments);
+};
+
+/**
+ * Reads a file previously saved with saveFileToPublic, given the URL path it is served at.
+ */
+export const readFileFromPublic = async (urlPath: string): Promise<Uint8Array> => await readFile(toPublicFilePath(urlPath));
+
+/**
+ * Deletes a file previously saved with saveFileToPublic, given the URL path it is served at. Missing files are ignored.
+ */
+export const deleteFileFromPublic = async (urlPath: string): Promise<void> => {
+  await rm(toPublicFilePath(urlPath), { force: true });
 };

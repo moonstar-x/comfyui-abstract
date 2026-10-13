@@ -1,4 +1,5 @@
 import { formatDateTime } from '@core/generations/generations';
+import type { GenerationRecord } from '@core/generations/generations';
 import type { Nullable } from '@core/utils/types';
 import type { AudioWorkflowField, ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
 import type { UploadRecord } from '@services/api/uploads';
@@ -24,7 +25,7 @@ export interface FileImageFormEntry extends BaseImageFormEntry {
   file: File;
 }
 
-// A file uploaded earlier, sent as its reference without uploading it again.
+// A file uploaded earlier or a generated file, sent as its reference without uploading it again.
 export interface UploadImageFormEntry extends BaseImageFormEntry {
   reference: string;
 }
@@ -51,7 +52,14 @@ export interface UploadAudioFormEntry extends BaseAudioFormEntry {
   uploadId: string;
 }
 
-export type AudioFormEntry = FileAudioFormEntry | UploadAudioFormEntry;
+// A generated file, sent as its reference without uploading it again.
+export interface GenerationAudioFormEntry extends BaseAudioFormEntry {
+  reference: string;
+  // The output itself, which is served publicly.
+  url: string;
+}
+
+export type AudioFormEntry = FileAudioFormEntry | GenerationAudioFormEntry | UploadAudioFormEntry;
 
 // A missing audio file is stored as null, since a single file has no empty list to fall back to.
 export type WorkflowFormValue = AudioFormEntry | boolean | ImageFormEntry[] | LoraFormEntry[] | null | string;
@@ -80,10 +88,22 @@ export const makeImageFormEntry = (file: File, url: string): FileImageFormEntry 
 
 const getUploadName = (upload: UploadRecord): string => `Upload from ${formatDateTime(upload.createdAt)}`;
 
+const getGenerationName = (generation: GenerationRecord): string => `Generated on ${formatDateTime(generation.createdAt)}`;
+
 export const makeUploadImageFormEntry = (upload: UploadRecord, url: string): UploadImageFormEntry => ({
   id: makeFormEntryId(),
   name: getUploadName(upload),
   reference: upload.comfyFilename,
+  url
+});
+
+/**
+ * A generated image, stored as a workflow input by storeGenerationOutputInput. The URL is the output itself, which is served publicly.
+ */
+export const makeGenerationImageFormEntry = (generation: GenerationRecord, reference: string, url: string): UploadImageFormEntry => ({
+  id: makeFormEntryId(),
+  name: getGenerationName(generation),
+  reference,
   url
 });
 
@@ -94,6 +114,16 @@ export const makeUploadAudioFormEntry = (upload: UploadRecord): UploadAudioFormE
   name: getUploadName(upload),
   reference: upload.comfyFilename,
   uploadId: upload.id
+});
+
+/**
+ * Generated audio, stored as a workflow input by storeGenerationOutputInput. The URL is the output itself, which is served publicly.
+ */
+export const makeGenerationAudioFormEntry = (generation: GenerationRecord, reference: string, url: string): GenerationAudioFormEntry => ({
+  id: makeFormEntryId(),
+  name: getGenerationName(generation),
+  reference,
+  url
 });
 
 export const getLoraFormEntries = (value: WorkflowFormValue): LoraFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'lora' in entry) : [];
@@ -148,7 +178,7 @@ const makeInitialFormValue = (field: WorkflowField, prefill: Nullable<WorkflowPr
   const prefillValue = prefill?.[field.key];
   const defaultValue = prefillValue !== undefined && isUsableInitialValue(field, prefillValue) ? prefillValue : field.defaultValue;
 
-  // Images can't come from the API config or an earlier generation, they're always uploaded by the user.
+  // Images can't come from the API config or an earlier generation, they're always picked by the user.
   if (field.kind === 'image-list') {
     return [];
   }

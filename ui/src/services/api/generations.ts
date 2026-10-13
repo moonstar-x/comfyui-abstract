@@ -58,3 +58,42 @@ export const fetchGenerationCount = async (): Promise<number> => {
 
   return data.count;
 };
+
+// Keyed by generation and output, so picking the same output again doesn't store it again.
+const outputInputs = new Map<string, Promise<string>>();
+
+const isInputResponse = (value: unknown): value is { reference: string } => typeof value === 'object' &&
+  value !== null &&
+  'reference' in value &&
+  typeof value.reference === 'string';
+
+const requestOutputInput = async (id: string, index: number): Promise<string> => {
+  const data = await apiRequest(`/generations/${encodeURIComponent(id)}/outputs/${index.toString()}/input`, { method: 'POST', isAuthenticated: true });
+  if (!isInputResponse(data)) {
+    throw new Error('The server returned an unexpected response when reusing the generated file.');
+  }
+
+  return data.reference;
+};
+
+/**
+ * Stores an output file of a generation as a workflow input and returns the reference that workflow params use to point at it.
+ * Unlike an upload, it isn't added to the current user's uploads.
+ */
+export const storeGenerationOutputInput = async (id: string, index: number): Promise<string> => {
+  const key = `${id}/${index.toString()}`;
+  const cached = outputInputs.get(key);
+  if (cached !== undefined) {
+    return await cached;
+  }
+
+  const request = requestOutputInput(id, index);
+  outputInputs.set(key, request);
+  try {
+    return await request;
+  } catch (error) {
+    // A failed request is retried the next time the output is picked.
+    outputInputs.delete(key);
+    throw error;
+  }
+};

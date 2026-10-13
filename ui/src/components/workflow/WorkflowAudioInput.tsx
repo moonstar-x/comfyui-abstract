@@ -1,4 +1,6 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
+import { GenerationOutputPickerDialog } from '@components/history/GenerationOutputPickerDialog';
+import type { GenerationOutput } from '@components/history/GenerationOutputPickerDialog';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
 import { useUploadFileUrl } from '@components/uploads/hooks/useUploads';
@@ -7,8 +9,9 @@ import { WorkflowFileSourceMenu } from '@components/workflow/WorkflowFileSourceM
 import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
 import type { Nullable, Optional } from '@core/utils/types';
 import type { AudioWorkflowField } from '@core/workflows/definitions';
-import { makeAudioFormEntry, makeUploadAudioFormEntry } from '@core/workflows/params';
+import { makeAudioFormEntry, makeGenerationAudioFormEntry, makeUploadAudioFormEntry } from '@core/workflows/params';
 import type { AudioFormEntry, UploadAudioFormEntry } from '@core/workflows/params';
+import { storeGenerationOutputInput } from '@services/api/generations';
 import { cn } from 'cn';
 import { FileAudio, Upload, X } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
@@ -39,6 +42,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
   // Set when the selected file is rejected, which keeps the previous value.
   const [selectionError, setSelectionError] = useState<Nullable<string>>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isGenerationPickerOpen, setIsGenerationPickerOpen] = useState(false);
   const hintId = `${id}-hint`;
   const shownError = selectionError ?? error;
   const hint = shownError ?? field.description ?? `Up to ${formatMegabytes(field.maxBytes)}.`;
@@ -59,6 +63,16 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
     onChange(field.key, makeAudioFormEntry(file, await readAsDataUrl(file)));
   };
 
+  const handleGenerationOutput = async ({ generation, index, url }: GenerationOutput): Promise<void> => {
+    setSelectionError(null);
+    try {
+      const reference = await storeGenerationOutputInput(generation.id, index);
+      onChange(field.key, makeGenerationAudioFormEntry(generation, reference, url));
+    } catch {
+      setSelectionError('Could not load the selected generated audio.');
+    }
+  };
+
   return (
     <fieldset aria-describedby={hintId} className="col-span-full flex min-w-0 flex-col gap-2">
       <legend className="mb-2 text-sm leading-none font-medium select-none">
@@ -72,6 +86,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
               <WorkflowFileSourceMenu
                 disabled={disabled}
                 onBrowse={() => inputRef.current?.click()}
+                onPickGeneration={() => { setIsGenerationPickerOpen(true); }}
                 onPickUpload={() => { setIsPickerOpen(true); }}
                 trigger={(
                   // Labelled by the children of the menu trigger, which replace its own.
@@ -95,6 +110,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                     disabled={disabled}
                     trigger={<Button aria-label={`Replace ${value.name}`} size="icon-xs" type="button" variant="ghost" />}
                     onBrowse={() => inputRef.current?.click()}
+                    onPickGeneration={() => { setIsGenerationPickerOpen(true); }}
                     onPickUpload={() => { setIsPickerOpen(true); }}
                   >
                     <Upload />
@@ -113,8 +129,8 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                     <X />
                   </Button>
                 </div>
-                {/* Keyed by the entry so a replaced file starts a fresh player. */}
-                {'file' in value
+                {/* Keyed by the entry so a replaced file starts a fresh player. Files from the device and generated files have their own URL. */}
+                {'url' in value
                   ? <AudioPlayer key={value.id} label={value.name} src={value.url} variant="compact" />
                   : <UploadAudioPlayer entry={value} key={value.id} />}
               </div>
@@ -150,6 +166,19 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
 
           setSelectionError(null);
           onChange(field.key, makeUploadAudioFormEntry(upload));
+        }}
+      />
+
+      <GenerationOutputPickerDialog
+        emptyMessage="You have not generated any audio yet"
+        mediaType="audio"
+        open={isGenerationPickerOpen}
+        title={`Pick ${field.label.toLowerCase()} from your generations`}
+        onClose={() => { setIsGenerationPickerOpen(false); }}
+        onSelect={([output]) => {
+          if (output !== undefined) {
+            void handleGenerationOutput(output);
+          }
         }}
       />
 

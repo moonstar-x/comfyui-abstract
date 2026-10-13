@@ -28,3 +28,5 @@ export const GenerationSummariesQuerySchema: z.ZodType<GenerationSummariesQuery>
 });
 
 export const GenerationIdSchema: z.ZodUUID = z.uuid();
+
+export const GenerationOutputIndexSchema: z.ZodType<number> = z.coerce.number().int().min(0);

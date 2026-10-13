@@ -1,3 +1,5 @@
+import { GenerationOutputPickerDialog } from '@components/history/GenerationOutputPickerDialog';
+import type { GenerationOutput } from '@components/history/GenerationOutputPickerDialog';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { useFetchUploadFile } from '@components/uploads/hooks/useUploads';
 import { UploadPickerDialog } from '@components/uploads/UploadPickerDialog';
@@ -5,12 +7,13 @@ import { WorkflowFileSourceMenu } from '@components/workflow/WorkflowFileSourceM
 import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
 import type { Nullable, Optional } from '@core/utils/types';
 import type { ImageListWorkflowField } from '@core/workflows/definitions';
-import { makeImageFormEntry, makeUploadImageFormEntry } from '@core/workflows/params';
+import { makeGenerationImageFormEntry, makeImageFormEntry, makeUploadImageFormEntry } from '@core/workflows/params';
 import type { ImageFormEntry } from '@core/workflows/params';
 import { closestCenter, DndContext, KeyboardSensor, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { storeGenerationOutputInput } from '@services/api/generations';
 import type { UploadRecord } from '@services/api/uploads';
 import { cn } from 'cn';
 import { ImagePlus, X } from 'lucide-react';
@@ -80,6 +83,7 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
   // Set when some of the selected files are rejected, the rest are still added.
   const [selectionError, setSelectionError] = useState<Nullable<string>>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isGenerationPickerOpen, setIsGenerationPickerOpen] = useState(false);
   const fetchUploadFile = useFetchUploadFile();
   const hintId = `${id}-hint`;
   const shownError = selectionError ?? error;
@@ -124,6 +128,20 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
       onChange(field.key, [...value, ...entries]);
     } catch {
       setSelectionError('Could not load the selected uploads.');
+    }
+  };
+
+  // Generated images are served publicly, so the previews load the outputs themselves.
+  const handleGenerationOutputs = async (outputs: readonly GenerationOutput[]): Promise<void> => {
+    setSelectionError(null);
+    try {
+      const entries = await Promise.all(outputs.slice(0, field.maxImages - value.length).map(async ({ generation, index, url }) => {
+        const reference = await storeGenerationOutputInput(generation.id, index);
+        return makeGenerationImageFormEntry(generation, reference, url);
+      }));
+      onChange(field.key, [...value, ...entries]);
+    } catch {
+      setSelectionError('Could not load the selected generated images.');
     }
   };
 
@@ -173,6 +191,7 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
             <WorkflowFileSourceMenu
               disabled={disabled}
               onBrowse={() => inputRef.current?.click()}
+              onPickGeneration={() => { setIsGenerationPickerOpen(true); }}
               onPickUpload={() => { setIsPickerOpen(true); }}
               trigger={(
                 // Labelled by the children of the menu trigger, which replace its own.
@@ -218,6 +237,16 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
         title={`Pick ${field.label.toLowerCase()} from your uploads`}
         onClose={() => { setIsPickerOpen(false); }}
         onSelect={(uploads) => { void handleUploads(uploads); }}
+      />
+
+      <GenerationOutputPickerDialog
+        emptyMessage="You have not generated any images yet"
+        maxSelected={Math.max(field.maxImages - value.length, 1)}
+        mediaType="image"
+        open={isGenerationPickerOpen}
+        title={`Pick ${field.label.toLowerCase()} from your generations`}
+        onClose={() => { setIsGenerationPickerOpen(false); }}
+        onSelect={(outputs) => { void handleGenerationOutputs(outputs); }}
       />
 
       <p className={isInvalid ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} id={hintId}>{hint}</p>

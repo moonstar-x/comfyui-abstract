@@ -51,6 +51,9 @@ export const UPLOAD_KIND_CONFIGS: Readonly<Record<UploadKind, UploadKindConfig>>
   }
 };
 
+// Holds the files that workflows reuse without them being one of the user's uploads, such as generated images.
+const COMFYUI_TEMP_SUBFOLDER = `${COMFYUI_UPLOAD_SUBFOLDER}/temp`;
+
 // Deleting a file takes ComfyUI no time, so this only stops a request from hanging when it can't be reached or the workflow never finishes.
 const DELETE_UPLOAD_FILE_TIMEOUT_MS = 30_000;
 
@@ -70,10 +73,11 @@ export interface StoreUploadData {
 }
 
 /**
- * Stores the file in the ComfyUI input directory and returns the reference workflows load it with.
+ * Stores the file in a subfolder of the ComfyUI input directory and returns the reference workflows load it with.
+ * Unless overwriting, ComfyUI renames the file instead when one with the same name already exists.
  */
-const uploadToComfyUi = async (data: Uint8Array, filename: string): Promise<string> => {
-  const result = await comfyui.uploadImage(data, filename, { subfolder: COMFYUI_UPLOAD_SUBFOLDER });
+const uploadToComfyUi = async (data: Uint8Array, filename: string, subfolder: string, shouldOverwrite = false): Promise<string> => {
+  const result = await comfyui.uploadImage(data, filename, { subfolder, override: shouldOverwrite });
   if (result === false) {
     throw new Error('Could not upload the file to ComfyUI.');
   }
@@ -97,13 +101,28 @@ export const storeUpload = async ({ username, kind, mimeType, extension, data }:
   }, t);
 
   // ComfyUI renames files that already exist instead of overwriting them, which would leave the row pointing at another file.
-  const reference = await uploadToComfyUi(data, filename);
+  const reference = await uploadToComfyUi(data, filename, COMFYUI_UPLOAD_SUBFOLDER);
   if (reference !== upload.comfy_filename) {
     throw new Error(`ComfyUI stored the file as ${reference} instead of ${upload.comfy_filename}.`);
   }
 
   return upload;
 });
+
+/**
+ * Stores an output file of a generation in the temp subfolder of the ComfyUI input directory so workflows can load it,
+ * without recording it as an upload of the user. The file is named after the generation and output, and overwritten when
+ * stored again, so reusing the same output doesn't pile up copies of it. Returns the reference workflows load it with.
+ */
+export const storeGenerationOutputInput = async (generationId: string, outputIndex: number, extension: string, data: Uint8Array): Promise<string> => {
+  const filename = `${generationId}-${(outputIndex + 1).toString()}.${extension}`;
+  const reference = await uploadToComfyUi(data, filename, COMFYUI_TEMP_SUBFOLDER, true);
+  if (reference !== `${COMFYUI_TEMP_SUBFOLDER}/${filename}`) {
+    throw new Error(`ComfyUI stored the file as ${reference} instead of ${COMFYUI_TEMP_SUBFOLDER}/${filename}.`);
+  }
+
+  return reference;
+};
 
 /**
  * Downloads the file of an upload from the ComfyUI input directory.
@@ -143,13 +162,15 @@ export const deleteUploadFile = async (upload: UploadRow): Promise<void> => {
   }
 };
 
+const UUID_PATTERN = String.raw`[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}`;
+
 /**
- * Accepts only references stored by storeUpload for the given kind, so a client can't point a workflow at any other file.
+ * Accepts only references stored by storeUpload, or by storeGenerationOutputInput, for the given kind, so a client can't point a workflow at any other file.
  * The subfolder (validated when read from the environment) and extensions contain no regex special characters, so they need no escaping.
  */
 export const makeUploadReferenceSchema = (kind: UploadKind): z.ZodString => {
   const extensions = [...new Set(Object.values(UPLOAD_KIND_CONFIGS[kind].extensions))].join('|');
-  const pattern = new RegExp(String.raw`^${COMFYUI_UPLOAD_SUBFOLDER}/[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}\.(?:${extensions})$`, 'u');
+  const pattern = new RegExp(String.raw`^(?:${COMFYUI_UPLOAD_SUBFOLDER}/${UUID_PATTERN}|${COMFYUI_TEMP_SUBFOLDER}/${UUID_PATTERN}-[1-9]\d*)\.(?:${extensions})$`, 'u');
 
-  return z.string().regex(pattern, `Must be a reference to an ${kind} uploaded through /uploads/${kind}.`);
+  return z.string().regex(pattern, `Must be a reference to an ${kind} uploaded through /uploads/${kind} or an output stored through /generations/:id/outputs/:index/input.`);
 };
