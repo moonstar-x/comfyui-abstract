@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { MAX_AUDIO_UPLOAD_MB, MAX_IMAGE_UPLOAD_MB } from '../../config/environment.js';
-import { createComfyUiClient } from '../comfyui/client.js';
+import { connectComfyUiClient, createComfyUiClient } from '../comfyui/client.js';
+import { deleteInputFile } from '../comfyui/utility/delete-input-file/workflow.js';
 import { database } from '../database/client/postgres.js';
 import type { UploadRow } from '../database/models/uploads.js';
 import { createUpload } from '../database/repositories/uploads.js';
@@ -54,6 +55,9 @@ export const UPLOAD_KIND_CONFIGS: Readonly<Record<UploadKind, UploadKindConfig>>
  * Subfolder of the ComfyUI input directory that uploads are stored in, kept apart from the files added through ComfyUI itself.
  */
 const UPLOAD_SUBFOLDER = 'comfyui-abstract';
+
+// Deleting a file takes ComfyUI no time, so this only stops a request from hanging when it can't be reached or the workflow never finishes.
+const DELETE_UPLOAD_FILE_TIMEOUT_MS = 30_000;
 
 // Only used for its HTTP API, so it never opens a websocket.
 const comfyui = createComfyUiClient();
@@ -123,6 +127,25 @@ export const readUploadFile = async (upload: UploadRow): Promise<Uint8Array> => 
   }
 
   return new Uint8Array(await response.arrayBuffer());
+};
+
+/**
+ * Deletes the file of an upload from the ComfyUI input directory. ComfyUI has no endpoint for it, so it runs a workflow,
+ * which requires a client with a websocket instead of the HTTP-only one used for the rest of the uploads.
+ */
+export const deleteUploadFile = async (upload: UploadRow): Promise<void> => {
+  const client = await connectComfyUiClient();
+  const timeout = Promise.withResolvers<never>();
+  const timer = setTimeout(() => {
+    timeout.reject(new Error(`Deleting the file of upload ${upload.id} timed out.`));
+  }, DELETE_UPLOAD_FILE_TIMEOUT_MS);
+
+  try {
+    await Promise.race([deleteInputFile(client, upload.comfy_filename), timeout.promise]);
+  } finally {
+    clearTimeout(timer);
+    client.destroy();
+  }
 };
 
 /**
