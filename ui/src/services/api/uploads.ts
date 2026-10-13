@@ -46,6 +46,8 @@ export const uploadFile = async (kind: UploadKind, file: File): Promise<string> 
  * A file the current user uploaded to use in workflows.
  */
 export interface UploadRecord {
+  // The reference that workflow params use to point at the file.
+  comfyFilename: string;
   createdAt: string;
   id: string;
   mediaType: MediaType;
@@ -67,6 +69,8 @@ const isUploadRecord = (value: unknown): value is UploadRecord => typeof value =
   value !== null &&
   'id' in value &&
   typeof value.id === 'string' &&
+  'comfyFilename' in value &&
+  typeof value.comfyFilename === 'string' &&
   'mediaType' in value &&
   isMediaType(value.mediaType) &&
   'mimeType' in value &&

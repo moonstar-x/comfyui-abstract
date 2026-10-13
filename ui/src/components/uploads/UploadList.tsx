@@ -5,7 +5,7 @@ import { UploadTile } from '@components/uploads/UploadTile';
 import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import type { Nullable } from '@core/utils/types';
-import type { UploadsFilter } from '@services/api/uploads';
+import type { UploadRecord, UploadsFilter } from '@services/api/uploads';
 import { useCallback, useRef, useState } from 'react';
 import type { FC, ReactNode } from 'react';
 
@@ -20,12 +20,17 @@ const GRID_CLASSES = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:gr
 export interface UploadListProps {
   emptyMessage: string;
   filter: UploadsFilter;
+  /**
+   * Makes the tiles toggle whether their upload is picked when clicked, see UploadTile.
+   */
+  onSelect?: ((upload: UploadRecord) => void) | undefined;
+  selectedIds?: ReadonlySet<string> | undefined;
 }
 
 /**
  * The current user's uploads as a grid, newest first.
  */
-export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter }) => {
+export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter, onSelect, selectedIds }) => {
   const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } = useUploads(filter);
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
   // Object URLs of the image uploads whose files have loaded, keyed by upload ID.
@@ -74,7 +79,14 @@ export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter }) => {
     <div className="flex flex-col gap-6">
       <div className={GRID_CLASSES}>
         {uploads.map((upload) => (
-          <UploadTile key={upload.id} upload={upload} onImageUrlChange={handleImageUrlChange} onOpenImage={handleOpenImage} />
+          <UploadTile
+            isSelected={selectedIds?.has(upload.id)}
+            key={upload.id}
+            upload={upload}
+            onImageUrlChange={handleImageUrlChange}
+            onOpenImage={handleOpenImage}
+            onSelect={onSelect}
+          />
         ))}
       </div>
 
