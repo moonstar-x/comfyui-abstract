@@ -113,6 +113,12 @@ export const findGenerations = async ({ username, mediaType, limit, offset }: Fi
   return await database.manyOrNone<GenerationRow>(query, [username ?? null, mediaType ?? null, limit, offset]);
 };
 
+export const countGenerationsByUsername = async (username: string): Promise<number> => {
+  const query = 'SELECT COUNT(*)::int AS count FROM generations WHERE username = $1';
+  const { count } = await database.one<{ count: number }>(query, [username]);
+  return count;
+};
+
 /**
  * Returns how many generations each user has made, optionally of a single media type, most recently active user first.
  * Users without generations are left out.

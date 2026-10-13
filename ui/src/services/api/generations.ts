@@ -46,3 +46,15 @@ export const fetchGenerations = async ({ username, mediaType }: GenerationsFilte
 export const deleteGeneration = async (id: string): Promise<void> => {
   await apiRequest(`/generations/${encodeURIComponent(id)}`, { method: 'DELETE', isAuthenticated: true });
 };
+
+/**
+ * Returns how many generations the current user has made.
+ */
+export const fetchGenerationCount = async (): Promise<number> => {
+  const data = await apiRequest(`/users/${CURRENT_USER}/generations/count`, { isAuthenticated: true });
+  if (typeof data !== 'object' || data === null || !('count' in data) || typeof data.count !== 'number') {
+    throw new Error('The server returned an invalid generation count.');
+  }
+
+  return data.count;
+};

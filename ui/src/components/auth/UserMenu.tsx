@@ -1,4 +1,5 @@
 import { useAuth } from '@components/auth/AuthContext';
+import { useGenerationCount } from '@components/history/hooks/useGenerations';
 import { useTheme } from '@components/theme/ThemeContext';
 import {
   DropdownMenu,
@@ -24,11 +25,21 @@ const TRIGGER_CLASSES = cn(
   'data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground'
 );
 
+const UserGenerationCount: FC = () => {
+  const { data: count } = useGenerationCount();
+  if (count === undefined) {
+    return null;
+  }
+
+  return <span className="truncate text-xs text-muted-foreground">{count === 1 ? '1 generation' : `${count.toLocaleString()} generations`}</span>;
+};
+
 const UserIdentity: FC<{ user: PublicUser }> = ({ user }) => (
   <>
     <UserAvatar pictureUrl={user.pictureUrl} username={user.username} />
     <span className="grid flex-1 text-left text-sm leading-tight">
       <span className="truncate font-medium">{user.username}</span>
+      <UserGenerationCount />
     </span>
   </>
 );

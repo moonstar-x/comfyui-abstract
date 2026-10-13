@@ -1,7 +1,7 @@
-import { deleteGeneration, fetchGenerations } from '@services/api/generations';
+import { deleteGeneration, fetchGenerationCount, fetchGenerations } from '@services/api/generations';
 import type { GenerationsFilter, GenerationsPage } from '@services/api/generations';
-import { infiniteQueryOptions, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResult } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResult, UseQueryResult } from '@tanstack/react-query';
 
 const PAGE_SIZE = 24;
 
@@ -20,6 +20,14 @@ export const useGenerations = ({ username, mediaType }: GenerationsFilter): UseI
   queryFn: async ({ pageParam }) => await fetchGenerations({ username, mediaType }, pageParam, PAGE_SIZE),
   initialPageParam: 0,
   getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.generations.length : undefined
+}));
+
+/**
+ * How many generations the current user has made. Kept under the history query key so it refreshes along with the history.
+ */
+export const useGenerationCount = (): UseQueryResult<number> => useQuery(queryOptions({
+  queryKey: [GENERATIONS_QUERY_KEY, 'count'],
+  queryFn: fetchGenerationCount
 }));
 
 export const useDeleteGeneration = (): UseMutationResult<void, Error, string> => {
