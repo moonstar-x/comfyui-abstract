@@ -2,7 +2,11 @@ import { Button } from '@components/ui/third-party/shadcn/button';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
 import { useUploads } from '@components/uploads/hooks/useUploads';
 import { UploadTile } from '@components/uploads/UploadTile';
+import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
+import type { Nullable } from '@core/utils/types';
 import type { UploadsFilter } from '@services/api/uploads';
+import { useCallback, useRef, useState } from 'react';
 import type { FC, ReactNode } from 'react';
 
 const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
@@ -23,6 +27,17 @@ export interface UploadListProps {
  */
 export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter }) => {
   const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } = useUploads(filter);
+  const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
+  // Object URLs of the image uploads whose files have loaded, keyed by upload ID.
+  const imageUrlsRef = useRef(new Map<string, string>());
+
+  const handleImageUrlChange = useCallback((id: string, url: string | undefined): void => {
+    if (url === undefined) {
+      imageUrlsRef.current.delete(id);
+    } else {
+      imageUrlsRef.current.set(id, url);
+    }
+  }, []);
 
   if (isPending) {
     return (
@@ -43,11 +58,23 @@ export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter }) => {
     return <Placeholder>{emptyMessage}</Placeholder>;
   }
 
+  // Pages through the loaded images in grid order, skipping audio and files that haven't loaded or failed to.
+  const handleOpenImage = (id: string): void => {
+    const loaded = uploads.flatMap((upload) => {
+      const url = imageUrlsRef.current.get(upload.id);
+      return url === undefined ? [] : [{ id: upload.id, url }];
+    });
+    const index = loaded.findIndex((image) => image.id === id);
+    if (index !== -1) {
+      setGallery({ images: loaded.map((image) => image.url), index });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6">
       <div className={GRID_CLASSES}>
         {uploads.map((upload) => (
-          <UploadTile key={upload.id} upload={upload} />
+          <UploadTile key={upload.id} upload={upload} onImageUrlChange={handleImageUrlChange} onOpenImage={handleOpenImage} />
         ))}
       </div>
 
@@ -56,6 +83,8 @@ export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter }) => {
           {isFetchingNextPage ? 'Loading…' : 'Load more'}
         </Button>
       )}
+
+      <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
     </div>
   );
 };

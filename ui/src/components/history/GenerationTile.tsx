@@ -35,9 +35,9 @@ export const GenerationTile: FC<GenerationTileProps> = ({ generation, onOpen }) 
   if (generation.mediaType === 'audio') {
     // The player stays usable inside the tile, so the button opening the generation sits behind it instead of wrapping it.
     return (
-      <div className="relative col-span-2 flex flex-col justify-center rounded-xl border bg-card p-4">
+      <div className="relative flex aspect-square flex-col rounded-xl border bg-card p-3">
         <button aria-label={label} className="absolute inset-0 cursor-pointer rounded-xl transition-colors hover:bg-muted/50" type="button" onClick={onOpen} />
-        <AudioPlayer className="relative" label={`${generation.username}'s audio`} preload="none" src={firstUrl} variant="full" />
+        <AudioPlayer className="relative min-h-0 flex-1" label={`${generation.username}'s audio`} preload="none" src={firstUrl} variant="tile" />
         {urls.length > 1 && <OutputCount count={urls.length} />}
       </div>
     );

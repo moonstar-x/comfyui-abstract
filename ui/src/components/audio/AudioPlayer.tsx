@@ -41,6 +41,13 @@ const VISUALIZER_CLASSES: Record<AudioPlayerVariant, string> = {
   tile: 'min-h-0 flex-1'
 };
 
+// Only the controls of a tile take clicks, letting the rest through to whatever the tile sits on.
+const PLAYER_CLASSES: Record<AudioPlayerVariant, string> = {
+  compact: 'gap-1',
+  full: 'gap-3',
+  tile: 'pointer-events-none gap-3 [&_[data-slot=slider]]:pointer-events-auto [&_button]:pointer-events-auto'
+};
+
 export interface AudioPlayerProps {
   className?: string;
   label: string;
@@ -235,7 +242,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
   );
 
   return (
-    <fieldset className={cn('flex min-w-0 flex-col', isCompact ? 'gap-1' : 'gap-3', className)}>
+    <fieldset className={cn('flex min-w-0 flex-col', PLAYER_CLASSES[variant], className)}>
       <legend className="sr-only">{label}</legend>
       {/* Generated audio comes without timed captions to provide. */}
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}

@@ -5,6 +5,7 @@ import { formatDateTime } from '@core/generations/generations';
 import { formatFileSize } from '@core/utils/files';
 import type { UploadRecord } from '@services/api/uploads';
 import { cn } from 'cn';
+import { useEffect } from 'react';
 import type { FC } from 'react';
 
 const UploadDetails: FC<{ className?: string; upload: UploadRecord }> = ({ className, upload }) => (
@@ -21,16 +22,31 @@ const FileError: FC = () => (
 );
 
 export interface UploadTileProps {
+  onImageUrlChange: (id: string, url: string | undefined) => void;
+  onOpenImage: (id: string) => void;
   upload: UploadRecord;
 }
 
 /**
  * An upload in the grid, showing its file along with its size and when it was uploaded.
  */
-export const UploadTile: FC<UploadTileProps> = ({ upload }) => {
+export const UploadTile: FC<UploadTileProps> = ({ onImageUrlChange, onOpenImage, upload }) => {
   const { hasError, url } = useUploadFileUrl(upload.id);
+  const isImage = upload.mediaType !== 'audio';
 
-  if (upload.mediaType === 'audio') {
+  // Reported so the preview can page through every image in the grid, not just the one that was clicked.
+  useEffect(() => {
+    if (!isImage || url === undefined) {
+      return;
+    }
+
+    onImageUrlChange(upload.id, url);
+    return (): void => {
+      onImageUrlChange(upload.id, undefined);
+    };
+  }, [isImage, onImageUrlChange, upload.id, url]);
+
+  if (!isImage) {
     return (
       <div className="flex aspect-square flex-col gap-3 rounded-xl border bg-card p-3">
         {hasError && <FileError />}
@@ -43,8 +59,13 @@ export const UploadTile: FC<UploadTileProps> = ({ upload }) => {
   return (
     <div className="relative flex aspect-square flex-col overflow-hidden rounded-xl border bg-muted/40">
       {hasError && <FileError />}
-      {!hasError && (url === undefined ? <Skeleton className="size-full rounded-none" /> : <img alt="" className="size-full object-cover" src={url} />)}
-      <UploadDetails className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2.5 pt-6 pb-2 text-white" upload={upload} />
+      {!hasError && url === undefined && <Skeleton className="size-full rounded-none" />}
+      {!hasError && url !== undefined && (
+        <button aria-label="Preview uploaded image" className="size-full cursor-zoom-in" type="button" onClick={() => { onOpenImage(upload.id); }}>
+          <img alt="" className="size-full object-cover" src={url} />
+        </button>
+      )}
+      <UploadDetails className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2.5 pt-6 pb-2 text-white" upload={upload} />
     </div>
   );
 };
