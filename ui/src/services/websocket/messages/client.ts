@@ -1,4 +1,4 @@
-export interface GenericWSClientMessage<TType extends string, TPayload extends object> { payload: TPayload; type: TType }
+export interface GenericWSClientMessage<TType extends string, TPayload extends object> { payload?: TPayload; type: TType }
 
 export const WORKFLOW_TYPES = ['generate-image', 'edit-image', 'generate-music', 'cover-music'] as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[number];
@@ -11,6 +11,7 @@ export interface RunWorkflowPayload {
 }
 
 export type WSClientMessage =
+  GenericWSClientMessage<'comfyui_free_up_memory', never> |
   GenericWSClientMessage<'get_queue', { promptId: string }> |
   GenericWSClientMessage<'get_status', never> |
   GenericWSClientMessage<'run_workflow', RunWorkflowPayload>;

@@ -9,6 +9,7 @@ export type GenericWSClientMessageWithPayload<TType extends string, TPayload ext
 export type RunWorkflowPayload = WorkflowRequestParams & { params: Record<string, unknown> };
 
 export type WSClientMessage =
+  GenericWSClientMessage<'comfyui_free_up_memory', never> |
   GenericWSClientMessage<'get_queue', { promptId: string }> |
   GenericWSClientMessage<'get_status', never> |
   GenericWSClientMessageWithPayload<'run_workflow', RunWorkflowPayload>;
@@ -19,6 +20,7 @@ export type WSClientMessage =
 export type WSAuthenticatedClientMessage = WSClientMessage & { token: string };
 
 export const ClientMessageSchema: z.ZodType<WSClientMessage> = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('comfyui_free_up_memory') }),
   z.object({
     type: z.literal('get_queue'),
     payload: z.object({ promptId: z.string().min(1) }).exactOptional()

@@ -31,6 +31,7 @@ export interface WorkflowProgress {
 export interface GenericWSServerMessage<TType extends string, TData extends object> { payload: TData; type: TType }
 
 export type WSServerMessage =
+  GenericWSServerMessage<'comfyui_memory_freed', Record<string, never>> |
   GenericWSServerMessage<'error', { code?: string; message: string }> |
   GenericWSServerMessage<'queue', { job: Nullable<QueueJobStatus>; pending: number; running: number; size: number }> |
   GenericWSServerMessage<'session', { clientId: string }> |

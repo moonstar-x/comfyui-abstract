@@ -31,6 +31,8 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
 
   public async handle(message: WSClientMessage): Promise<Nullable<WSServerMessage>> {
     switch (message.type) {
+      case 'comfyui_free_up_memory':
+        return await this.handleFreeUpMemory();
       case 'get_queue':
         return await this.handleGetQueue(message.payload?.promptId);
       case 'get_status':
@@ -42,6 +44,16 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
 
   public setComfyUiSession(comfyUiSession: ComfyUiClientSession): void {
     this._comfyUiSession = comfyUiSession;
+  }
+
+  private async handleFreeUpMemory(): Promise<WSServerMessage> {
+    const comfyui = this.safeGetComfyUiSession();
+
+    if (!await comfyui.freeMemory()) {
+      throw new WebSocketError('Could not free up the memory in ComfyUI.');
+    }
+
+    return { type: 'comfyui_memory_freed', payload: {} };
   }
 
   private async handleGetQueue(promptId?: string): Promise<WSServerMessage> {

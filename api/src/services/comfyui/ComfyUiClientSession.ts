@@ -125,6 +125,13 @@ export class ComfyUiClientSession {
     this._client.destroy();
   }
 
+  /**
+   * Unloads the models and frees the memory cached by ComfyUI. Returns whether ComfyUI accepted the request.
+   */
+  public async freeMemory(): Promise<boolean> {
+    return await this._client.freeMemory(true, true);
+  }
+
   public async getOnlineState(): Promise<boolean> {
     try {
       const { status } = await this._client.ping();
