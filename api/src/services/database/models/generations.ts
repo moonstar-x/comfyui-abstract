@@ -30,3 +30,10 @@ export interface GenerationUserSummaryRow {
   picture_url: null | string;
   username: string;
 }
+
+export interface GenerationPeriodCountsRow {
+  all_time: number;
+  this_month: number;
+  this_week: number;
+  today: number;
+}

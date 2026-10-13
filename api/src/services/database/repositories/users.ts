@@ -46,3 +46,9 @@ export const updateUser = async (username: string, { passwordHash, pictureUrl }:
 
   return await database.one<UserRow>(query, [username, passwordHash ?? null, pictureUrl !== undefined, pictureUrl ?? null]);
 };
+
+export const countUsers = async (): Promise<number> => {
+  const query = 'SELECT COUNT(*)::int AS count FROM users';
+  const { count } = await database.one<{ count: number }>(query);
+  return count;
+};

@@ -1,7 +1,7 @@
 import type { Nullable } from '../../../utils/types.js';
 import type { WorkflowType } from '../../../workflows/types.js';
 import { database } from '../client/postgres.js';
-import type { GenerationRow, GenerationUserSummaryRow, MediaType } from '../models/generations.js';
+import type { GenerationPeriodCountsRow, GenerationRow, GenerationUserSummaryRow, MediaType } from '../models/generations.js';
 
 export interface PublicGeneration {
   completedAt: Date;
@@ -27,6 +27,13 @@ export interface GenerationUserSummary {
   lastGeneratedAt: Date;
   pictureUrl: Nullable<string>;
   username: string;
+}
+
+export interface GenerationPeriodCounts {
+  allTime: number;
+  thisMonth: number;
+  thisWeek: number;
+  today: number;
 }
 
 export interface CreateGenerationData {
@@ -74,6 +81,13 @@ export const toGenerationUserSummary = (summary: GenerationUserSummaryRow): Gene
   pictureUrl: summary.picture_url,
   generationCount: summary.generation_count,
   lastGeneratedAt: summary.last_generated_at
+});
+
+export const toGenerationPeriodCounts = (counts: GenerationPeriodCountsRow): GenerationPeriodCounts => ({
+  today: counts.today,
+  thisWeek: counts.this_week,
+  thisMonth: counts.this_month,
+  allTime: counts.all_time
 });
 
 export const createGeneration = async (data: CreateGenerationData): Promise<GenerationRow> => {
@@ -132,6 +146,36 @@ export const findGenerationUserSummaries = async (mediaType?: MediaType): Promis
     ORDER BY last_generated_at DESC`;
 
   return await database.manyOrNone<GenerationUserSummaryRow>(query, [mediaType ?? null]);
+};
+
+/**
+ * Returns the users with the most generations, most generations first. Ties go to the most recently active user.
+ * Users without generations are left out.
+ */
+export const findMostActiveGenerationUserSummaries = async (limit: number): Promise<GenerationUserSummaryRow[]> => {
+  const query = `SELECT g.username, u.picture_url, COUNT(*)::int AS generation_count, MAX(g.created_at) AS last_generated_at
+    FROM generations g
+    JOIN users u ON u.username = g.username
+    GROUP BY g.username, u.picture_url
+    ORDER BY generation_count DESC, last_generated_at DESC
+    LIMIT $1`;
+
+  return await database.manyOrNone<GenerationUserSummaryRow>(query, [limit]);
+};
+
+/**
+ * Counts every user's generations made since the start of the current day, week (Monday) and month, and of all time.
+ * Period boundaries follow the database session's time zone.
+ */
+export const countGenerationsByPeriod = async (): Promise<GenerationPeriodCountsRow> => {
+  const query = `SELECT
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now()))::int AS today,
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('week', now()))::int AS this_week,
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS this_month,
+      COUNT(*)::int AS all_time
+    FROM generations`;
+
+  return await database.one<GenerationPeriodCountsRow>(query);
 };
 
 /**
