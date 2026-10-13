@@ -31,3 +31,25 @@ export const formatFileSize = (bytes: number): string => {
 
   return format.format(bytes / (1024 ** exponent));
 };
+
+/**
+ * Saves the file at the URL under its own name. The download attribute alone is ignored for files on another origin, such as the API,
+ * so the file is fetched and saved from an object URL instead.
+ */
+export const downloadFile = async (url: string): Promise<void> => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Could not download ${url} (HTTP ${response.status.toString()}).`);
+  }
+
+  const objectUrl = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = decodeURIComponent(new URL(url).pathname.split('/').pop() ?? '');
+  link.click();
+
+  // Revoked on the next tick, once the browser has started the download.
+  setTimeout(() => {
+    URL.revokeObjectURL(objectUrl);
+  }, 0);
+};

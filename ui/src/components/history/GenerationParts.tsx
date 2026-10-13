@@ -65,19 +65,25 @@ export const GenerationParams: FC<{ params: Record<string, unknown> }> = ({ para
 };
 
 export interface AudioOutputsProps {
+  /**
+   * Shows a download link next to each player, left out where the generation has its own download button.
+   */
+  hasDownloadLinks: boolean;
   urls: string[];
   variant: NonNullable<AudioPlayerProps['variant']>;
 }
 
-export const AudioOutputs: FC<AudioOutputsProps> = ({ urls, variant }) => (
+export const AudioOutputs: FC<AudioOutputsProps> = ({ hasDownloadLinks, urls, variant }) => (
   <ul className="flex flex-col gap-2">
     {urls.map((url, index) => (
       <li className="flex items-center gap-2 rounded-md border bg-muted/40 p-2" key={url}>
         <AudioPlayer className="min-w-0 flex-1" label={`Output ${(index + 1).toString()}`} preload="none" src={url} variant={variant} />
-        <a download className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" href={url}>
-          <Download aria-hidden="true" className="size-4" />
-          <span className="sr-only">Download</span>
-        </a>
+        {hasDownloadLinks && (
+          <a download className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" href={url}>
+            <Download aria-hidden="true" className="size-4" />
+            <span className="sr-only">Download</span>
+          </a>
+        )}
       </li>
     ))}
   </ul>

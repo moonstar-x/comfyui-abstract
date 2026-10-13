@@ -17,7 +17,7 @@ const GenerationOutputs: FC<GenerationOutputsProps> = ({ generation, onOpenImage
   }
 
   if (generation.mediaType === 'audio') {
-    return <AudioOutputs urls={urls} variant="compact" />;
+    return <AudioOutputs hasDownloadLinks urls={urls} variant="compact" />;
   }
 
   return (

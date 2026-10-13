@@ -6,10 +6,11 @@ import { UserAvatar } from '@components/users/UserAvatar';
 import { formatDateTime, formatParamLabel, formatParamValue, formatRelativeTime, splitGenerationParams } from '@core/generations/generations';
 import type { GenerationPrompt, GenerationRecord } from '@core/generations/generations';
 import { DynamicRouteDefs } from '@core/router/routes';
+import { downloadFile } from '@core/utils/files';
 import { toOutputUrl } from '@core/workflows/outputs';
 import { makeWorkflowPrefillState } from '@core/workflows/params';
 import { cn } from 'cn';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Download } from 'lucide-react';
 import { useState } from 'react';
 import type { FC } from 'react';
 import { Link } from 'react-router';
@@ -122,10 +123,44 @@ const PostMedia: FC<PostMediaProps> = ({ generation, onOpenImage }) => {
   }
 
   if (generation.mediaType === 'audio') {
-    return <AudioOutputs urls={urls} variant="full" />;
+    return <AudioOutputs hasDownloadLinks={false} urls={urls} variant="full" />;
   }
 
   return <ImageMosaic urls={urls} onOpenImage={onOpenImage} />;
+};
+
+/**
+ * Saves every output of the generation. A file that can't be fetched is opened in a new tab instead, so it can still be saved from there.
+ */
+const DownloadOutputsButton: FC<{ urls: string[] }> = ({ urls }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async (): Promise<void> => {
+    setIsDownloading(true);
+    await Promise.all(urls.map(async (url) => {
+      try {
+        await downloadFile(url);
+      } catch {
+        window.open(url, '_blank', 'noopener');
+      }
+    }));
+    setIsDownloading(false);
+  };
+
+  return (
+    <Button
+      aria-label={urls.length === 1 ? 'Download' : `Download ${urls.length.toString()} files`}
+      className="cursor-pointer"
+      disabled={isDownloading}
+      size="icon-sm"
+      title={urls.length === 1 ? 'Download' : `Download ${urls.length.toString()} files`}
+      type="button"
+      variant="outline"
+      onClick={() => { void handleDownload(); }}
+    >
+      <Download aria-hidden="true" />
+    </Button>
+  );
 };
 
 /**
@@ -139,7 +174,6 @@ const OpenWorkflowButton: FC<{ generation: GenerationRecord }> = ({ generation }
 
   return (
     <Button
-      className="ml-auto"
       nativeButton={false}
       render={<Link state={makeWorkflowPrefillState(generation.model, generation.params)} to={DynamicRouteDefs.workflowWithModel(generation.workflowType, generation.model)} />}
       size="sm"
@@ -170,6 +204,7 @@ export interface GenerationPostProps {
 export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, generation, onDeleted, onOpenImage }) => {
   const profilePath = DynamicRouteDefs.historyByUser(generation.username);
   const { prompts, settings } = splitGenerationParams(generation.params);
+  const outputUrls = generation.outputs.map((output) => toOutputUrl(output));
 
   return (
     <article className={cn('flex flex-col gap-3', framed ? 'rounded-xl border bg-card p-4 shadow-xl' : 'border-b px-1 py-4 sm:rounded-xl sm:border sm:bg-card sm:p-4')}>
@@ -198,7 +233,10 @@ export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, genera
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <WorkflowBadge generation={generation} />
           <DurationLabel generation={generation} />
-          <OpenWorkflowButton generation={generation} />
+          <div className="ml-auto flex items-center gap-1.5">
+            {outputUrls.length > 0 && <DownloadOutputsButton urls={outputUrls} />}
+            <OpenWorkflowButton generation={generation} />
+          </div>
         </div>
         {settings.length > 0 && <ParamBadges settings={settings} />}
       </footer>
