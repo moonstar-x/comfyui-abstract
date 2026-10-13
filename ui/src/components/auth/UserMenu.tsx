@@ -11,11 +11,11 @@ import {
 } from '@components/ui/third-party/shadcn/dropdown-menu';
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@components/ui/third-party/shadcn/sidebar';
 import { UserAvatar } from '@components/users/UserAvatar';
-import { DynamicRouteDefs } from '@core/router/routes';
+import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
 import { CURRENT_USER } from '@services/api/generations';
 import type { PublicUser } from '@services/auth/session';
 import { cn } from 'cn';
-import { ChevronsUpDown, History, LogOut, Moon, Sun } from 'lucide-react';
+import { ChevronsUpDown, History, LogOut, Moon, Settings, Sun } from 'lucide-react';
 import type { FC } from 'react';
 import { Link } from 'react-router';
 
@@ -63,6 +63,10 @@ export const UserMenu: FC = () => {
           <DropdownMenuItem render={<Link to={DynamicRouteDefs.historyByUser(CURRENT_USER)} />}>
             <History />
             My Generations
+          </DropdownMenuItem>
+          <DropdownMenuItem render={<Link to={RouteDefs.settings} />}>
+            <Settings />
+            Settings
           </DropdownMenuItem>
           <DropdownMenuItem
             closeOnClick={false}

@@ -1,6 +1,7 @@
 import { useAuth } from '@components/auth/AuthContext';
 import { AuthFormField } from '@components/auth/AuthFormField';
 import { Button } from '@components/ui/third-party/shadcn/button';
+import { PASSWORD_MIN_LENGTH, validatePasswordLength } from '@core/auth/validation';
 import { RouteDefs } from '@core/router/routes';
 import { useMutation } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
@@ -12,8 +13,6 @@ import { Link, useLocation } from 'react-router';
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 64;
 const USERNAME_PATTERN = /^[\w\-.]+$/u;
-const PASSWORD_MIN_LENGTH = 8;
-const PASSWORD_MAX_LENGTH = 256;
 const RESERVED_USERNAMES: ReadonlySet<string> = new Set(['me']);
 
 interface SignUpValues {
@@ -35,8 +34,9 @@ const validate = ({ username, password, confirmPassword }: SignUpValues): SignUp
     errors.username = 'This username is reserved.';
   }
 
-  if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
-    errors.password = `Password must be between ${PASSWORD_MIN_LENGTH.toString()} and ${PASSWORD_MAX_LENGTH.toString()} characters.`;
+  const passwordError = validatePasswordLength(password);
+  if (passwordError !== undefined) {
+    errors.password = passwordError;
   }
 
   if (confirmPassword !== password) {

@@ -14,6 +14,7 @@ import { RESERVED_USERNAMES } from '../../services/auth/reserved.js';
 import { PasswordSchema, PictureUrlSchema } from '../../services/auth/schemas.js';
 import { findUserByUsername, toPublicUser, updateUser } from '../../services/database/repositories/users.js';
 import type { UpdateUserData } from '../../services/database/repositories/users.js';
+import { deleteProfilePicture } from '../../services/users/pictures.js';
 
 const UpdateUserBodySchema = z.object({
   password: PasswordSchema.optional(),
@@ -36,14 +37,14 @@ export default class PatchUserController extends PatchController {
     const { username } = res.locals.user;
     const body = parseBody(UpdateUserBodySchema, req.body);
 
+    const user = await findUserByUsername(username);
+    if (!user) {
+      throw new ResourceNotFoundError(`User ${username} does not exist.`);
+    }
+
     const data: UpdateUserData = {};
 
     if (body.password !== undefined) {
-      const user = await findUserByUsername(username);
-      if (!user) {
-        throw new ResourceNotFoundError(`User ${username} does not exist.`);
-      }
-
       if (!await isPasswordValid(user.password_hash, body.currentPassword ?? '')) {
         throw new UnauthorizedRequestError('The current password is incorrect.', ErrorCodes.INVALID_CREDENTIALS);
       }
@@ -56,6 +57,11 @@ export default class PatchUserController extends PatchController {
     }
 
     const updatedUser = await updateUser(username, data);
+    if (updatedUser.picture_url !== user.picture_url) {
+      // A picture uploaded through /users/me/picture is no longer used once it is replaced or removed.
+      await deleteProfilePicture(user.picture_url);
+    }
+
     return new ResponseBuilder().withStatus(StatusCodes.OK).withData(toPublicUser(updatedUser));
   }
 }

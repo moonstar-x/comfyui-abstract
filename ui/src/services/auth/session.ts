@@ -14,7 +14,7 @@ export interface Session {
   user: PublicUser;
 }
 
-const isPublicUser = (value: unknown): value is PublicUser => typeof value === 'object' &&
+export const isPublicUser = (value: unknown): value is PublicUser => typeof value === 'object' &&
   value !== null &&
   'username' in value &&
   typeof value.username === 'string';
