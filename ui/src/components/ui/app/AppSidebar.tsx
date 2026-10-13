@@ -1,5 +1,5 @@
 import { UserMenu } from '@components/auth/UserMenu';
-import { CATEGORY_TILE_CLASSES, FEED_NAV_ITEM, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
+import { CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
 import type { NavItem } from '@components/ui/app/navigation';
 import {
   Sidebar,
@@ -84,6 +84,7 @@ export const AppSidebar: FC = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu className="gap-0.5">
+              <NavMenuItem isActive={isNavItemActive(DASHBOARD_NAV_ITEM, pathname)} item={DASHBOARD_NAV_ITEM} />
               <NavMenuItem isActive={isNavItemActive(FEED_NAV_ITEM, pathname)} item={FEED_NAV_ITEM} />
             </SidebarMenu>
           </SidebarGroupContent>

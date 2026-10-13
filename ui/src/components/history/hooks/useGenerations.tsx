@@ -6,7 +6,7 @@ import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResu
 const PAGE_SIZE = 24;
 
 // Every history query starts with this, so a change to the history can refresh all of them at once.
-const GENERATIONS_QUERY_KEY = 'generations';
+export const GENERATIONS_QUERY_KEY = 'generations';
 
 /**
  * Refetches every history query, such as after a generation is added or deleted.

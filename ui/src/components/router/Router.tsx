@@ -6,8 +6,8 @@ import { lazy } from 'react';
 import type { FC } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router';
 
+const DashboardPage = lazy(async () => await import('@pages/DashboardPage'));
 const HistoryPage = lazy(async () => await import('@pages/HistoryPage'));
-const HomePage = lazy(async () => await import('@pages/HomePage'));
 const LoginPage = lazy(async () => await import('@pages/LoginPage'));
 const SettingsPage = lazy(async () => await import('@pages/SettingsPage'));
 const SignUpPage = lazy(async () => await import('@pages/SignUpPage'));
@@ -25,8 +25,8 @@ export const Router: FC = () => (
 
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
-          <Route element={<HomePage />} path={RouteDefs.home} />
           <Route element={<WorkflowPage />} path={DynamicRouteDefs.workflowById(':id')} />
+          <Route element={<DashboardPage />} path={RouteDefs.home} />
           <Route element={<HistoryPage />} path={RouteDefs.feed} />
           {/* Not built with historyByUser(), which would encode the colon of the param. */}
           <Route element={<HistoryPage />} path={`${RouteDefs.history}/:username`} />
