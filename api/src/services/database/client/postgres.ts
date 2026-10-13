@@ -19,3 +19,8 @@ export const database: pgPromise.IDatabase<object> = pgp({
   password: POSTGRES_PASSWORD,
   max: POSTGRES_MAX_CONNECTIONS
 });
+
+/**
+ * The database itself or a transaction, so repository functions can run either standalone or as part of a transaction.
+ */
+export type DatabaseConnection = pgPromise.IBaseProtocol<object>;

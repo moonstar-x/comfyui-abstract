@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { MAX_AUDIO_UPLOAD_MB, MAX_IMAGE_UPLOAD_MB } from '../../config/environment.js';
 import { createComfyUiClient } from '../comfyui/client.js';
+import { database } from '../database/client/postgres.js';
+import type { UploadRow } from '../database/models/uploads.js';
+import { createUpload } from '../database/repositories/uploads.js';
 
 export const UPLOAD_KINDS = {
   AUDIO: 'audio',
@@ -59,11 +62,19 @@ export const isUploadKind = (value: unknown): value is UploadKind => typeof valu
 
 export const getUploadExtension = (kind: UploadKind, contentType: string): string | undefined => UPLOAD_KIND_CONFIGS[kind].extensions[contentType];
 
+export interface StoreUploadData {
+  data: Uint8Array;
+  extension: string;
+  kind: UploadKind;
+  mimeType: string;
+  username: string;
+}
+
 /**
- * Stores the file in the ComfyUI input directory under a random name, and returns the reference workflows load it with.
+ * Stores the file in the ComfyUI input directory and returns the reference workflows load it with.
  */
-export const uploadToComfyUi = async (data: Uint8Array, extension: string): Promise<string> => {
-  const result = await comfyui.uploadImage(data, `${randomUUID()}.${extension}`, { subfolder: UPLOAD_SUBFOLDER });
+const uploadToComfyUi = async (data: Uint8Array, filename: string): Promise<string> => {
+  const result = await comfyui.uploadImage(data, filename, { subfolder: UPLOAD_SUBFOLDER });
   if (result === false) {
     throw new Error('Could not upload the file to ComfyUI.');
   }
@@ -72,7 +83,31 @@ export const uploadToComfyUi = async (data: Uint8Array, extension: string): Prom
 };
 
 /**
- * Accepts only references returned by uploadToComfyUi for the given kind, so a client can't point a workflow at any other file.
+ * Records the upload for the user and stores the file in ComfyUI under a random name, in a transaction so the row is only kept
+ * if the file made it to ComfyUI. The row's comfy_filename is the reference workflows load the file with.
+ */
+export const storeUpload = async ({ username, kind, mimeType, extension, data }: StoreUploadData): Promise<UploadRow> => await database.tx(async (t) => {
+  const filename = `${randomUUID()}.${extension}`;
+  const upload = await createUpload({
+    username,
+    comfyFilename: `${UPLOAD_SUBFOLDER}/${filename}`,
+    mediaType: kind,
+    mimeType,
+    sizeBytes: data.byteLength,
+    originalFilename: null
+  }, t);
+
+  // ComfyUI renames files that already exist instead of overwriting them, which would leave the row pointing at another file.
+  const reference = await uploadToComfyUi(data, filename);
+  if (reference !== upload.comfy_filename) {
+    throw new Error(`ComfyUI stored the file as ${reference} instead of ${upload.comfy_filename}.`);
+  }
+
+  return upload;
+});
+
+/**
+ * Accepts only references stored by storeUpload for the given kind, so a client can't point a workflow at any other file.
  * The subfolder and extensions contain no regex special characters, so they need no escaping.
  */
 export const makeUploadReferenceSchema = (kind: UploadKind): z.ZodString => {
