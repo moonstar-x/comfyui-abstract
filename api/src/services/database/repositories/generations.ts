@@ -45,12 +45,12 @@ export interface CreateGenerationData {
 
 export interface FindGenerationsFilter {
   limit: number;
-  mediaType?: MediaType;
+  mediaType?: MediaType | undefined;
   offset: number;
   /**
    * Only returns the generations of this user when given, otherwise the generations of every user.
    */
-  username?: string;
+  username?: string | undefined;
 }
 
 export const toPublicGeneration = (generation: GenerationRow): PublicGeneration => ({

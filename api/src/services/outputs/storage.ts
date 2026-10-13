@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { PUBLIC_DIRECTORY } from '../../config/environment.js';
 
@@ -21,4 +21,18 @@ export const saveFileToPublic = async (folder: string, filename: string, data: U
   await writeFile(path.join(directory, safeFilename), data);
 
   return `${PUBLIC_ROUTE}/${encodeURIComponent(safeFolder)}/${encodeURIComponent(safeFilename)}`;
+};
+
+const isSafeSegment = (segment: string | undefined): segment is string => segment !== undefined && segment !== '' && segment !== '.' && segment !== '..' && path.basename(segment) === segment;
+
+/**
+ * Deletes a file previously saved with saveFileToPublic, given the URL path it is served at. Missing files are ignored.
+ */
+export const deleteFileFromPublic = async (urlPath: string): Promise<void> => {
+  const [folder, filename] = urlPath.split('/').slice(-2).map((segment) => decodeURIComponent(segment));
+  if (!isSafeSegment(folder) || !isSafeSegment(filename)) {
+    throw new Error(`Invalid public file path ${urlPath}.`);
+  }
+
+  await rm(path.join(PUBLIC_DIRECTORY, folder, filename), { force: true });
 };

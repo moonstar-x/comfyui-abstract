@@ -3,6 +3,7 @@ import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
 import { ErrorCodes } from '../app/http/errors/ErrorCodes.js';
 import { verifyToken } from '../services/auth/token.js';
+import type { TokenPayload } from '../services/auth/token.js';
 import { AuthenticatedClientMessageSchema } from './messages/client.js';
 import type { WSAuthenticatedClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
@@ -31,8 +32,8 @@ export class WebSocketMessenger {
       throw new WebSocketError('Malformed message received.');
     }
 
-    await WebSocketMessenger.authenticate(message.token);
-    const result = await this._handler.handle(message);
+    const user = await WebSocketMessenger.authenticate(message.token);
+    const result = await this._handler.handle(message, user);
     if (result !== null) {
       this.send(result);
     }
@@ -44,14 +45,14 @@ export class WebSocketMessenger {
     }
   }
 
-  private static async authenticate(token: string): Promise<void> {
+  private static async authenticate(token: string): Promise<TokenPayload> {
     if (token === '') {
       throw new WebSocketError('No authorization token was provided.', { code: ErrorCodes.SESSION_NOT_PROVIDED });
     }
 
     // Only the token itself is checked to avoid a database query per message, so a deleted user keeps access until the token expires.
     try {
-      await verifyToken(token);
+      return await verifyToken(token);
     } catch (error) {
       throw new WebSocketError('The provided token is invalid or has expired.', { code: ErrorCodes.SESSION_INVALID, cause: error });
     }

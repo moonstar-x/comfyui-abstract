@@ -39,6 +39,10 @@ export interface ConfiguredWorkflow {
    */
   params: Record<string, unknown>;
   workflow: ComfyUiWorkflow;
+  /**
+   * Identifier of the workflow implementation, as referenced by the config.
+   */
+  workflowId: string;
 }
 
 const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
@@ -156,6 +160,7 @@ export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParam
   const Implementation = getImplementation(config);
   return {
     workflow: new Implementation(),
+    workflowId: Implementation.id,
     params: { ...config.params.defaults, ...clientParams, ...config.serverParams }
   };
 };

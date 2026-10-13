@@ -7,6 +7,14 @@ import type { WorkflowField, WorkflowType } from '../../workflows/types.js';
  */
 export type WorkflowOutputKind = 'audio' | 'images';
 
+export interface WorkflowPrompt<TParams extends object = object> {
+  /**
+   * Params the prompt was built with, including the defaults the schema filled in such as random seeds.
+   */
+  params: TParams;
+  prompt: NodeData;
+}
+
 export abstract class ComfyUiWorkflow<TParams extends object = object> {
   public readonly outputKind: WorkflowOutputKind = 'images';
   /**
@@ -15,13 +23,13 @@ export abstract class ComfyUiWorkflow<TParams extends object = object> {
   public abstract readonly outputNodeId: string;
   protected abstract readonly schema: z.ZodType<TParams>;
 
-  public makePrompt(rawParams: unknown): NodeData {
+  public makePrompt(rawParams: unknown): WorkflowPrompt<TParams> {
     const result = this.schema.safeParse(rawParams);
     if (!result.success) {
       throw new Error(`Invalid workflow params: ${z.prettifyError(result.error)}`);
     }
 
-    return this.buildPrompt(result.data);
+    return { params: result.data, prompt: this.buildPrompt(result.data) };
   }
 
   protected abstract buildPrompt(params: TParams): NodeData;

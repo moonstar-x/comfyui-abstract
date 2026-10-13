@@ -1,9 +1,13 @@
 import { EventEmitter } from 'node:events';
 import path from 'node:path';
 import { logger } from '@moonstar-x/logger';
+import type { TokenPayload } from '../services/auth/token.js';
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
-import type { ComfyUiWorkflow } from '../services/comfyui/ComfyUiWorkflow.js';
+import type { ComfyUiWorkflow, WorkflowOutputKind } from '../services/comfyui/ComfyUiWorkflow.js';
+import { MEDIA_TYPES } from '../services/database/models/generations.js';
+import type { MediaType } from '../services/database/models/generations.js';
+import { createGeneration } from '../services/database/repositories/generations.js';
 import { saveFileToPublic } from '../services/outputs/storage.js';
 import type { Nullable } from '../utils/types.js';
 import { makeWorkflow } from '../workflows/factory.js';
@@ -20,16 +24,46 @@ export interface WebSocketMessageHandlerEvents {
 }
 
 interface TrackedRun {
+  createdAt: Date;
+  model: string;
   // Number of nodes in the queued prompt, which the progress is counted against.
   nodeCount: number;
+  params: Record<string, unknown>;
   promptId: string;
   type: WorkflowType;
+  username: string;
+  workflowId: string;
 }
+
+const OUTPUT_MEDIA_TYPES: Readonly<Record<WorkflowOutputKind, MediaType>> = {
+  images: MEDIA_TYPES.IMAGE,
+  audio: MEDIA_TYPES.AUDIO
+};
+
+/**
+ * Failing to save a generation only loses it from the history, so the error is logged instead of failing the run whose files are already saved.
+ */
+const saveGeneration = async (run: TrackedRun, result: { completedAt: Date; mediaType: MediaType; outputs: string[]; startedAt: Nullable<Date> }): Promise<void> => {
+  try {
+    await createGeneration({
+      username: run.username,
+      promptId: run.promptId,
+      workflowType: run.type,
+      workflowId: run.workflowId,
+      model: run.model,
+      params: run.params,
+      createdAt: run.createdAt,
+      ...result
+    });
+  } catch (error) {
+    logger.error(`Could not save the generation of workflow ${run.promptId} for user ${run.username}.`, error);
+  }
+};
 
 export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandlerEvents> {
   private _comfyUiSession: Nullable<ComfyUiClientSession> = null;
 
-  public async handle(message: WSClientMessage): Promise<Nullable<WSServerMessage>> {
+  public async handle(message: WSClientMessage, user: TokenPayload): Promise<Nullable<WSServerMessage>> {
     switch (message.type) {
       case 'comfyui_free_up_memory':
         return await this.handleFreeUpMemory();
@@ -38,7 +72,7 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       case 'get_status':
         return await this.handleGetStatus();
       case 'run_workflow':
-        return await this.handleRunWorkflow(message.payload);
+        return await this.handleRunWorkflow(message.payload, user);
     }
   }
 
@@ -82,11 +116,12 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     return { type: 'status', payload: { online: isOnlineState, usage } };
   }
 
-  private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload): Promise<WSServerMessage> {
+  private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload, { username }: TokenPayload): Promise<WSServerMessage> {
     const comfyui = this.safeGetComfyUiSession();
-    const { workflow, params: workflowParams } = makeWorkflow(request, params);
-    const prompt = workflow.makePrompt(workflowParams);
+    const { workflow, workflowId, params: workflowParams } = makeWorkflow(request, params);
+    const { prompt, params: resolvedParams } = workflow.makePrompt(workflowParams);
 
+    const createdAt = new Date();
     let promptId: string;
     try {
       promptId = await comfyui.queuePrompt(prompt);
@@ -94,7 +129,16 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       throw new WebSocketError('Could not queue the workflow in ComfyUI.', { cause: error });
     }
 
-    void this.trackWorkflowCompletion(comfyui, workflow, { promptId, type: request.type, nodeCount: Object.keys(prompt).length });
+    void this.trackWorkflowCompletion(comfyui, workflow, {
+      promptId,
+      type: request.type,
+      model: request.model,
+      workflowId,
+      username,
+      params: { ...resolvedParams },
+      createdAt,
+      nodeCount: Object.keys(prompt).length
+    });
     return { type: 'workflow_start', payload: { promptId } };
   }
 
@@ -106,8 +150,12 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     return this._comfyUiSession;
   }
 
-  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, { promptId, type, nodeCount }: TrackedRun): Promise<void> {
+  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, run: TrackedRun): Promise<void> {
+    const { promptId, type, nodeCount } = run;
+    // The first progress event is sent once ComfyUI picks the prompt from the queue, which marks the end of the wait in the queue.
+    let startedAt: Nullable<Date> = null;
     const stopProgress = comfyui.onPromptProgress(promptId, nodeCount, (progress) => {
+      startedAt ??= new Date();
       this.emit('message', { type: 'workflow_progress', payload: { promptId, ...progress } });
     });
 
@@ -116,6 +164,7 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the file with.
       const urls = await Promise.all(files.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
 
+      await saveGeneration(run, { mediaType: OUTPUT_MEDIA_TYPES[workflow.outputKind], outputs: urls, startedAt, completedAt: new Date() });
       this.emit('message', { type: 'workflow_complete', payload: { promptId, files: urls } });
     } catch (error) {
       logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
