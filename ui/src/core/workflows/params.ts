@@ -67,11 +67,48 @@ const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<W
   'lora' in value &&
   typeof value.lora === 'string';
 
-// Defaults come from the API config, so they're not guaranteed to match the field kind.
-const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
-  const { defaultValue } = field;
+/**
+ * Params of an earlier generation to start the form from, instead of the config defaults.
+ */
+export type WorkflowPrefill = Record<string, unknown>;
 
-  // Images can't come from the API config, they're always uploaded by the user.
+const isWorkflowPrefill = (value: unknown): value is WorkflowPrefill => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+interface WorkflowPrefillState {
+  prefill: { model: string; params: WorkflowPrefill };
+}
+
+/**
+ * The location state that opens the workflow page with the form filled from an earlier generation of the given model.
+ */
+export const makeWorkflowPrefillState = (model: string, params: WorkflowPrefill): WorkflowPrefillState => ({ prefill: { model, params } });
+
+/**
+ * Reads the prefill from the location state of the workflow page, as long as it was made for the given model.
+ */
+export const getWorkflowPrefill = (state: unknown, model: string): Nullable<WorkflowPrefill> => {
+  if (typeof state !== 'object' || state === null || !('prefill' in state)) {
+    return null;
+  }
+
+  const { prefill } = state;
+  if (typeof prefill !== 'object' || prefill === null || !('model' in prefill) || prefill.model !== model || !('params' in prefill)) {
+    return null;
+  }
+
+  const { params } = prefill;
+  return isWorkflowPrefill(params) ? params : null;
+};
+
+// A select option may have been removed from the config since the prefill was made.
+const isUsableInitialValue = (field: WorkflowField, value: unknown): boolean => field.kind !== 'select' || (typeof value === 'string' && field.options.includes(value));
+
+// Defaults come from the API config and prefills from earlier generations, so neither is guaranteed to match the field kind.
+const makeInitialFormValue = (field: WorkflowField, prefill: Nullable<WorkflowPrefill>): WorkflowFormValue => {
+  const prefillValue = prefill?.[field.key];
+  const defaultValue = prefillValue !== undefined && isUsableInitialValue(field, prefillValue) ? prefillValue : field.defaultValue;
+
+  // Images can't come from the API config or an earlier generation, they're always uploaded by the user.
   if (field.kind === 'image-list') {
     return [];
   }
@@ -93,7 +130,9 @@ const makeInitialFormValue = (field: WorkflowField): WorkflowFormValue => {
   return typeof defaultValue === 'string' || typeof defaultValue === 'number' ? String(defaultValue) : '';
 };
 
-export const makeInitialFormValues = (fields: readonly WorkflowField[]): WorkflowFormValues => Object.fromEntries(fields.map((field) => [field.key, makeInitialFormValue(field)]));
+export const makeInitialFormValues = (fields: readonly WorkflowField[], prefill: Nullable<WorkflowPrefill> = null): WorkflowFormValues => Object.fromEntries(
+  fields.map((field) => [field.key, makeInitialFormValue(field, prefill)])
+);
 
 const parseNumber = (field: NumberWorkflowField, raw: string): number | string => {
   const value = Number(raw);

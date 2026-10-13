@@ -1,12 +1,11 @@
+import { invalidateGenerationHistory } from '@components/history/hooks/useGenerations';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
-import { API_URL } from '@core/config/environment';
 import type { Nullable } from '@core/utils/types';
-import { getOutputKind } from '@core/workflows/outputs';
+import { getOutputKind, toOutputUrl } from '@core/workflows/outputs';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, use, useCallback, useEffect, useMemo, useState } from 'react';
 import type { Context, FC, ReactNode } from 'react';
-
-const toOutputUrl = (path: string): string => new URL(path, API_URL).href;
 
 export interface Generation {
   createdAt: number;
@@ -35,6 +34,7 @@ interface Props {
 
 export const GenerationSessionProvider: FC<Props> = ({ children }) => {
   const { messenger } = useAppWebSocket();
+  const queryClient = useQueryClient();
   // Newest first. Lives above the router so results survive page navigation, including runs that finish while away.
   const [generations, setGenerations] = useState<Generation[]>([]);
 
@@ -50,7 +50,9 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     };
 
     setGenerations((previous) => previous.some((item) => item.promptId === generation.promptId) ? previous : [generation, ...previous]);
-  }), [messenger]);
+    // The API stores the generation before sending the completion, so the history already has it.
+    void invalidateGenerationHistory(queryClient);
+  }), [messenger, queryClient]);
 
   const clear = useCallback(() => {
     setGenerations([]);

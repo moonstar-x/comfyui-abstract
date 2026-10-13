@@ -145,8 +145,24 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
   return { type, models };
 };
 
+const findWorkflowConfig = ({ type, model }: WorkflowRequestParams): undefined | WorkflowConfig => getConfig().workflows
+  .find((candidate) => candidate.type === type && candidate.alias === model);
+
+/**
+ * Leaves out the server params of a workflow, which clients must never see. Params of workflows no longer in the config are kept as they are,
+ * since there is no way to tell which of them were server params.
+ */
+export const omitServerParams = (request: WorkflowRequestParams, params: Record<string, unknown>): Record<string, unknown> => {
+  const config = findWorkflowConfig(request);
+  if (config === undefined) {
+    return params;
+  }
+
+  return Object.fromEntries(Object.entries(params).filter(([key]) => !Object.hasOwn(config.serverParams, key)));
+};
+
 export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParams: Record<string, unknown>): ConfiguredWorkflow => {
-  const config = getConfig().workflows.find((candidate) => candidate.type === type && candidate.alias === model);
+  const config = findWorkflowConfig({ type, model });
   if (config === undefined) {
     throw new BadRequestError(`There is no ${type} workflow with the model ${model}.`);
   }

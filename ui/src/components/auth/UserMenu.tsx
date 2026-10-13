@@ -1,6 +1,5 @@
 import { useAuth } from '@components/auth/AuthContext';
 import { useTheme } from '@components/theme/ThemeContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@components/ui/third-party/shadcn/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,28 +10,23 @@ import {
   DropdownMenuTrigger
 } from '@components/ui/third-party/shadcn/dropdown-menu';
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@components/ui/third-party/shadcn/sidebar';
+import { UserAvatar } from '@components/users/UserAvatar';
+import { DynamicRouteDefs } from '@core/router/routes';
+import { CURRENT_USER } from '@services/api/generations';
 import type { PublicUser } from '@services/auth/session';
 import { cn } from 'cn';
-import { ChevronsUpDown, LogOut, Moon, Sun } from 'lucide-react';
+import { ChevronsUpDown, History, LogOut, Moon, Sun } from 'lucide-react';
 import type { FC } from 'react';
+import { Link } from 'react-router';
 
 const TRIGGER_CLASSES = cn(
   'group-data-[collapsible=icon]:size-10! group-data-[collapsible=icon]:p-1!',
   'data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground'
 );
 
-const getInitials = (username: string): string => username.slice(0, 2).toUpperCase();
-
-const UserAvatar: FC<{ user: PublicUser }> = ({ user }) => (
-  <Avatar className="rounded-lg after:rounded-lg">
-    {user.pictureUrl !== null && <AvatarImage alt="" className="rounded-lg" src={user.pictureUrl} />}
-    <AvatarFallback className="rounded-lg">{getInitials(user.username)}</AvatarFallback>
-  </Avatar>
-);
-
 const UserIdentity: FC<{ user: PublicUser }> = ({ user }) => (
   <>
-    <UserAvatar user={user} />
+    <UserAvatar pictureUrl={user.pictureUrl} username={user.username} />
     <span className="grid flex-1 text-left text-sm leading-tight">
       <span className="truncate font-medium">{user.username}</span>
     </span>
@@ -66,6 +60,10 @@ export const UserMenu: FC = () => {
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
+          <DropdownMenuItem render={<Link to={DynamicRouteDefs.historyByUser(CURRENT_USER)} />}>
+            <History />
+            My Generations
+          </DropdownMenuItem>
           <DropdownMenuItem
             closeOnClick={false}
             onClick={() => {

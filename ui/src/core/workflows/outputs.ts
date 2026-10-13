@@ -1,3 +1,4 @@
+import { API_URL } from '@core/config/environment';
 import type { WorkflowType } from '@services/websocket/messages/client';
 
 export type WorkflowOutputKind = 'audio' | 'image';
@@ -23,3 +24,8 @@ export const getOutputKind = (url: string): WorkflowOutputKind => {
 
   return AUDIO_EXTENSIONS.has(extension) ? 'audio' : 'image';
 };
+
+/**
+ * The API returns output files as paths relative to itself.
+ */
+export const toOutputUrl = (path: string): string => new URL(path, API_URL).href;

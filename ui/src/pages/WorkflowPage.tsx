@@ -4,13 +4,13 @@ import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
 import { useWorkflowDefinition } from '@components/workflow/hooks/useWorkflowDefinition';
 import { WorkflowModelPicker } from '@components/workflow/WorkflowModelPicker';
 import { WorkflowParamsForm } from '@components/workflow/WorkflowParamsForm';
+import { WORKFLOW_MODEL_SEARCH_PARAM } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
 import { findWorkflowModel, isWorkflowType } from '@core/workflows/definitions';
+import { getWorkflowPrefill } from '@core/workflows/params';
 import type { WorkflowType } from '@services/websocket/messages/client';
 import type { FC, ReactNode } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
-
-const MODEL_SEARCH_PARAM = 'model';
 
 const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
   <div className="flex min-h-90 flex-1 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 text-sm text-muted-foreground">
@@ -19,7 +19,10 @@ const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
 );
 
 const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
+  // Location state can hold anything, so it is only read through getWorkflowPrefill.
+  const state: unknown = location.state;
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: definition, error, isPending } = useWorkflowDefinition(type);
   const runner = useRunWorkflow();
@@ -28,16 +31,16 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const models = definition?.models ?? [];
   const model = definition === undefined
     ? null
-    : findWorkflowModel(definition, searchParams.get(MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
+    : findWorkflowModel(definition, searchParams.get(WORKFLOW_MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
 
   const handleModelChange = (next: Nullable<string>): void => {
     runner.reset();
     setSearchParams((previous) => {
       const params = new URLSearchParams(previous);
       if (next === null) {
-        params.delete(MODEL_SEARCH_PARAM);
+        params.delete(WORKFLOW_MODEL_SEARCH_PARAM);
       } else {
-        params.set(MODEL_SEARCH_PARAM, next);
+        params.set(WORKFLOW_MODEL_SEARCH_PARAM, next);
       }
 
       return params;
@@ -58,8 +61,8 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
       return <Placeholder>There are no models configured for this workflow</Placeholder>;
     }
 
-    // Keyed by model so switching models starts from that model's defaults.
-    return <WorkflowParamsForm key={model.alias} model={model} runner={runner} type={type} />;
+    // Keyed by model so switching models starts from that model's defaults. Switching also drops the location state, and with it the prefill.
+    return <WorkflowParamsForm key={model.alias} model={model} prefill={getWorkflowPrefill(state, model.alias)} runner={runner} type={type} />;
   };
 
   return (

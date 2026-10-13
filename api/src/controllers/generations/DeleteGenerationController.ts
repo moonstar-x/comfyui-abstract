@@ -6,8 +6,8 @@ import { ResourceNotFoundError } from '../../app/http/errors/ResourceNotFoundErr
 import { ResponseBuilder } from '../../app/http/ResponseBuilder.js';
 import { requireAuth } from '../../middleware/auth.js';
 import type { AuthenticatedResponse } from '../../middleware/auth.js';
-import { deleteGeneration, findGenerationById, toPublicGeneration } from '../../services/database/repositories/generations.js';
-import { deleteGenerationOutputs } from '../../services/generations/history.js';
+import { deleteGeneration, findGenerationById } from '../../services/database/repositories/generations.js';
+import { deleteGenerationOutputs, toHistoryGeneration } from '../../services/generations/history.js';
 import { GenerationIdSchema } from '../../services/generations/schemas.js';
 
 /**
@@ -37,6 +37,6 @@ export default class DeleteGenerationController extends DeleteController {
     }
 
     await deleteGenerationOutputs(deletedGeneration);
-    return new ResponseBuilder().withStatus(StatusCodes.OK).withData(toPublicGeneration(deletedGeneration));
+    return new ResponseBuilder().withStatus(StatusCodes.OK).withData(toHistoryGeneration(deletedGeneration));
   }
 }

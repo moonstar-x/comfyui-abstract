@@ -5,6 +5,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Keeps an element scrollable while hiding its scrollbar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @theme inline {
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --color-background: var(--background);
@@ -163,6 +172,10 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+  }
+  /* The page still scrolls, it just doesn't show a scrollbar. */
+  html {
+    @apply scrollbar-none;
   }
   body {
     @apply bg-background font-sans text-foreground antialiased;

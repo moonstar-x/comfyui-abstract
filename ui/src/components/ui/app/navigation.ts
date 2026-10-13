@@ -1,6 +1,6 @@
-import { DynamicRouteDefs } from '@core/router/routes';
+import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { AudioLines, ImagePlus, Mic, WandSparkles } from 'lucide-react';
+import { AudioLines, ImagePlus, Mic, Newspaper, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -41,6 +41,9 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
   }
 ];
 
+// Shown first in the sidebar, outside of any section.
+export const FEED_NAV_ITEM: NavItem = { category: 'general', icon: Newspaper, path: RouteDefs.feed, title: 'Feed' };
+
 export const CATEGORY_TILE_CLASSES: Record<NavCategory, string> = {
   audio: 'bg-tile-audio text-tile-audio-foreground',
   general: 'bg-tile-general text-tile-general-foreground',
@@ -49,6 +52,14 @@ export const CATEGORY_TILE_CLASSES: Record<NavCategory, string> = {
 };
 
 export const isNavItemActive = (item: NavItem, pathname: string): boolean => matchPath({ end: true, path: item.path }, pathname) !== null;
+
+/**
+ * The navigation entry of a workflow type, used to label generations with the workflow that made them.
+ */
+export const findWorkflowNavItem = (type: string): Nullable<NavItem> => {
+  const path = DynamicRouteDefs.workflowById(type);
+  return WORKFLOW_SECTIONS.flatMap((section) => section.items).find((item) => item.path === path) ?? null;
+};
 
 export const findNavMatch = (pathname: string): Nullable<NavMatch> => {
   for (const section of WORKFLOW_SECTIONS) {

@@ -94,15 +94,25 @@ const send = async (path: string, init: RequestInit): Promise<Response> => {
   }
 };
 
+export interface ApiResponse {
+  data: unknown;
+  meta: Record<string, unknown>;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
 /**
- * Sends a request to the API and returns the data field of the response body.
+ * Sends a request to the API and returns the data and meta fields of the response body.
  * Authenticated requests clear the stored session when the API rejects the token, which sends the user back to the login page.
  */
-export const apiRequest = async (path: string, options: ApiRequestOptions = {}): Promise<unknown> => {
+export const apiRequestWithMeta = async (path: string, options: ApiRequestOptions = {}): Promise<ApiResponse> => {
   const response = await send(path, buildRequestInit(options));
   const body = await readJson(response);
   if (response.ok) {
-    return typeof body === 'object' && body !== null && 'data' in body ? body.data : null;
+    return {
+      data: isRecord(body) ? body['data'] ?? null : null,
+      meta: isRecord(body) && isRecord(body['meta']) ? body['meta'] : {}
+    };
   }
 
   const { code, message } = getErrorPayload(body);
@@ -114,4 +124,12 @@ export const apiRequest = async (path: string, options: ApiRequestOptions = {}):
     code: code ?? ApiErrorCodes.UNKNOWN_ERROR,
     status: response.status
   });
+};
+
+/**
+ * Sends a request to the API and returns the data field of the response body.
+ */
+export const apiRequest = async (path: string, options: ApiRequestOptions = {}): Promise<unknown> => {
+  const { data } = await apiRequestWithMeta(path, options);
+  return data;
 };

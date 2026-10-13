@@ -12,7 +12,7 @@ import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { getWorkflowOutputKind } from '@core/workflows/outputs';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
-import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '@core/workflows/params';
+import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues, WorkflowPrefill } from '@core/workflows/params';
 import { uploadWorkflowFiles } from '@core/workflows/uploads';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
@@ -57,16 +57,20 @@ const getSubmitLabel = (isUploading: boolean, isSubmitting: boolean, isRunning: 
 
 export interface WorkflowParamsFormProps {
   model: WorkflowModelDefinition;
+  /**
+   * Starts the form from the params of an earlier generation. Resetting still goes back to the config defaults.
+   */
+  prefill?: Nullable<WorkflowPrefill>;
   runner: UseRunWorkflowReturn;
   type: WorkflowType;
 }
 
-export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, runner }) => {
+export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, prefill = null, runner }) => {
   const { isConnected } = useAppWebSocket();
   const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
   const outputKind = getWorkflowOutputKind(type);
   const { current, previous: history, generations } = useGenerationSession(outputKind);
-  const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
+  const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields, prefill));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
   const [isUploading, setIsUploading] = useState(false);
