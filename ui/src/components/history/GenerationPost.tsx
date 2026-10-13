@@ -51,23 +51,24 @@ const PostDescription: FC<{ prompts: GenerationPrompt[] }> = ({ prompts }) => (
   </div>
 );
 
-const ParamBadges: FC<{ settings: Array<[string, unknown]> }> = ({ settings }) => (
-  <ul aria-label="Parameters" className="flex flex-wrap gap-1.5">
-    {settings.map(([key, value]) => {
-      const label = formatParamLabel(key);
-      const text = formatParamValue(value);
+const ParamBadges: FC<{ settings: Array<[string, unknown]> }> = ({ settings }) => {
+  const badges = settings
+    .map(([key, value]) => ({ key, label: formatParamLabel(key), text: formatParamValue(value) }))
+    .toSorted((a, b) => a.label.localeCompare(b.label));
 
-      return (
+  return (
+    <ul aria-label="Parameters" className="flex flex-wrap gap-1.5">
+      {badges.map(({ key, label, text }) => (
         <li className="min-w-0 max-w-full" key={key}>
           <Badge className="max-w-full" title={`${label}: ${text}`} variant="secondary">
             <span className="text-muted-foreground">{label}</span>
             <span className="min-w-0 truncate">{text}</span>
           </Badge>
         </li>
-      );
-    })}
-  </ul>
-);
+      ))}
+    </ul>
+  );
+};
 
 interface ImageMosaicProps {
   onOpenImage: (images: string[], index: number) => void;
@@ -203,7 +204,7 @@ export interface GenerationPostProps {
  */
 export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, generation, onDeleted, onOpenImage }) => {
   const profilePath = DynamicRouteDefs.historyByUser(generation.username);
-  const { prompts, settings } = splitGenerationParams(generation.params);
+  const { prompts, settings } = splitGenerationParams(generation.workflowType, generation.params);
   const outputUrls = generation.outputs.map((output) => toOutputUrl(output));
 
   return (

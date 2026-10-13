@@ -174,6 +174,14 @@ const MAIN_PROMPT_KEYS: readonly string[] = ['positivePrompt', 'captionPrompt', 
 
 const isPromptParam = (key: string): boolean => key.toLowerCase().includes('prompt');
 
+// Upload references that mean nothing as a badge, by workflow type. Keep in sync with the workflow fields of the API.
+const HIDDEN_PARAM_KEYS: Readonly<Record<string, readonly string[]>> = {
+  'cover-music': ['song'],
+  'edit-image': ['images']
+};
+
+const isHiddenParam = (workflowType: string, key: string): boolean => HIDDEN_PARAM_KEYS[workflowType]?.includes(key) ?? false;
+
 const isEmptyParam = (value: unknown): boolean => value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
 
 const getPromptRank = (key: string): number => {
@@ -195,14 +203,14 @@ export interface GenerationPostParams {
 }
 
 /**
- * Splits the params of a generation into the prompts that describe a feed post and the settings shown as badges, leaving out empty ones.
+ * Splits the params of a generation into the prompts that describe a feed post and the settings shown as badges, leaving out empty and hidden ones.
  */
-export const splitGenerationParams = (params: Record<string, unknown>): GenerationPostParams => {
+export const splitGenerationParams = (workflowType: string, params: Record<string, unknown>): GenerationPostParams => {
   const prompts: GenerationPrompt[] = [];
   const settings: Array<[string, unknown]> = [];
 
   for (const [key, value] of Object.entries(params)) {
-    if (isEmptyParam(value)) {
+    if (isEmptyParam(value) || isHiddenParam(workflowType, key)) {
       continue;
     }
 
