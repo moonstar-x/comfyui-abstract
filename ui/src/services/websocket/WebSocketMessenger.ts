@@ -6,7 +6,7 @@ export type WSSendFunction = (message: string) => void;
 export type WSMessageListener<TMessage extends WSServerMessage = WSServerMessage> = (message: TMessage) => void;
 export type WSUnsubscribe = () => void;
 
-const SERVER_MESSAGE_TYPES: ReadonlySet<string> = new Set<WSServerMessageType>(['error', 'queue', 'session', 'status', 'workflow_complete', 'workflow_error', 'workflow_progress', 'workflow_start']);
+const SERVER_MESSAGE_TYPES: ReadonlySet<string> = new Set<WSServerMessageType>(['comfyui_memory_freed', 'error', 'queue', 'session', 'status', 'workflow_complete', 'workflow_error', 'workflow_progress', 'workflow_start']);
 
 const isMessageOfType = <TType extends WSServerMessageType>(message: WSServerMessage, type: TType): message is WSServerMessageOfType<TType> => message.type === type;
 
