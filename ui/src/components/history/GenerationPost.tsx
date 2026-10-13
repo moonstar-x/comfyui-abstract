@@ -180,7 +180,7 @@ export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, genera
         </Link>
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex min-w-0 items-baseline gap-1.5 text-sm">
-            <Link className="truncate font-semibold hover:underline" to={profilePath}>{generation.username}</Link>
+            <Link className="truncate font-semibold hover:underline" to={profilePath}>{`@${generation.username}`}</Link>
             <span aria-hidden="true" className="text-muted-foreground">·</span>
             <time className="shrink-0 text-muted-foreground" dateTime={generation.createdAt} title={formatDateTime(generation.createdAt)}>
               {formatRelativeTime(generation.createdAt)}
