@@ -222,90 +222,90 @@
   },
   "30": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 1"
     }
   },
   "31": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 2"
     }
   },
   "32": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 3"
     }
   },
   "33": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 4"
     }
   },
   "34": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 5"
     }
   },
   "35": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 6"
     }
   },
   "36": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 7"
     }
   },
   "37": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 8"
     }
   },
   "38": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 9"
     }
   },
   "39": {
     "inputs": {
-      "base64": ""
+      "image": ""
     },
-    "class_type": "SimpleUtilsBase64ToImage",
+    "class_type": "LoadImage",
     "_meta": {
       "title": "Input > Image 10"
     }

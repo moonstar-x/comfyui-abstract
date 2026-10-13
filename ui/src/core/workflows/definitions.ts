@@ -50,12 +50,16 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
 
 export interface ImageListWorkflowField extends BaseWorkflowField {
   kind: 'image-list';
+  // Maximum size of each file, in bytes.
+  maxBytes: number;
   maxImages: number;
 }
 
 // A single audio file uploaded by the user.
 export interface AudioWorkflowField extends BaseWorkflowField {
   kind: 'audio';
+  // Maximum size of the file, in bytes.
+  maxBytes: number;
 }
 
 export type WorkflowField =

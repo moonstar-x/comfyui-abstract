@@ -4,6 +4,8 @@ declare namespace NodeJS {
     ENABLE_SIGNUP?: string;
     JWT_EXPIRATION?: string;
     JWT_SECRET?: string;
+    MAX_AUDIO_UPLOAD_MB?: string;
+    MAX_IMAGE_UPLOAD_MB?: string;
     PORT?: string;
 
     POSTGRES_DATABASE?: string;

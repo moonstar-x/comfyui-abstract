@@ -8,6 +8,8 @@ import { WebSocketMessageHandler } from './WebSocketMessageHandler.js';
 import { WebSocketMessenger } from './WebSocketMessenger.js';
 
 const WEBSOCKET_PATH = '/ws';
+// Messages only carry params and upload references, files go through POST /uploads, so anything bigger is rejected before it's buffered.
+const MAX_MESSAGE_BYTES = 1024 * 1024;
 
 export interface WebSocketServerOptions {
   heartbeat: WebSocketHeartbeat;
@@ -45,7 +47,7 @@ export class WebSocketServer {
   }
 
   public static create(httpServer: HttpServer): WebSocketServer {
-    const wss = new NodeWebSocketServer({ server: httpServer, path: WEBSOCKET_PATH });
+    const wss = new NodeWebSocketServer({ server: httpServer, path: WEBSOCKET_PATH, maxPayload: MAX_MESSAGE_BYTES });
     const heartbeat = new WebSocketHeartbeat(wss);
 
     return new WebSocketServer(wss, { heartbeat });

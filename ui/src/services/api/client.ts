@@ -5,10 +5,12 @@ import { getSession, setSession } from '@services/auth/session';
 // Keep in sync with api/src/app/http/errors/ErrorCodes.ts.
 export const ApiErrorCodes = {
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   SESSION_INVALID: 'SESSION_INVALID',
   SESSION_NOT_PROVIDED: 'SESSION_NOT_PROVIDED',
   SIGNUP_DISABLED: 'SIGNUP_DISABLED',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+  UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
   USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
   USERNAME_RESERVED: 'USERNAME_RESERVED'
 } as const;
@@ -57,15 +59,21 @@ const readJson = async (response: Response): Promise<unknown> => {
 };
 
 export interface ApiRequestOptions {
+  // Sent as JSON.
   body?: unknown;
+  // Sent as the raw body with its own content type, takes precedence over body.
+  file?: Blob;
   isAuthenticated?: boolean;
   method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
 }
 
-const buildRequestInit = ({ body, isAuthenticated = false, method = 'GET' }: ApiRequestOptions): RequestInit => {
+const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET' }: ApiRequestOptions): RequestInit => {
   const headers = new Headers();
   const init: RequestInit = { method, headers };
-  if (body !== undefined) {
+  if (file !== undefined) {
+    headers.set('Content-Type', file.type);
+    init.body = file;
+  } else if (body !== undefined) {
     headers.set('Content-Type', 'application/json');
     init.body = JSON.stringify(body);
   }

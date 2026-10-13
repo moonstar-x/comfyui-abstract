@@ -1,4 +1,3 @@
-import { getDataUrlBase64 } from '@core/utils/files';
 import type { Nullable } from '@core/utils/types';
 import type { AudioWorkflowField, ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
 
@@ -10,19 +9,23 @@ export interface LoraFormEntry {
   strength: string;
 }
 
+// Uploaded when the workflow runs, see uploadWorkflowFiles.
 export interface ImageFormEntry {
+  file: File;
   // Only used as a stable React key, never sent to the API.
   id: number;
   name: string;
-  // Data URL of the file, used for the preview. Only its base64 part is sent to the API.
+  // Data URL of the file, only used for the preview.
   url: string;
 }
 
+// Uploaded when the workflow runs, see uploadWorkflowFiles.
 export interface AudioFormEntry {
+  file: File;
   // Only used as a stable React key, never sent to the API.
   id: number;
   name: string;
-  // Data URL of the file, used for the preview. Only its base64 part is sent to the API.
+  // Data URL of the file, only used for the preview.
   url: string;
 }
 
@@ -49,9 +52,9 @@ const makeFormEntryId = (): number => {
 
 export const makeLoraFormEntry = (lora = '', strength = DEFAULT_LORA_STRENGTH): LoraFormEntry => ({ id: makeFormEntryId(), lora, strength: strength.toString() });
 
-export const makeImageFormEntry = (name: string, url: string): ImageFormEntry => ({ id: makeFormEntryId(), name, url });
+export const makeImageFormEntry = (file: File, url: string): ImageFormEntry => ({ id: makeFormEntryId(), name: file.name, file, url });
 
-export const makeAudioFormEntry = (name: string, url: string): AudioFormEntry => ({ id: makeFormEntryId(), name, url });
+export const makeAudioFormEntry = (file: File, url: string): AudioFormEntry => ({ id: makeFormEntryId(), name: file.name, file, url });
 
 export const getLoraFormEntries = (value: WorkflowFormValue): LoraFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'lora' in entry) : [];
 
@@ -141,7 +144,7 @@ const parseLoras = (field: LoraListWorkflowField, entries: readonly LoraFormEntr
   return loras;
 };
 
-const parseImages = (field: ImageListWorkflowField, entries: readonly ImageFormEntry[]): string | string[] => {
+const parseImages = (field: ImageListWorkflowField, entries: readonly ImageFormEntry[]): File[] | string => {
   if (field.required === true && entries.length === 0) {
     return `${field.label} requires at least one image.`;
   }
@@ -150,7 +153,7 @@ const parseImages = (field: ImageListWorkflowField, entries: readonly ImageFormE
     return `${field.label} accepts at most ${field.maxImages.toString()} images.`;
   }
 
-  return entries.map(({ url }) => getDataUrlBase64(url));
+  return entries.map(({ file }) => file);
 };
 
 const parseAudio = (field: AudioWorkflowField, entry: Nullable<AudioFormEntry>): ParsedFieldResult => {
@@ -158,7 +161,7 @@ const parseAudio = (field: AudioWorkflowField, entry: Nullable<AudioFormEntry>):
     return field.required === true ? { error: `${field.label} is required.` } : { value: undefined };
   }
 
-  return { value: getDataUrlBase64(entry.url) };
+  return { value: entry.file };
 };
 
 const toParsedFieldResult = (result: string | unknown[]): ParsedFieldResult => typeof result === 'string' ? { error: result } : { value: result };
@@ -183,6 +186,7 @@ const parseUploadField = (field: UploadWorkflowField, value: WorkflowFormValue):
 
 /**
  * Converts the raw form values into workflow params. Empty optional fields are left out so the API applies its own defaults.
+ * Audio and image fields hold the selected files, which uploadWorkflowFiles replaces with their upload references.
  */
 export const parseWorkflowParams = (fields: readonly WorkflowField[], values: WorkflowFormValues): ParsedWorkflowParams => {
   const params: Record<string, unknown> = {};

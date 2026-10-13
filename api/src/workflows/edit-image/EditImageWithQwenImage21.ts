@@ -3,6 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
+import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
 import prompt from '../json/edit-image-qwen-image-2_1.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
@@ -12,7 +13,7 @@ import { IMAGE_EDIT_FIELDS, makeImagesField } from './fields.js';
 const TEXT_ENCODER_NODE_ID = '9';
 const IMAGE_INPUT_PREFIX = 'images.image_';
 
-// Base64 image nodes, linked in order to the images.image_N inputs of the text encoder.
+// LoadImage nodes, linked in order to the images.image_N inputs of the text encoder.
 const IMAGE_NODE_IDS = ['30', '31', '32', '33', '34', '35', '36', '37', '38', '39'] as const;
 
 export interface EditImageWithQwenImage21Params {
@@ -33,7 +34,7 @@ export interface EditImageWithQwenImage21Params {
 const EditImageWithQwenImage21ParamsSchema: z.ZodType<EditImageWithQwenImage21Params> = z.object({
   cfg: z.number().positive().default(prompt['15'].inputs.value),
   clip: z.string().min(1).default(prompt['5'].inputs.clip_name),
-  images: z.array(z.base64()).max(IMAGE_NODE_IDS.length),
+  images: z.array(makeUploadReferenceSchema(UPLOAD_KINDS.IMAGE)).max(IMAGE_NODE_IDS.length),
   model: z.string().min(1).default(prompt['4'].inputs.unet_name),
   negativePrompt: z.string().default(prompt['12'].inputs.value),
   positivePrompt: z.string().min(1),
@@ -90,7 +91,7 @@ export default class EditImageWithQwenImage21 extends ComfyUiWorkflow<EditImageW
       const image = params.images[index];
       const imageNode = workflow[nodeId];
       if (image !== undefined && imageNode !== undefined) {
-        imageNode.inputs['base64'] = image;
+        imageNode.inputs['image'] = image;
         continue;
       }
 

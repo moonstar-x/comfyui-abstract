@@ -1,6 +1,6 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
-import { readAsDataUrl } from '@core/utils/files';
-import type { Optional } from '@core/utils/types';
+import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
+import type { Nullable, Optional } from '@core/utils/types';
 import type { ImageListWorkflowField } from '@core/workflows/definitions';
 import { makeImageFormEntry } from '@core/workflows/params';
 import type { ImageFormEntry } from '@core/workflows/params';
@@ -10,7 +10,7 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from 'cn';
 import { ImagePlus, X } from 'lucide-react';
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { FC } from 'react';
 
 export interface WorkflowImageListInputProps {
@@ -73,9 +73,12 @@ const SortableImage: FC<SortableImageProps> = ({ entry, disabled, onOpen, onRemo
 export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field, value, error, disabled, onChange, onOpen }) => {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set when some of the selected files are rejected, the rest are still added.
+  const [selectionError, setSelectionError] = useState<Nullable<string>>(null);
   const hintId = `${id}-hint`;
-  const hint = error ?? field.description ?? `Up to ${field.maxImages.toString()} images.`;
-  const isInvalid = error !== undefined;
+  const shownError = selectionError ?? error;
+  const hint = shownError ?? field.description ?? `Up to ${field.maxImages.toString()} images, ${formatMegabytes(field.maxBytes)} each.`;
+  const isInvalid = shownError !== undefined;
   const isFull = value.length >= field.maxImages;
   const sensors = useSensors(
     // A small distance keeps clicks on the image opening the preview.
@@ -85,20 +88,27 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Files beyond the limit are dropped, and anything that isn't an image is ignored.
+  // Files beyond the limit are dropped, files that are too large are rejected, and anything that isn't an image is ignored.
   const handleFiles = async (files: Iterable<File>): Promise<void> => {
-    const images = [...files]
-      .filter((file) => file.type.startsWith('image/'))
+    const candidates = [...files].filter((file) => file.type.startsWith('image/'));
+    const tooLarge = candidates.filter((file) => file.size > field.maxBytes);
+    const images = candidates
+      .filter((file) => file.size <= field.maxBytes)
       .slice(0, field.maxImages - value.length);
+
+    setSelectionError(tooLarge.length > 0
+      ? `${tooLarge.map((file) => file.name).join(', ')} ${tooLarge.length === 1 ? 'is' : 'are'} too large. Each image must be at most ${formatMegabytes(field.maxBytes)}.`
+      : null);
     if (images.length === 0) {
       return;
     }
 
-    const entries = await Promise.all(images.map(async (file) => makeImageFormEntry(file.name, await readAsDataUrl(file))));
+    const entries = await Promise.all(images.map(async (file) => makeImageFormEntry(file, await readAsDataUrl(file))));
     onChange(field.key, [...value, ...entries]);
   };
 
   const handleRemove = (index: number): void => {
+    setSelectionError(null);
     onChange(field.key, value.filter((_entry, entryIndex) => entryIndex !== index));
   };
 

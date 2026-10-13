@@ -1,3 +1,4 @@
+import { UPLOAD_KIND_CONFIGS } from '../../services/uploads/uploads.js';
 import { makeSharedMusicFields, STYLE_PROMPT_FIELD } from '../generate-music/fields.js';
 import type { SharedMusicParam } from '../generate-music/fields.js';
 import type { WorkflowField } from '../types.js';
@@ -8,7 +9,7 @@ export const makeYuE2CoverFields = (maxDuration: number): Readonly<Record<YuE2Co
   const { lyricsPrompt, ...rest } = makeSharedMusicFields(maxDuration);
 
   return {
-    song: { kind: 'audio', label: 'Song', required: true, description: 'The song whose melody is covered.' },
+    song: { kind: 'audio', label: 'Song', required: true, maxBytes: UPLOAD_KIND_CONFIGS.audio.maxBytes, description: 'The song whose melody is covered.' },
     stylePrompt: STYLE_PROMPT_FIELD,
     lyricsPrompt,
     ...rest,

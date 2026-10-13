@@ -1,3 +1,4 @@
+import { UPLOAD_KIND_CONFIGS } from '../../services/uploads/uploads.js';
 import { TEXT_TO_IMAGE_FIELDS } from '../generate-image/fields.js';
 import type { ImageListWorkflowField, WorkflowField } from '../types.js';
 
@@ -10,4 +11,4 @@ export const IMAGE_EDIT_FIELDS: Readonly<Record<ImageEditParam, WorkflowField>> 
   positivePrompt: { kind: 'text', label: 'Prompt', multiline: true, required: true, placeholder: 'Describe the changes you want to make…' }
 };
 
-export const makeImagesField = (maxImages: number): ImageListWorkflowField => ({ kind: 'image-list', label: 'Images', required: true, maxImages });
+export const makeImagesField = (maxImages: number): ImageListWorkflowField => ({ kind: 'image-list', label: 'Images', required: true, maxImages, maxBytes: UPLOAD_KIND_CONFIGS.image.maxBytes });

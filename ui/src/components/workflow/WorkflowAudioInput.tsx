@@ -1,13 +1,13 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
 import { Button } from '@components/ui/third-party/shadcn/button';
-import { readAsDataUrl } from '@core/utils/files';
+import { formatMegabytes, readAsDataUrl } from '@core/utils/files';
 import type { Nullable, Optional } from '@core/utils/types';
 import type { AudioWorkflowField } from '@core/workflows/definitions';
 import { makeAudioFormEntry } from '@core/workflows/params';
 import type { AudioFormEntry } from '@core/workflows/params';
 import { cn } from 'cn';
 import { FileAudio, Upload, X } from 'lucide-react';
-import { useId, useRef } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { FC } from 'react';
 
 export interface WorkflowAudioInputProps {
@@ -21,9 +21,12 @@ export interface WorkflowAudioInputProps {
 export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, error, disabled, onChange }) => {
   const id = useId();
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set when the selected file is rejected, which keeps the previous value.
+  const [selectionError, setSelectionError] = useState<Nullable<string>>(null);
   const hintId = `${id}-hint`;
-  const hint = error ?? field.description;
-  const isInvalid = error !== undefined;
+  const shownError = selectionError ?? error;
+  const hint = shownError ?? field.description ?? `Up to ${formatMegabytes(field.maxBytes)}.`;
+  const isInvalid = shownError !== undefined;
 
   // Anything that isn't an audio file is ignored.
   const handleFile = async (file: Optional<File>): Promise<void> => {
@@ -31,11 +34,17 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
       return;
     }
 
-    onChange(field.key, makeAudioFormEntry(file.name, await readAsDataUrl(file)));
+    if (file.size > field.maxBytes) {
+      setSelectionError(`${file.name} is too large. ${field.label} must be at most ${formatMegabytes(field.maxBytes)}.`);
+      return;
+    }
+
+    setSelectionError(null);
+    onChange(field.key, makeAudioFormEntry(file, await readAsDataUrl(file)));
   };
 
   return (
-    <fieldset aria-describedby={hint === undefined ? undefined : hintId} className="col-span-full flex min-w-0 flex-col gap-2">
+    <fieldset aria-describedby={hintId} className="col-span-full flex min-w-0 flex-col gap-2">
       <legend className="mb-2 text-sm leading-none font-medium select-none">
         {field.label}
         {field.required === true && <span aria-hidden="true" className="text-destructive">*</span>}
@@ -76,6 +85,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                     type="button"
                     variant="ghost"
                     onClick={() => {
+                      setSelectionError(null);
                       onChange(field.key, null);
                     }}
                   >
@@ -104,9 +114,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
         }}
       />
 
-      {hint !== undefined && (
-        <p className={isInvalid ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} id={hintId}>{hint}</p>
-      )}
+      <p className={isInvalid ? 'text-xs text-destructive' : 'text-xs text-muted-foreground'} id={hintId}>{hint}</p>
     </fieldset>
   );
 };

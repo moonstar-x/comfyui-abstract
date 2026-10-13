@@ -13,5 +13,4 @@ export const readAsDataUrl = async (file: File): Promise<string> => await new Pr
   reader.readAsDataURL(file);
 });
 
-// The API expects plain base64, without the data URL prefix.
-export const getDataUrlBase64 = (url: string): string => url.slice(url.indexOf(',') + 1);
+export const formatMegabytes = (bytes: number): string => `${(bytes / 1024 / 1024).toString()} MB`;

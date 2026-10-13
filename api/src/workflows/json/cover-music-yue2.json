@@ -197,9 +197,9 @@
   },
   "58": {
     "inputs": {
-      "base64": ""
+      "audio": ""
     },
-    "class_type": "SimpleUtilsBase64ToAudio",
+    "class_type": "LoadAudio",
     "_meta": {
       "title": "Input > Song"
     }

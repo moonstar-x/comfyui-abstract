@@ -13,6 +13,7 @@ import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/def
 import { getWorkflowOutputKind } from '@core/workflows/outputs';
 import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues } from '@core/workflows/params';
+import { uploadWorkflowFiles } from '@core/workflows/uploads';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
@@ -26,15 +27,32 @@ const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '�
 
 interface ResultPlaceholderContentProps {
   isSubmitting: boolean;
+  isUploading: boolean;
   promptId: Nullable<string>;
 }
 
-const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, promptId }) => {
+const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, isUploading, promptId }) => {
   if (promptId !== null) {
     return <WorkflowRunStatus promptId={promptId} />;
   }
 
+  if (isUploading) {
+    return 'Uploading files…';
+  }
+
   return isSubmitting ? 'Queueing…' : 'Run the workflow to see the result here';
+};
+
+const getSubmitLabel = (isUploading: boolean, isSubmitting: boolean, isRunning: boolean): string => {
+  if (isUploading) {
+    return 'Uploading…';
+  }
+
+  if (isSubmitting) {
+    return 'Queueing…';
+  }
+
+  return isRunning ? 'Generating…' : 'Run Workflow';
 };
 
 export interface WorkflowParamsFormProps {
@@ -51,8 +69,9 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
+  const [isUploading, setIsUploading] = useState(false);
   // The form stays locked from submission until the run settles, not just until it is queued.
-  const isBusy = isSubmitting || isRunning;
+  const isBusy = isUploading || isSubmitting || isRunning;
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -75,17 +94,34 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
     reset();
   };
 
-  const handleSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
-    event.preventDefault();
-
+  // Files go through the HTTP API first, so the run message only carries their references.
+  const submit = async (): Promise<void> => {
     const parsed = parseWorkflowParams(model.fields, values);
     setErrors(parsed.errors);
     if (Object.keys(parsed.errors).length > 0) {
       return;
     }
 
-    const payload: RunWorkflowPayload = { type, model: model.alias, params: parsed.params };
+    setIsUploading(true);
+    let uploaded;
+    try {
+      uploaded = await uploadWorkflowFiles(model.fields, parsed.params);
+    } finally {
+      setIsUploading(false);
+    }
+
+    setErrors(uploaded.errors);
+    if (Object.keys(uploaded.errors).length > 0) {
+      return;
+    }
+
+    const payload: RunWorkflowPayload = { type, model: model.alias, params: uploaded.params };
     run(payload);
+  };
+
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    void submit();
   };
 
   // Cmd/Ctrl + Enter submits from any field, including multiline ones where Enter inserts a newline.
@@ -139,7 +175,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
         <div className="flex flex-wrap items-center gap-2">
           <Button disabled={!isConnected || isBusy} size="lg" type="submit">
             <Play data-icon="inline-start" />
-            {isSubmitting ? 'Queueing…' : (isRunning ? 'Generating…' : 'Run Workflow')}
+            {getSubmitLabel(isUploading, isSubmitting, isRunning)}
             {!isBusy && (
               <kbd className="ml-1 hidden rounded bg-primary-foreground/15 px-1.5 py-0.5 font-sans text-xs pointer-fine:inline-block">
                 {SUBMIT_SHORTCUT_LABEL}
@@ -161,7 +197,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, r
         {isBusy || current === null
           ? (
               <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
-                <ResultPlaceholderContent isSubmitting={isSubmitting} promptId={isRunning ? promptId : null} />
+                <ResultPlaceholderContent isSubmitting={isSubmitting} isUploading={isUploading} promptId={isRunning ? promptId : null} />
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.

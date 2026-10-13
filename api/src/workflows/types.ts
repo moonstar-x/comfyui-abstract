@@ -44,18 +44,26 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
 }
 
 /**
- * A list of images uploaded by the client, sent as base64 strings without the data URL prefix.
+ * A list of images uploaded by the client through POST /uploads/image, sent as the returned references.
  */
 export interface ImageListWorkflowField extends BaseWorkflowField {
   kind: 'image-list';
+  /**
+   * Maximum size of each file, in bytes.
+   */
+  maxBytes: number;
   maxImages: number;
 }
 
 /**
- * A single audio file uploaded by the client, sent as a base64 string without the data URL prefix.
+ * A single audio file uploaded by the client through POST /uploads/audio, sent as the returned reference.
  */
 export interface AudioWorkflowField extends BaseWorkflowField {
   kind: 'audio';
+  /**
+   * Maximum size of the file, in bytes.
+   */
+  maxBytes: number;
 }
 
 /**
