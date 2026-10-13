@@ -1,7 +1,7 @@
-import { fetchUploadFile, fetchUploads } from '@services/api/uploads';
+import { deleteUpload, fetchUploadFile, fetchUploads } from '@services/api/uploads';
 import type { UploadsFilter, UploadsPage } from '@services/api/uploads';
-import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
+import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { InfiniteData, UseInfiniteQueryResult, UseMutationResult } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 const PAGE_SIZE = 24;
@@ -14,6 +14,20 @@ export const useUploads = ({ mediaType }: UploadsFilter): UseInfiniteQueryResult
   initialPageParam: 0,
   getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.uploads.length : undefined
 }));
+
+export const useDeleteUpload = (): UseMutationResult<void, Error, string> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await deleteUpload(id);
+    },
+    // Only the lists are refetched, the files of the remaining uploads haven't changed.
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === UPLOADS_QUERY_KEY && query.queryKey[1] !== 'file' });
+    }
+  });
+};
 
 // Uploads never change, so the file is never refetched while it is cached.
 const makeUploadFileQuery = (id: string): { queryFn: () => Promise<Blob>; queryKey: string[]; staleTime: number } => ({

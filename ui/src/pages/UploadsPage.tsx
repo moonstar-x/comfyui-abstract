@@ -15,7 +15,7 @@ const UploadsPage: FC = () => {
         <MediaTypeFilter value={mediaType} onChange={setMediaType} />
       </div>
 
-      <UploadList emptyMessage={mediaType === undefined ? EMPTY_MESSAGE : `${EMPTY_MESSAGE} of this type`} filter={{ mediaType }} />
+      <UploadList canDelete emptyMessage={mediaType === undefined ? EMPTY_MESSAGE : `${EMPTY_MESSAGE} of this type`} filter={{ mediaType }} />
     </div>
   );
 };

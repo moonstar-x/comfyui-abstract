@@ -1,5 +1,6 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
+import { DeleteUploadButton } from '@components/uploads/DeleteUploadButton';
 import { useUploadFileUrl } from '@components/uploads/hooks/useUploads';
 import { formatDateTime } from '@core/generations/generations';
 import { formatFileSize } from '@core/utils/files';
@@ -25,6 +26,10 @@ const FileError: FC = () => (
 
 export interface UploadTileProps {
   /**
+   * Shows a button on the top right that deletes the upload after confirming it.
+   */
+  canDelete?: boolean | undefined;
+  /**
    * Highlights the tile as picked, see onSelect.
    */
   isSelected?: boolean | undefined;
@@ -38,13 +43,17 @@ export interface UploadTileProps {
 }
 
 interface FileTileProps extends Pick<UploadTileProps, 'onSelect' | 'upload'> {
+  canDelete: boolean;
   hasError: boolean;
   isSelected: boolean;
   url: string | undefined;
 }
 
+// Placed after the file so it sits above it and above the button picking the upload.
+const DELETE_BUTTON_CLASSES = 'absolute top-2 right-2';
+
 // The player stays usable inside the tile, so the button picking the upload sits behind it instead of wrapping it.
-const AudioTile: FC<FileTileProps> = ({ hasError, isSelected, onSelect, upload, url }) => (
+const AudioTile: FC<FileTileProps> = ({ canDelete, hasError, isSelected, onSelect, upload, url }) => (
   <div className={cn('relative flex aspect-square flex-col gap-3 rounded-xl border bg-card p-3 transition-colors', isSelected && SELECTED_CLASSES)}>
     {onSelect !== undefined && (
       <button
@@ -58,10 +67,11 @@ const AudioTile: FC<FileTileProps> = ({ hasError, isSelected, onSelect, upload, 
     {hasError && <FileError />}
     {!hasError && (url === undefined ? <Skeleton className="flex-1 rounded-lg" /> : <AudioPlayer className="relative min-h-0 flex-1" label="Uploaded audio" src={url} variant="tile" />)}
     <UploadDetails className="pointer-events-none relative text-muted-foreground" upload={upload} />
+    {canDelete && <DeleteUploadButton className={DELETE_BUTTON_CLASSES} id={upload.id} />}
   </div>
 );
 
-const ImageTile: FC<FileTileProps & Pick<UploadTileProps, 'onOpenImage'>> = ({ hasError, isSelected, onOpenImage, onSelect, upload, url }) => (
+const ImageTile: FC<FileTileProps & Pick<UploadTileProps, 'onOpenImage'>> = ({ canDelete, hasError, isSelected, onOpenImage, onSelect, upload, url }) => (
   <div className={cn('relative flex aspect-square flex-col overflow-hidden rounded-xl border bg-muted/40 transition-colors', isSelected && SELECTED_CLASSES)}>
     {hasError && <FileError />}
     {!hasError && url === undefined && <Skeleton className="size-full rounded-none" />}
@@ -83,13 +93,14 @@ const ImageTile: FC<FileTileProps & Pick<UploadTileProps, 'onOpenImage'>> = ({ h
       </button>
     )}
     <UploadDetails className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2.5 pt-6 pb-2 text-white" upload={upload} />
+    {canDelete && <DeleteUploadButton className={DELETE_BUTTON_CLASSES} id={upload.id} />}
   </div>
 );
 
 /**
  * An upload in the grid, showing its file along with its size and when it was uploaded.
  */
-export const UploadTile: FC<UploadTileProps> = ({ isSelected = false, onImageUrlChange, onOpenImage, onSelect, upload }) => {
+export const UploadTile: FC<UploadTileProps> = ({ canDelete = false, isSelected = false, onImageUrlChange, onOpenImage, onSelect, upload }) => {
   const { hasError, url } = useUploadFileUrl(upload.id);
   const isImage = upload.mediaType !== 'audio';
 
@@ -106,6 +117,6 @@ export const UploadTile: FC<UploadTileProps> = ({ isSelected = false, onImageUrl
   }, [isImage, onImageUrlChange, upload.id, url]);
 
   return isImage
-    ? <ImageTile hasError={hasError} isSelected={isSelected} upload={upload} url={url} onOpenImage={onOpenImage} onSelect={onSelect} />
-    : <AudioTile hasError={hasError} isSelected={isSelected} upload={upload} url={url} onSelect={onSelect} />;
+    ? <ImageTile canDelete={canDelete} hasError={hasError} isSelected={isSelected} upload={upload} url={url} onOpenImage={onOpenImage} onSelect={onSelect} />
+    : <AudioTile canDelete={canDelete} hasError={hasError} isSelected={isSelected} upload={upload} url={url} onSelect={onSelect} />;
 };

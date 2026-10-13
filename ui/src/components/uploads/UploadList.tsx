@@ -18,6 +18,10 @@ const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
 const GRID_CLASSES = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
 
 export interface UploadListProps {
+  /**
+   * Shows a delete button on every tile, see UploadTile.
+   */
+  canDelete?: boolean | undefined;
   emptyMessage: string;
   filter: UploadsFilter;
   /**
@@ -30,7 +34,7 @@ export interface UploadListProps {
 /**
  * The current user's uploads as a grid, newest first.
  */
-export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter, onSelect, selectedIds }) => {
+export const UploadList: FC<UploadListProps> = ({ canDelete, emptyMessage, filter, onSelect, selectedIds }) => {
   const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } = useUploads(filter);
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
   // Object URLs of the image uploads whose files have loaded, keyed by upload ID.
@@ -80,6 +84,7 @@ export const UploadList: FC<UploadListProps> = ({ emptyMessage, filter, onSelect
       <div className={GRID_CLASSES}>
         {uploads.map((upload) => (
           <UploadTile
+            canDelete={canDelete}
             isSelected={selectedIds?.has(upload.id)}
             key={upload.id}
             upload={upload}

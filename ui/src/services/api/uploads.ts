@@ -103,3 +103,10 @@ export const fetchUploads = async ({ mediaType }: UploadsFilter, offset: number,
  * Downloads the file of an upload. It can't be linked to directly since the API only serves it to its authenticated owner.
  */
 export const fetchUploadFile = async (id: string): Promise<Blob> => await apiRequestFile(`/uploads/${encodeURIComponent(id)}/file`, { isAuthenticated: true });
+
+/**
+ * Deletes an upload of the current user along with its file.
+ */
+export const deleteUpload = async (id: string): Promise<void> => {
+  await apiRequest(`/uploads/${encodeURIComponent(id)}`, { method: 'DELETE', isAuthenticated: true });
+};
