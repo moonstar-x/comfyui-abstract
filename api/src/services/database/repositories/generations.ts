@@ -1,7 +1,16 @@
 import type { Nullable } from '../../../utils/types.js';
 import type { WorkflowType } from '../../../workflows/types.js';
 import { database } from '../client/postgres.js';
-import type { GenerationPeriodCountsRow, GenerationRow, GenerationUserSummaryRow, MediaType } from '../models/generations.js';
+import type {
+  GenerationDailyCountRow,
+  GenerationModelCountRow,
+  GenerationPeriodCountsRow,
+  GenerationRow,
+  GenerationTimingStatsRow,
+  GenerationUserSummaryRow,
+  GenerationWorkflowCountRow,
+  MediaType
+} from '../models/generations.js';
 
 export interface PublicGeneration {
   completedAt: Date;
@@ -31,9 +40,64 @@ export interface GenerationUserSummary {
 
 export interface GenerationPeriodCounts {
   allTime: number;
+  /**
+   * The same counts for the previous day, week and month, up to the same point in time as now, so they compare fairly
+   * against periods that are still in progress.
+   */
+  previous: {
+    thisMonth: number;
+    thisWeek: number;
+    today: number;
+  };
   thisMonth: number;
   thisWeek: number;
   today: number;
+}
+
+export interface GenerationWorkflowCount {
+  generationCount: number;
+  mediaType: MediaType;
+  workflowType: WorkflowType;
+}
+
+export interface GenerationModelCount {
+  generationCount: number;
+  mediaType: MediaType;
+  model: string;
+}
+
+export interface GenerationDailyCount {
+  /**
+   * The day formatted as YYYY-MM-DD.
+   */
+  day: string;
+  generationCount: number;
+}
+
+/**
+ * Milliseconds.
+ */
+export interface DurationStats {
+  avg: number;
+  max: number;
+  median: number;
+  min: number;
+  p95: number;
+}
+
+export interface GenerationTimingStats {
+  /**
+   * Time from the moment a generation was queued until ComfyUI started it.
+   */
+  queueWait: Nullable<DurationStats>;
+  /**
+   * Time ComfyUI spent running a generation.
+   */
+  render: Nullable<DurationStats>;
+  /**
+   * How many generations the stats are made of. Generations without a start time are left out.
+   */
+  sampleCount: number;
 }
 
 export interface CreateGenerationData {
@@ -87,7 +151,49 @@ export const toGenerationPeriodCounts = (counts: GenerationPeriodCountsRow): Gen
   today: counts.today,
   thisWeek: counts.this_week,
   thisMonth: counts.this_month,
-  allTime: counts.all_time
+  allTime: counts.all_time,
+  previous: {
+    today: counts.yesterday,
+    thisWeek: counts.previous_week,
+    thisMonth: counts.previous_month
+  }
+});
+
+export const toGenerationWorkflowCount = (count: GenerationWorkflowCountRow): GenerationWorkflowCount => ({
+  workflowType: count.workflow_type,
+  mediaType: count.media_type,
+  generationCount: count.generation_count
+});
+
+export const toGenerationModelCount = (count: GenerationModelCountRow): GenerationModelCount => ({
+  model: count.model,
+  mediaType: count.media_type,
+  generationCount: count.generation_count
+});
+
+export const toGenerationDailyCount = (count: GenerationDailyCountRow): GenerationDailyCount => ({
+  day: count.day,
+  generationCount: count.generation_count
+});
+
+const toDurationStats = (stats: GenerationTimingStatsRow, prefix: 'render' | 'wait'): Nullable<DurationStats> => {
+  const min = stats[`${prefix}_min_ms`];
+  const max = stats[`${prefix}_max_ms`];
+  const avg = stats[`${prefix}_avg_ms`];
+  const median = stats[`${prefix}_median_ms`];
+  const p95 = stats[`${prefix}_p95_ms`];
+
+  if (min === null || max === null || avg === null || median === null || p95 === null) {
+    return null;
+  }
+
+  return { min, max, avg, median, p95 };
+};
+
+export const toGenerationTimingStats = (stats: GenerationTimingStatsRow): GenerationTimingStats => ({
+  sampleCount: stats.sample_count,
+  queueWait: toDurationStats(stats, 'wait'),
+  render: toDurationStats(stats, 'render')
 });
 
 export const createGeneration = async (data: CreateGenerationData): Promise<GenerationRow> => {
@@ -165,17 +271,89 @@ export const findMostActiveGenerationUserSummaries = async (limit: number): Prom
 
 /**
  * Counts every user's generations made since the start of the current day, week (Monday) and month, and of all time.
- * Period boundaries follow the database session's time zone.
+ * Also counts the previous day, week and month up to the same point in time as now, e.g. last Monday until this time last week.
+ * Periods start at midnight UTC.
  */
 export const countGenerationsByPeriod = async (): Promise<GenerationPeriodCountsRow> => {
   const query = `SELECT
       COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now()))::int AS today,
       COUNT(*) FILTER (WHERE created_at >= date_trunc('week', now()))::int AS this_week,
       COUNT(*) FILTER (WHERE created_at >= date_trunc('month', now()))::int AS this_month,
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('day', now()) - interval '1 day' AND created_at < now() - interval '1 day')::int AS yesterday,
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('week', now()) - interval '1 week' AND created_at < now() - interval '1 week')::int AS previous_week,
+      COUNT(*) FILTER (WHERE created_at >= date_trunc('month', now()) - interval '1 month' AND created_at < now() - interval '1 month')::int AS previous_month,
       COUNT(*)::int AS all_time
     FROM generations`;
 
   return await database.one<GenerationPeriodCountsRow>(query);
+};
+
+/**
+ * Counts every user's generations per workflow, most used workflow first.
+ */
+export const countGenerationsByWorkflow = async (): Promise<GenerationWorkflowCountRow[]> => {
+  const query = `SELECT workflow_type, media_type, COUNT(*)::int AS generation_count
+    FROM generations
+    GROUP BY workflow_type, media_type
+    ORDER BY generation_count DESC, workflow_type`;
+
+  return await database.manyOrNone<GenerationWorkflowCountRow>(query);
+};
+
+/**
+ * Returns the models used the most, most generations first.
+ */
+export const findTopGenerationModels = async (limit: number): Promise<GenerationModelCountRow[]> => {
+  const query = `SELECT model, media_type, COUNT(*)::int AS generation_count
+    FROM generations
+    GROUP BY model, media_type
+    ORDER BY generation_count DESC, model
+    LIMIT $1`;
+
+  return await database.manyOrNone<GenerationModelCountRow>(query, [limit]);
+};
+
+/**
+ * Counts every user's generations for each of the last given days, today included and oldest first. Days without generations count as 0.
+ * Days start at midnight UTC.
+ */
+export const countGenerationsByDay = async (days: number): Promise<GenerationDailyCountRow[]> => {
+  const query = `SELECT to_char(d.day, 'YYYY-MM-DD') AS day, COUNT(g.id)::int AS generation_count
+    FROM generate_series(date_trunc('day', now()) - ($1 - 1) * interval '1 day', date_trunc('day', now()), interval '1 day') AS d(day)
+    LEFT JOIN generations g ON g.created_at >= d.day AND g.created_at < d.day + interval '1 day'
+    GROUP BY d.day
+    ORDER BY d.day`;
+
+  return await database.manyOrNone<GenerationDailyCountRow>(query, [days]);
+};
+
+/**
+ * Summarizes how long generations waited in the queue and how long they took to render.
+ * Generations without a start time are left out, since their wait and render times cannot be told apart.
+ */
+export const getGenerationTimingStats = async (): Promise<GenerationTimingStatsRow> => {
+  const query = `WITH timings AS (
+      SELECT
+        EXTRACT(EPOCH FROM started_at - created_at) * 1000 AS wait_ms,
+        EXTRACT(EPOCH FROM completed_at - started_at) * 1000 AS render_ms
+      FROM generations
+      WHERE started_at IS NOT NULL
+    )
+    SELECT
+      COUNT(*)::int AS sample_count,
+      MIN(wait_ms)::float8 AS wait_min_ms,
+      MAX(wait_ms)::float8 AS wait_max_ms,
+      AVG(wait_ms)::float8 AS wait_avg_ms,
+      percentile_cont(0.5) WITHIN GROUP (ORDER BY wait_ms)::float8 AS wait_median_ms,
+      percentile_cont(0.95) WITHIN GROUP (ORDER BY wait_ms)::float8 AS wait_p95_ms,
+      MIN(render_ms)::float8 AS render_min_ms,
+      MAX(render_ms)::float8 AS render_max_ms,
+      AVG(render_ms)::float8 AS render_avg_ms,
+      percentile_cont(0.5) WITHIN GROUP (ORDER BY render_ms)::float8 AS render_median_ms,
+      percentile_cont(0.95) WITHIN GROUP (ORDER BY render_ms)::float8 AS render_p95_ms
+    FROM timings`;
+
+  return await database.one<GenerationTimingStatsRow>(query);
 };
 
 /**

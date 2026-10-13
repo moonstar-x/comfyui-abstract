@@ -33,7 +33,47 @@ export interface GenerationUserSummaryRow {
 
 export interface GenerationPeriodCountsRow {
   all_time: number;
+  previous_month: number;
+  previous_week: number;
   this_month: number;
   this_week: number;
   today: number;
+  yesterday: number;
+}
+
+export interface GenerationWorkflowCountRow {
+  generation_count: number;
+  media_type: MediaType;
+  workflow_type: WorkflowType;
+}
+
+export interface GenerationModelCountRow {
+  generation_count: number;
+  media_type: MediaType;
+  model: string;
+}
+
+export interface GenerationDailyCountRow {
+  /**
+   * The day formatted as YYYY-MM-DD.
+   */
+  day: string;
+  generation_count: number;
+}
+
+/**
+ * Every value is in milliseconds, or null when no generation has a start time.
+ */
+export interface GenerationTimingStatsRow {
+  render_avg_ms: null | number;
+  render_max_ms: null | number;
+  render_median_ms: null | number;
+  render_min_ms: null | number;
+  render_p95_ms: null | number;
+  sample_count: number;
+  wait_avg_ms: null | number;
+  wait_max_ms: null | number;
+  wait_median_ms: null | number;
+  wait_min_ms: null | number;
+  wait_p95_ms: null | number;
 }
