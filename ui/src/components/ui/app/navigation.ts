@@ -1,6 +1,7 @@
 import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
-import { AudioLines, FolderUp, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
+import { CURRENT_USER } from '@services/api/generations';
+import { AudioLines, FolderUp, History, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -48,7 +49,8 @@ export const FEED_NAV_ITEM: NavItem = { category: 'general', icon: Newspaper, pa
 // Shown last in the sidebar, after the workflow sections.
 export const ASSETS_SECTION: NavSection = {
   items: [
-    { category: 'general', icon: FolderUp, path: RouteDefs.uploads, title: 'My Uploads' }
+    { category: 'general', icon: FolderUp, path: RouteDefs.uploads, title: 'My Uploads' },
+    { category: 'general', icon: History, path: DynamicRouteDefs.historyByUser(CURRENT_USER), title: 'My Generations' }
   ],
   title: 'Assets'
 };
@@ -61,6 +63,17 @@ export const CATEGORY_TILE_CLASSES: Record<NavCategory, string> = {
 };
 
 export const isNavItemActive = (item: NavItem, pathname: string): boolean => matchPath({ end: true, path: item.path }, pathname) !== null;
+
+/**
+ * The history of the logged in user can be reached through their username as well, it's matched as the path of My Generations.
+ */
+export const toNavPathname = (pathname: string, username: string | undefined): string => {
+  if (username !== undefined && pathname === DynamicRouteDefs.historyByUser(username)) {
+    return DynamicRouteDefs.historyByUser(CURRENT_USER);
+  }
+
+  return pathname;
+};
 
 /**
  * The navigation entry of a workflow type, used to label generations with the workflow that made them.

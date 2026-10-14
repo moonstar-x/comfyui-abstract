@@ -1,5 +1,6 @@
+import { useAuth } from '@components/auth/AuthContext';
 import { UserMenu } from '@components/auth/UserMenu';
-import { ASSETS_SECTION, CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
+import { ASSETS_SECTION, CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, toNavPathname, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
 import type { NavItem, NavSection } from '@components/ui/app/navigation';
 import {
   Sidebar,
@@ -73,7 +74,8 @@ const NavMenuSection: FC<NavMenuSectionProps> = ({ pathname, section }) => (
 );
 
 export const AppSidebar: FC = () => {
-  const { pathname } = useLocation();
+  const { user } = useAuth();
+  const pathname = toNavPathname(useLocation().pathname, user?.username);
 
   return (
     <Sidebar collapsible="icon">
