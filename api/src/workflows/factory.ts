@@ -3,7 +3,7 @@ import type { ComfyUiWorkflow, ComfyUiWorkflowClass } from '../services/comfyui/
 import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
 import CoverMusicWithYue2 from './cover-music/CoverMusicWithYue2.js';
-import EditImageWithQwenImage21 from './edit-image/EditImageWithQwenImage21.js';
+import ImageEditWithQwenImage21 from './image-edit/ImageEditWithQwenImage21.js';
 import GenerateImageWithKrea2 from './generate-image/GenerateImageWithKrea2.js';
 import GenerateImageWithQwenImage21 from './generate-image/GenerateImageWithQwenImage21.js';
 import GenerateMusicWithMiniMaxMusic3 from './generate-music/GenerateMusicWithMiniMaxMusic3.js';
@@ -48,7 +48,7 @@ export interface ConfiguredWorkflow {
 const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   GenerateImageWithQwenImage21,
   GenerateImageWithKrea2,
-  EditImageWithQwenImage21,
+  ImageEditWithQwenImage21,
   GenerateMusicWithMiniMaxMusic3,
   GenerateMusicWithYue2,
   CoverMusicWithYue2

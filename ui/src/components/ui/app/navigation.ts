@@ -29,7 +29,7 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
   {
     items: [
       { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('generate-image'), title: 'Generate Image' },
-      { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('edit-image'), title: 'Edit Image' }
+      { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('image-edit'), title: 'Edit Image' }
     ],
     title: 'Image Generation'
   },

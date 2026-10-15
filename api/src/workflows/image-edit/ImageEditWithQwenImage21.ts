@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { makeRandomSeed } from '../../services/comfyui/utils.js';
 import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
-import prompt from '../json/edit-image-qwen-image-2_1.json' with { type: 'json' };
+import prompt from '../json/image-edit-qwen-image-2_1.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { WorkflowError } from '../WorkflowError.js';
@@ -16,7 +16,7 @@ const IMAGE_INPUT_PREFIX = 'images.image_';
 // LoadImage nodes, linked in order to the images.image_N inputs of the text encoder.
 const IMAGE_NODE_IDS = ['30', '31', '32', '33', '34', '35', '36', '37', '38', '39'] as const;
 
-export interface EditImageWithQwenImage21Params {
+export interface ImageEditWithQwenImage21Params {
   cfg: number;
   clip: string;
   images: string[];
@@ -31,7 +31,7 @@ export interface EditImageWithQwenImage21Params {
 }
 
 // Everything except the positive prompt and the images defaults to the values saved in the workflow.
-const EditImageWithQwenImage21ParamsSchema: z.ZodType<EditImageWithQwenImage21Params> = z.object({
+const ImageEditWithQwenImage21ParamsSchema: z.ZodType<ImageEditWithQwenImage21Params> = z.object({
   cfg: z.number().positive().default(prompt['15'].inputs.value),
   clip: z.string().min(1).default(prompt['5'].inputs.clip_name),
   images: z.array(makeUploadReferenceSchema(UPLOAD_KINDS.IMAGE)).max(IMAGE_NODE_IDS.length),
@@ -45,15 +45,15 @@ const EditImageWithQwenImage21ParamsSchema: z.ZodType<EditImageWithQwenImage21Pa
   vae: z.string().min(1).default(prompt['6'].inputs.vae_name)
 });
 
-export default class EditImageWithQwenImage21 extends ComfyUiWorkflow<EditImageWithQwenImage21Params> {
-  public static readonly fields: WorkflowFields<EditImageWithQwenImage21Params> = { ...IMAGE_EDIT_FIELDS, images: makeImagesField(IMAGE_NODE_IDS.length) };
-  public static readonly id: string = 'edit-image-qwen-image-2.1';
-  public static readonly type: WorkflowType = WORKFLOW_TYPES.EDIT_IMAGE;
+export default class ImageEditWithQwenImage21 extends ComfyUiWorkflow<ImageEditWithQwenImage21Params> {
+  public static readonly fields: WorkflowFields<ImageEditWithQwenImage21Params> = { ...IMAGE_EDIT_FIELDS, images: makeImagesField(IMAGE_NODE_IDS.length) };
+  public static readonly id: string = 'image-edit-qwen-image-2.1';
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.IMAGE_EDIT;
 
   public override readonly outputNodeId = '20';
-  protected override readonly schema: z.ZodType<EditImageWithQwenImage21Params> = EditImageWithQwenImage21ParamsSchema;
+  protected override readonly schema: z.ZodType<ImageEditWithQwenImage21Params> = ImageEditWithQwenImage21ParamsSchema;
 
-  protected override buildPrompt(params: EditImageWithQwenImage21Params): NodeData {
+  protected override buildPrompt(params: ImageEditWithQwenImage21Params): NodeData {
     if (params.images.length === 0) {
       throw new WorkflowError('At least one image must be provided to edit.');
     }

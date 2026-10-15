@@ -29,8 +29,8 @@ workflows:
       clip: qwen3vl_4b_fp8_scaled.safetensors
       vae: qwen_image_vae.safetensors
   - alias: qwen-image-2.1
-    workflow: edit-image-qwen-image-2.1
-    type: edit-image
+    workflow: image-edit-qwen-image-2.1
+    type: image-edit
     params:
       visible:
         - images
