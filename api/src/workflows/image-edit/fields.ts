@@ -1,5 +1,5 @@
 import { UPLOAD_KIND_CONFIGS } from '../../services/uploads/uploads.js';
-import { TEXT_TO_IMAGE_FIELDS } from '../generate-image/fields.js';
+import { TEXT_TO_IMAGE_FIELDS } from '../image-generate/fields.js';
 import type { ImageListWorkflowField, WorkflowField } from '../types.js';
 
 type ImageEditParam = 'cfg' | 'clip' | 'denoise' | 'model' | 'negativePrompt' | 'prompt' | 'resolution' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'vae';

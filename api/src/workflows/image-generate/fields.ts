@@ -37,3 +37,13 @@ export const TEXT_TO_IMAGE_FIELDS: Readonly<Record<TextToImageParam, WorkflowFie
 };
 
 export const LORAS_FIELD: LoraListWorkflowField = { kind: 'lora-list', label: 'LoRA Models', minStrength: 0, maxStrength: 2 };
+
+type ImageGenerateParam = 'cfg' | 'clip' | 'denoise' | 'height' | 'model' | 'prompt' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'vae' | 'width';
+
+const { positivePrompt: _positivePrompt, negativePrompt: _negativePrompt, ...SHARED_FIELDS } = TEXT_TO_IMAGE_FIELDS;
+
+export const IMAGE_GENERATE_FIELDS: Readonly<Record<ImageGenerateParam, WorkflowField>> = {
+  prompt: { kind: 'text', label: 'Prompt', multiline: true, required: true, placeholder: 'Describe the image you want to generate…' },
+  ...SHARED_FIELDS,
+  denoise: { kind: 'number', label: 'Denoise', min: 0, max: 1, step: 0.05 }
+};

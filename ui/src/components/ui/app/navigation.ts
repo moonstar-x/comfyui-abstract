@@ -28,7 +28,7 @@ export interface NavMatch {
 export const WORKFLOW_SECTIONS: NavSection[] = [
   {
     items: [
-      { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('generate-image'), title: 'Generate Image' },
+      { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('image-generate'), title: 'Generate Image' },
       { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('image-edit'), title: 'Edit Image' }
     ],
     title: 'Image Generation'

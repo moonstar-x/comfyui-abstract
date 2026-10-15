@@ -1,5 +1,5 @@
 export const WORKFLOW_TYPES = {
-  GENERATE_IMAGE: 'generate-image',
+  IMAGE_GENERATE: 'image-generate',
   IMAGE_EDIT: 'image-edit',
   GENERATE_MUSIC: 'generate-music',
   COVER_MUSIC: 'cover-music'

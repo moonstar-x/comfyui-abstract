@@ -7,7 +7,7 @@ const WORKFLOW_OUTPUT_KINDS: Record<WorkflowType, WorkflowOutputKind> = {
   'cover-music': 'audio',
   'image-edit': 'image',
   'generate-music': 'audio',
-  'generate-image': 'image'
+  'image-generate': 'image'
 };
 
 // Extensions ComfyUI saves audio with, anything else is treated as an image.

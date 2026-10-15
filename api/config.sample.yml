@@ -1,7 +1,7 @@
 workflows:
   - alias: krea2
-    workflow: generate-image-krea2
-    type: generate-image
+    workflow: image-generate-krea2
+    type: image-generate
     serverParams:
       model: krea2.safetensors
       clip: qwen3vl_4b_fp8_scaled.safetensors

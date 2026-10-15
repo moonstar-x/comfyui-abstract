@@ -1,6 +1,6 @@
 export interface GenericWSClientMessage<TType extends string, TPayload extends object> { payload?: TPayload; type: TType }
 
-export const WORKFLOW_TYPES = ['generate-image', 'image-edit', 'generate-music', 'cover-music'] as const;
+export const WORKFLOW_TYPES = ['image-generate', 'image-edit', 'generate-music', 'cover-music'] as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[number];
 
 export interface RunWorkflowPayload {

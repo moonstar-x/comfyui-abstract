@@ -1,4 +1,4 @@
-import { TEXT_TO_IMAGE_FIELDS } from '../generate-image/fields.js';
+import { TEXT_TO_IMAGE_FIELDS } from '../image-generate/fields.js';
 import type { WorkflowField } from '../types.js';
 
 type TextToMusicParam = 'captionPrompt' | 'cfg' | 'clip' | 'lyricsPrompt' | 'maxDuration' | 'model' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'tiledDecode' | 'vae';
