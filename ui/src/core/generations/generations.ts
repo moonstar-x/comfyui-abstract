@@ -176,7 +176,7 @@ const isPromptParam = (key: string): boolean => key.toLowerCase().includes('prom
 
 // Upload references that mean nothing as a badge, by workflow type. Keep in sync with the workflow fields of the API.
 const HIDDEN_PARAM_KEYS: Readonly<Record<string, readonly string[]>> = {
-  'cover-music': ['song'],
+  'music-cover': ['song'],
   'image-edit': ['images']
 };
 

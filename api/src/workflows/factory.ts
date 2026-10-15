@@ -2,7 +2,7 @@ import { BadRequestError } from '../app/http/errors/BadRequestError.js';
 import type { ComfyUiWorkflowClass, ComfyUiWorkflowInstance } from '../services/comfyui/ComfyUiWorkflow.js';
 import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
-import CoverMusicWithYue2 from './cover-music/CoverMusicWithYue2.js';
+import MusicCoverWithYue2 from './music-cover/MusicCoverWithYue2.js';
 import GenerateMusicWithMiniMaxMusic3 from './generate-music/GenerateMusicWithMiniMaxMusic3.js';
 import GenerateMusicWithYue2 from './generate-music/GenerateMusicWithYue2.js';
 import ImageEditWithQwenImage21 from './image-edit/ImageEditWithQwenImage21.js';
@@ -51,7 +51,7 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   ImageEditWithQwenImage21,
   GenerateMusicWithMiniMaxMusic3,
   GenerateMusicWithYue2,
-  CoverMusicWithYue2
+  MusicCoverWithYue2
 ];
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);

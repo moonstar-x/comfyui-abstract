@@ -1,9 +1,10 @@
 import { UPLOAD_KIND_CONFIGS } from '../../services/uploads/uploads.js';
 import { makeSharedMusicFields, STYLE_PROMPT_FIELD } from '../generate-music/fields.js';
 import type { SharedMusicParam } from '../generate-music/fields.js';
+import { IMAGE_GENERATE_FIELDS } from '../image-generate/fields.js';
 import type { WorkflowField } from '../types.js';
 
-type YuE2CoverParam = 'audioEncoder' | 'model' | 'song' | 'stylePrompt' | SharedMusicParam;
+type YuE2CoverParam = 'audioEncoder' | 'denoise' | 'model' | 'song' | 'stylePrompt' | SharedMusicParam;
 
 export const makeYuE2CoverFields = (maxDuration: number): Readonly<Record<YuE2CoverParam, WorkflowField>> => {
   const { lyricsPrompt, ...rest } = makeSharedMusicFields(maxDuration);
@@ -13,6 +14,7 @@ export const makeYuE2CoverFields = (maxDuration: number): Readonly<Record<YuE2Co
     stylePrompt: STYLE_PROMPT_FIELD,
     lyricsPrompt,
     ...rest,
+    denoise: IMAGE_GENERATE_FIELDS.denoise,
     model: { kind: 'text', label: 'Checkpoint' },
     audioEncoder: { kind: 'text', label: 'Audio Encoder' }
   };
