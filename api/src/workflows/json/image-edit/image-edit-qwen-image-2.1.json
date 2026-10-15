@@ -1,0 +1,136 @@
+{
+  "6": {
+    "inputs": {
+      "images": [
+        "7:16",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "17": {
+    "inputs": {
+      "image": "914cd702-b8e8-438a-965f-d9935a541f0a-1.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "7:9": {
+    "inputs": {
+      "unet_name": "qwen-image-2.1\\qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "7:10": {
+    "inputs": {
+      "clip_name": "qwen-image-2.1\\qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "7:11": {
+    "inputs": {
+      "vae_name": "qwen-image-2.1\\qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "7:13": {
+    "inputs": {
+      "device": "auto",
+      "dtype": "default",
+      "model": [
+        "7:9",
+        0
+      ]
+    },
+    "class_type": "QwenImage21Cache",
+    "_meta": {
+      "title": "Qwen Image 2.1 Cache"
+    }
+  },
+  "7:14": {
+    "inputs": {
+      "prompt": "Give the lion a party hat!",
+      "negative_prompt": "",
+      "resolution": 1024,
+      "clip": [
+        "7:10",
+        0
+      ],
+      "images.image_1": [
+        "17",
+        0
+      ],
+      "vae": [
+        "7:11",
+        0
+      ]
+    },
+    "class_type": "TextEncodeQwenImage21",
+    "_meta": {
+      "title": "Text Encode Qwen Image 2.1"
+    }
+  },
+  "7:15": {
+    "inputs": {
+      "seed": 635088540131988,
+      "steps": 25,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "7:13",
+        0
+      ],
+      "positive": [
+        "7:14",
+        0
+      ],
+      "negative": [
+        "7:14",
+        1
+      ],
+      "latent_image": [
+        "7:14",
+        2
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "7:16": {
+    "inputs": {
+      "samples": [
+        "7:15",
+        0
+      ],
+      "vae": [
+        "7:11",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  }
+}

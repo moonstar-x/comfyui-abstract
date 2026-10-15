@@ -170,7 +170,7 @@ export const formatParamValue = (value: unknown): string => {
 };
 
 // The prompt that leads a feed post, in order of preference. Keep in sync with the workflow fields of the API.
-const MAIN_PROMPT_KEYS: readonly string[] = ['positivePrompt', 'captionPrompt', 'stylePrompt'];
+const MAIN_PROMPT_KEYS: readonly string[] = ['positivePrompt', 'prompt', 'captionPrompt', 'stylePrompt'];
 
 const isPromptParam = (key: string): boolean => key.toLowerCase().includes('prompt');
 
