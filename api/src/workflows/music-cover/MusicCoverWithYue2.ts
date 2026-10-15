@@ -5,7 +5,7 @@ import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { SeedSchema } from '../../services/comfyui/utils.js';
 import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
-import prompt from '../json/music-cover/music-cover-yue2.json' with { type: 'json' };
+import prompt from '../_json/music-cover/music-cover-yue2.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { makeYuE2CoverFields } from './fields.js';

@@ -3,7 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { SeedSchema } from '../../services/comfyui/utils.js';
-import prompt from '../json/image-generate/image-generate-qwen-image-2.1.json' with { type: 'json' };
+import prompt from '../_json/image-generate/image-generate-qwen-image-2.1.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { IMAGE_GENERATE_FIELDS, NEGATIVE_PROMPT_FIELD, RESOLUTION_FIELD } from './fields.js';

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
 import { SeedSchema } from '../../services/comfyui/utils.js';
-import prompt from '../json/music-generate/music-generate-minimax-music3.json' with { type: 'json' };
+import prompt from '../_json/music-generate/music-generate-minimax-music3.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
 import { makeTextToMusicFields } from './fields.js';
