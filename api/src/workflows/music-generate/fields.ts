@@ -1,4 +1,4 @@
-import { TEXT_TO_IMAGE_FIELDS } from '../image-generate/fields.js';
+import { IMAGE_GENERATE_FIELDS, TEXT_TO_IMAGE_FIELDS } from '../image-generate/fields.js';
 import type { WorkflowField } from '../types.js';
 
 type TextToMusicParam = 'captionPrompt' | 'cfg' | 'clip' | 'lyricsPrompt' | 'maxDuration' | 'model' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'tiledDecode' | 'vae';
@@ -33,7 +33,7 @@ export const makeTextToMusicFields = (maxDuration: number): Readonly<Record<Text
   };
 };
 
-type YuE2MusicParam = 'abcPlanning' | 'mode' | 'model' | 'stylePrompt' | SharedMusicParam;
+type YuE2MusicParam = 'abcPlanning' | 'denoise' | 'mode' | 'model' | 'stylePrompt' | SharedMusicParam;
 
 export const YUE2_MODES = ['full', 'melody'] as const;
 
@@ -45,6 +45,7 @@ export const makeYuE2MusicFields = (maxDuration: number): Readonly<Record<YuE2Mu
     lyricsPrompt,
     mode: { kind: 'select', label: 'Mode', options: YUE2_MODES },
     ...rest,
+    denoise: IMAGE_GENERATE_FIELDS.denoise,
     abcPlanning: { kind: 'boolean', label: 'ABC Planning', description: 'Plans the song in ABC notation before generating the audio.' },
     model: { kind: 'text', label: 'Checkpoint' }
   };

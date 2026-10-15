@@ -1,7 +1,7 @@
 export const WORKFLOW_TYPES = {
   IMAGE_GENERATE: 'image-generate',
   IMAGE_EDIT: 'image-edit',
-  GENERATE_MUSIC: 'generate-music',
+  MUSIC_GENERATE: 'music-generate',
   MUSIC_COVER: 'music-cover'
 } as const;
 export type WorkflowType = typeof WORKFLOW_TYPES[keyof typeof WORKFLOW_TYPES];

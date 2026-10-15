@@ -11,7 +11,7 @@ import { makeTextToMusicFields } from './fields.js';
 
 const MINIMAX_MUSIC3_MAX_DURATION = 300;
 
-export interface GenerateMusicWithMiniMaxMusic3Params {
+export interface MusicGenerateWithMiniMaxMusic3Params {
   captionPrompt: string;
   cfg: number;
   clip: string;
@@ -27,7 +27,7 @@ export interface GenerateMusicWithMiniMaxMusic3Params {
 }
 
 // Everything except the captions and lyrics prompt defaults to the values saved in the workflow.
-const GenerateMusicWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateMusicWithMiniMaxMusic3Params> = z.object({
+const MusicGenerateWithMiniMaxMusic3ParamsSchema: z.ZodType<MusicGenerateWithMiniMaxMusic3Params> = z.object({
   model: z.string().min(1).default(prompt['12'].inputs.unet_name),
   clip: z.string().min(1).default(prompt['13'].inputs.clip_name),
   vae: z.string().min(1).default(prompt['14'].inputs.vae_name),
@@ -42,18 +42,18 @@ const GenerateMusicWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateMusicWithMin
   tiledDecode: z.boolean().default(prompt['33'].inputs.value)
 });
 
-export default class GenerateMusicWithMiniMaxMusic3 extends ComfyUiWorkflow<GenerateMusicWithMiniMaxMusic3Params> {
-  public static readonly fields: WorkflowFields<GenerateMusicWithMiniMaxMusic3Params> = makeTextToMusicFields(MINIMAX_MUSIC3_MAX_DURATION);
+export default class MusicGenerateWithMiniMaxMusic3 extends ComfyUiWorkflow<MusicGenerateWithMiniMaxMusic3Params> {
+  public static readonly fields: WorkflowFields<MusicGenerateWithMiniMaxMusic3Params> = makeTextToMusicFields(MINIMAX_MUSIC3_MAX_DURATION);
   public static readonly id: string = 'generate-music-minimax-music3';
-  public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_MUSIC;
+  public static readonly type: WorkflowType = WORKFLOW_TYPES.MUSIC_GENERATE;
 
-  public override readonly advancedParams: Array<keyof GenerateMusicWithMiniMaxMusic3Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'tiledDecode'];
+  public override readonly advancedParams: Array<keyof MusicGenerateWithMiniMaxMusic3Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'tiledDecode'];
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '43';
-  public override readonly visibleParams: Array<keyof GenerateMusicWithMiniMaxMusic3Params> = ['captionPrompt', 'lyricsPrompt', 'maxDuration'];
-  protected override readonly schema: z.ZodType<GenerateMusicWithMiniMaxMusic3Params> = GenerateMusicWithMiniMaxMusic3ParamsSchema;
+  public override readonly visibleParams: Array<keyof MusicGenerateWithMiniMaxMusic3Params> = ['captionPrompt', 'lyricsPrompt', 'maxDuration'];
+  protected override readonly schema: z.ZodType<MusicGenerateWithMiniMaxMusic3Params> = MusicGenerateWithMiniMaxMusic3ParamsSchema;
 
-  protected override buildPrompt(params: GenerateMusicWithMiniMaxMusic3Params): NodeData {
+  protected override buildPrompt(params: MusicGenerateWithMiniMaxMusic3Params): NodeData {
     return new PromptBuilder(
       prompt,
       this.getWorkflowParams(),
