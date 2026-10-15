@@ -44,7 +44,7 @@ const MusicGenerateWithYue2ParamsSchema: z.ZodType<MusicGenerateWithYue2Params> 
 
 export default class MusicGenerateWithYue2 extends ComfyUiWorkflow<MusicGenerateWithYue2Params> {
   public static readonly fields: WorkflowFields<MusicGenerateWithYue2Params> = makeYuE2MusicFields(YUE2_MAX_DURATION);
-  public static readonly id: string = 'generate-music-yue2';
+  public static readonly id: string = 'music-generate-yue2';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.MUSIC_GENERATE;
 
   public override readonly advancedParams: Array<keyof MusicGenerateWithYue2Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'abcPlanning', 'denoise'];

@@ -44,7 +44,7 @@ const MusicGenerateWithMiniMaxMusic3ParamsSchema: z.ZodType<MusicGenerateWithMin
 
 export default class MusicGenerateWithMiniMaxMusic3 extends ComfyUiWorkflow<MusicGenerateWithMiniMaxMusic3Params> {
   public static readonly fields: WorkflowFields<MusicGenerateWithMiniMaxMusic3Params> = makeTextToMusicFields(MINIMAX_MUSIC3_MAX_DURATION);
-  public static readonly id: string = 'generate-music-minimax-music3';
+  public static readonly id: string = 'music-generate-minimax-music3';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.MUSIC_GENERATE;
 
   public override readonly advancedParams: Array<keyof MusicGenerateWithMiniMaxMusic3Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'tiledDecode'];

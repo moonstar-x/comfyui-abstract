@@ -1,15 +1,48 @@
 workflows:
-  - alias: krea2
+  - alias: qwen-image-2.1
+    workflow: image-generate-qwen-image-2.1
+    type: image-generate
+    serverParams:
+      model: 'qwen-image-2.1\qwen_image_2.1_int8_convrot.safetensors'
+      clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
+      vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
+
+  - alias: krea2-turbo
     workflow: image-generate-krea2
     type: image-generate
     serverParams:
-      model: krea2.safetensors
-      clip: qwen3vl_4b_fp8_scaled.safetensors
-      vae: qwen_image_vae.safetensors
+      model: 'krea2\krea2_turbo_int8_convrot.safetensors'
+      clip: 'krea2\qwen3vl_4b_fp8_scaled.safetensors'
+      vae: 'qwen-image\qwen_image_vae.safetensors'
+
   - alias: qwen-image-2.1
     workflow: image-edit-qwen-image-2.1
     type: image-edit
     serverParams:
-      model: qwen_image_2.1_int8_convrot.safetensors
-      clip: qwen3vl_8b_int8_convrot.safetensors
-      vae: qwen_image_2.1_vae_bf16.safetensors
+      model: 'qwen-image-2.1\qwen_image_2.1_int8_convrot.safetensors'
+      clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
+      vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
+
+  - alias: minimax-music3
+    workflow: music-generate-minimax-music3
+    type: music-generate
+    serverParams:
+      model: 'minimax_music\minimax_music3_dit_fp16.safetensors'
+      clip: 'minimax_music\minimax_music3_text_encoder_pruned_int8_convrot.safetensors'
+      vae: 'minimax_music\minimax_music3_dav.safetensors'
+
+  - alias: yue2
+    workflow: music-cover-yue2
+    type: music-cover
+    params:
+      defaults:
+        maxDuration: 900
+    serverParams:
+      model: 'yue2\yue2_3b_int8_convrot.safetensors'
+      audioEncoder: 'sheetsage\sheetsage2_bf16.safetensors'
+
+  - alias: yue2
+    workflow: music-generate-yue2
+    type: music-generate
+    serverParams:
+      model: 'yue2\yue2_3b_int8_convrot.safetensors'
