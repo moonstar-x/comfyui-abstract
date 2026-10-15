@@ -56,7 +56,9 @@ export default class ImageEditWithQwenImage21 extends ComfyUiWorkflow<ImageEditW
   public static readonly id: string = 'image-edit-qwen-image-2.1';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.IMAGE_EDIT;
 
+  public override readonly advancedParams: Array<keyof ImageEditWithQwenImage21Params> = ['negativePrompt', 'resolution', 'seed', 'steps', 'cfg', 'sampler', 'scheduler', 'denoise'];
   public override readonly outputNodeId = '6';
+  public override readonly visibleParams: Array<keyof ImageEditWithQwenImage21Params> = ['prompt', 'images'];
   protected override readonly schema: z.ZodType<ImageEditWithQwenImage21Params> = ImageEditWithQwenImage21ParamsSchema;
 
   protected override buildPrompt(params: ImageEditWithQwenImage21Params): NodeData {
@@ -66,7 +68,7 @@ export default class ImageEditWithQwenImage21 extends ComfyUiWorkflow<ImageEditW
 
     const builder = new PromptBuilder(
       prompt,
-      ['model', 'clip', 'vae', 'resolution', 'prompt', 'negativePrompt', 'seed', 'steps', 'cfg', 'sampler', 'scheduler', 'denoise'],
+      this.getWorkflowParams(),
       ['images']
     )
       .setInputNode('model', '7:9.inputs.unet_name')

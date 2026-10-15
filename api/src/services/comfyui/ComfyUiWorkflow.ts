@@ -16,13 +16,32 @@ export interface WorkflowPrompt<TParams extends object = object> {
 }
 
 export abstract class ComfyUiWorkflow<TParams extends object = object> {
+  /**
+   * Params shown in the advanced section of the client form, in the order they are rendered.
+   */
+  public abstract readonly advancedParams: Array<keyof TParams>;
   public readonly outputKind: WorkflowOutputKind = 'images';
   /**
    * ID of the node in the workflow whose files are the result of the workflow.
    */
   public abstract readonly outputNodeId: string;
+  /**
+   * Params shown in the client form, in the order they are rendered.
+   */
+  public abstract readonly visibleParams: Array<keyof TParams>;
   protected abstract readonly schema: z.ZodType<TParams>;
 
+  /**
+   * Every param this workflow uses.
+   */
+  public getWorkflowParams(): Array<keyof TParams> {
+    return [...this.visibleParams, ...this.advancedParams];
+  }
+
+  /**
+   * Build the prompt from on the raw params.
+   * @param rawParams
+   */
   public makePrompt(rawParams: unknown): WorkflowPrompt<TParams> {
     const result = this.schema.safeParse(rawParams);
     if (!result.success) {
@@ -33,6 +52,19 @@ export abstract class ComfyUiWorkflow<TParams extends object = object> {
   }
 
   protected abstract buildPrompt(params: TParams): NodeData;
+}
+
+/**
+ * Instance side of a workflow implementation whose params are not known, such as one resolved from the config.
+ * ComfyUiWorkflow<object> cannot be used for this, since the param lists make the class contravariant in its params.
+ */
+export interface ComfyUiWorkflowInstance {
+  readonly advancedParams: readonly PropertyKey[];
+  readonly getClientParams: () => PropertyKey[];
+  readonly makePrompt: (rawParams: unknown) => WorkflowPrompt;
+  readonly outputKind: WorkflowOutputKind;
+  readonly outputNodeId: string;
+  readonly visibleParams: readonly PropertyKey[];
 }
 
 /**
@@ -49,5 +81,5 @@ export interface ComfyUiWorkflowClass {
   readonly id: string;
   readonly type: WorkflowType;
 
-  new (): ComfyUiWorkflow;
+  new (): ComfyUiWorkflowInstance;
 }

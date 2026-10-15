@@ -44,13 +44,15 @@ export default class GenerateImageWithQwenImage21 extends ComfyUiWorkflow<Genera
   public static readonly id: string = 'generate-image-qwen-image-2.1';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_IMAGE;
 
+  public override readonly advancedParams: Array<keyof GenerateImageWithQwenImage21Params> = ['negativePrompt', 'seed', 'steps', 'cfg', 'sampler', 'scheduler'];
   public override readonly outputNodeId = '27';
+  public override readonly visibleParams: Array<keyof GenerateImageWithQwenImage21Params> = ['positivePrompt', 'width', 'height'];
   protected override readonly schema: z.ZodType<GenerateImageWithQwenImage21Params> = GenerateImageWithQwenImage21ParamsSchema;
 
   protected override buildPrompt(params: GenerateImageWithQwenImage21Params): NodeData {
     return new PromptBuilder(
       prompt,
-      ['model', 'clip', 'vae', 'width', 'height', 'positivePrompt', 'negativePrompt', 'seed', 'steps', 'cfg', 'sampler', 'scheduler'],
+      this.getWorkflowParams(),
       ['images']
     )
       .setInputNode('model', '12.inputs.unet_name')

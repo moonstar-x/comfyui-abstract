@@ -4,7 +4,7 @@ import { logger } from '@moonstar-x/logger';
 import type { TokenPayload } from '../services/auth/token.js';
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
-import type { ComfyUiWorkflow, WorkflowOutputKind } from '../services/comfyui/ComfyUiWorkflow.js';
+import type { ComfyUiWorkflowInstance, WorkflowOutputKind } from '../services/comfyui/ComfyUiWorkflow.js';
 import { MEDIA_TYPES } from '../services/database/models/generations.js';
 import type { MediaType } from '../services/database/models/generations.js';
 import { createGeneration } from '../services/database/repositories/generations.js';
@@ -150,7 +150,7 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
     return this._comfyUiSession;
   }
 
-  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflow, run: TrackedRun): Promise<void> {
+  private async trackWorkflowCompletion(comfyui: ComfyUiClientSession, workflow: ComfyUiWorkflowInstance, run: TrackedRun): Promise<void> {
     const { promptId, type, nodeCount } = run;
     // The first progress event is sent once ComfyUI picks the prompt from the queue, which marks the end of the wait in the queue.
     let startedAt: Nullable<Date> = null;

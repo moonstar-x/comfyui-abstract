@@ -45,14 +45,16 @@ export default class GenerateMusicWithYue2 extends ComfyUiWorkflow<GenerateMusic
   public static readonly id: string = 'generate-music-yue2';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_MUSIC;
 
+  public override readonly advancedParams: Array<keyof GenerateMusicWithYue2Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'abcPlanning'];
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '57';
+  public override readonly visibleParams: Array<keyof GenerateMusicWithYue2Params> = ['stylePrompt', 'lyricsPrompt', 'maxDuration', 'mode'];
   protected override readonly schema: z.ZodType<GenerateMusicWithYue2Params> = GenerateMusicWithYue2ParamsSchema;
 
   protected override buildPrompt(params: GenerateMusicWithYue2Params): NodeData {
     return new PromptBuilder(
       prompt,
-      ['model', 'stylePrompt', 'lyricsPrompt', 'cfg', 'sampler', 'scheduler', 'seed', 'steps', 'maxDuration', 'abcPlanning', 'mode'],
+      this.getWorkflowParams(),
       ['audio']
     )
       .setInputNode('model', '44.inputs.ckpt_name')

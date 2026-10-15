@@ -1,5 +1,5 @@
 import { BadRequestError } from '../app/http/errors/BadRequestError.js';
-import type { ComfyUiWorkflow, ComfyUiWorkflowClass } from '../services/comfyui/ComfyUiWorkflow.js';
+import type { ComfyUiWorkflowClass, ComfyUiWorkflowInstance } from '../services/comfyui/ComfyUiWorkflow.js';
 import { getConfig } from '../services/config/config.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
 import CoverMusicWithYue2 from './cover-music/CoverMusicWithYue2.js';
@@ -19,7 +19,7 @@ export interface WorkflowRequestParams {
 }
 
 /**
- * A workflow param exposed to the client, in the order the config lists it.
+ * A workflow param exposed to the client, in the order the workflow implementation lists it.
  */
 export type WorkflowFieldDefinition = WorkflowField & { defaultValue?: unknown; isAdvanced: boolean; key: string };
 
@@ -38,7 +38,7 @@ export interface ConfiguredWorkflow {
    * Params the workflow is run with: the config defaults, overridden by the client params, overridden by the server params.
    */
   params: Record<string, unknown>;
-  workflow: ComfyUiWorkflow;
+  workflow: ComfyUiWorkflowInstance;
   /**
    * Identifier of the workflow implementation, as referenced by the config.
    */
@@ -56,7 +56,13 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);
 
-const getClientParamKeys = (config: WorkflowConfig): string[] => [...config.params.visible, ...config.params.advanced];
+/**
+ * Params the client may send: the visible and advanced params of the implementation, except the ones the config sets as server params.
+ */
+const getClientParamKeys = (config: WorkflowConfig, workflow: ComfyUiWorkflowInstance): { advanced: string[]; visible: string[] } => {
+  const omitServerParamKeys = (keys: readonly PropertyKey[]): string[] => keys.map(String).filter((key) => !Object.hasOwn(config.serverParams, key));
+  return { visible: omitServerParamKeys(workflow.visibleParams), advanced: omitServerParamKeys(workflow.advancedParams) };
+};
 
 const findDuplicates = (values: readonly string[]): string[] => [...new Set(values.filter((value, index) => values.indexOf(value) !== index))];
 
@@ -71,17 +77,10 @@ const validateWorkflowConfig = (config: WorkflowConfig): string[] => {
     errors.push(`workflow "${config.workflow}" is of type "${implementation.type}", not "${config.type}".`);
   }
 
-  const clientKeys = getClientParamKeys(config);
-  const serverKeys = Object.keys(config.serverParams);
-  const referencedKeys = [...clientKeys, ...Object.keys(config.params.defaults), ...serverKeys];
+  const referencedKeys = [...Object.keys(config.params.defaults), ...Object.keys(config.serverParams)];
   const unknownKeys = [...new Set(referencedKeys.filter((key) => !Object.hasOwn(implementation.fields, key)))];
   if (unknownKeys.length > 0) {
     errors.push(`unknown params ${unknownKeys.join(', ')}. Available params: ${Object.keys(implementation.fields).join(', ')}.`);
-  }
-
-  const repeatedKeys = findDuplicates([...clientKeys, ...serverKeys]);
-  if (repeatedKeys.length > 0) {
-    errors.push(`params ${repeatedKeys.join(', ')} must only appear once across params.visible, params.advanced and serverParams.`);
   }
 
   return errors;
@@ -132,12 +131,13 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
   const models = getConfig().workflows
     .filter((config) => config.type === type)
     .map((config) => {
-      const implementation = getImplementation(config);
+      const Implementation = getImplementation(config);
+      const { visible, advanced } = getClientParamKeys(config, new Implementation());
       return {
         alias: config.alias,
         fields: [
-          ...config.params.visible.map((key) => makeFieldDefinition(config, implementation, key, false)),
-          ...config.params.advanced.map((key) => makeFieldDefinition(config, implementation, key, true))
+          ...visible.map((key) => makeFieldDefinition(config, Implementation, key, false)),
+          ...advanced.map((key) => makeFieldDefinition(config, Implementation, key, true))
         ]
       };
     });
@@ -167,15 +167,17 @@ export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParam
     throw new BadRequestError(`There is no ${type} workflow with the model ${model}.`);
   }
 
-  const clientKeys = new Set(getClientParamKeys(config));
+  const Implementation = getImplementation(config);
+  const workflow = new Implementation();
+  const { visible, advanced } = getClientParamKeys(config, workflow);
+  const clientKeys = new Set([...visible, ...advanced]);
   const forbiddenKeys = Object.keys(clientParams).filter((key) => !clientKeys.has(key));
   if (forbiddenKeys.length > 0) {
     throw new BadRequestError(`The ${type} workflow with the model ${model} does not accept the params: ${forbiddenKeys.join(', ')}.`);
   }
 
-  const Implementation = getImplementation(config);
   return {
-    workflow: new Implementation(),
+    workflow,
     workflowId: Implementation.id,
     params: { ...config.params.defaults, ...clientParams, ...config.serverParams }
   };

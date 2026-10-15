@@ -46,14 +46,16 @@ export default class CoverMusicWithYue2 extends ComfyUiWorkflow<CoverMusicWithYu
   public static readonly id: string = 'cover-music-yue2';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.COVER_MUSIC;
 
+  public override readonly advancedParams: Array<keyof CoverMusicWithYue2Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler'];
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '57';
+  public override readonly visibleParams: Array<keyof CoverMusicWithYue2Params> = ['song', 'stylePrompt', 'lyricsPrompt', 'maxDuration'];
   protected override readonly schema: z.ZodType<CoverMusicWithYue2Params> = CoverMusicWithYue2ParamsSchema;
 
   protected override buildPrompt(params: CoverMusicWithYue2Params): NodeData {
     return new PromptBuilder(
       prompt,
-      ['model', 'audioEncoder', 'stylePrompt', 'lyricsPrompt', 'seed', 'maxDuration', 'cfg', 'steps', 'sampler', 'scheduler', 'song'],
+      this.getWorkflowParams(),
       ['audio']
     )
       .setInputNode('model', '44.inputs.ckpt_name')

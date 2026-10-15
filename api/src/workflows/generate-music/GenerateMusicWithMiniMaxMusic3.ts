@@ -47,14 +47,16 @@ export default class GenerateMusicWithMiniMaxMusic3 extends ComfyUiWorkflow<Gene
   public static readonly id: string = 'generate-music-minimax-music3';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_MUSIC;
 
+  public override readonly advancedParams: Array<keyof GenerateMusicWithMiniMaxMusic3Params> = ['seed', 'steps', 'cfg', 'sampler', 'scheduler', 'tiledDecode'];
   public override readonly outputKind: WorkflowOutputKind = 'audio';
   public override readonly outputNodeId = '43';
+  public override readonly visibleParams: Array<keyof GenerateMusicWithMiniMaxMusic3Params> = ['captionPrompt', 'lyricsPrompt', 'maxDuration'];
   protected override readonly schema: z.ZodType<GenerateMusicWithMiniMaxMusic3Params> = GenerateMusicWithMiniMaxMusic3ParamsSchema;
 
   protected override buildPrompt(params: GenerateMusicWithMiniMaxMusic3Params): NodeData {
     return new PromptBuilder(
       prompt,
-      ['model', 'clip', 'vae', 'captionPrompt', 'lyricsPrompt', 'cfg', 'sampler', 'scheduler', 'seed', 'steps', 'maxDuration', 'tiledDecode'],
+      this.getWorkflowParams(),
       ['audio']
     )
       .setInputNode('model', '12.inputs.unet_name')

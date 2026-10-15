@@ -52,13 +52,15 @@ export default class GenerateImageWithKrea2 extends ComfyUiWorkflow<GenerateImag
   public static readonly id: string = 'generate-image-krea2';
   public static readonly type: WorkflowType = WORKFLOW_TYPES.GENERATE_IMAGE;
 
+  public override readonly advancedParams: Array<keyof GenerateImageWithKrea2Params> = ['negativePrompt', 'seed', 'steps', 'cfg', 'sampler', 'scheduler', 'loras'];
   public override readonly outputNodeId = '27';
+  public override readonly visibleParams: Array<keyof GenerateImageWithKrea2Params> = ['positivePrompt', 'width', 'height'];
   protected override readonly schema: z.ZodType<GenerateImageWithKrea2Params> = GenerateImageWithKrea2ParamsSchema;
 
   protected override buildPrompt(params: GenerateImageWithKrea2Params): NodeData {
     const builder = new PromptBuilder(
       prompt,
-      ['model', 'clip', 'vae', 'width', 'height', 'positivePrompt', 'negativePrompt', 'seed', 'steps', 'cfg', 'sampler', 'scheduler'],
+      this.getWorkflowParams(),
       ['images']
     )
       .setInputNode('model', '12.inputs.unet_name')

@@ -3,18 +3,6 @@ workflows:
     workflow: generate-image-krea2
     type: generate-image
     params:
-      visible:
-        - positivePrompt
-        - width
-        - height
-      advanced:
-        - negativePrompt
-        - seed
-        - steps
-        - cfg
-        - sampler
-        - scheduler
-        - loras
       defaults:
         width: 1024
         height: 1024
@@ -32,16 +20,6 @@ workflows:
     workflow: image-edit-qwen-image-2.1
     type: image-edit
     params:
-      visible:
-        - images
-        - positivePrompt
-      advanced:
-        - negativePrompt
-        - seed
-        - steps
-        - cfg
-        - sampler
-        - scheduler
       defaults:
         negativePrompt: ''
         steps: 25
