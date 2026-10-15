@@ -1,6 +1,7 @@
 export const WORKFLOW_TYPES = {
   IMAGE_GENERATE: 'image-generate',
   IMAGE_EDIT: 'image-edit',
+  IMAGE_UPSCALE: 'image-upscale',
   MUSIC_GENERATE: 'music-generate',
   MUSIC_COVER: 'music-cover'
 } as const;

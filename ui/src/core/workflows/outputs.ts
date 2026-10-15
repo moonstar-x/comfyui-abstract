@@ -6,6 +6,7 @@ export type WorkflowOutputKind = 'audio' | 'image';
 const WORKFLOW_OUTPUT_KINDS: Record<WorkflowType, WorkflowOutputKind> = {
   'music-cover': 'audio',
   'image-edit': 'image',
+  'image-upscale': 'image',
   'music-generate': 'audio',
   'image-generate': 'image'
 };

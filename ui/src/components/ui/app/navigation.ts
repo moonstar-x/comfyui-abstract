@@ -1,7 +1,7 @@
 import { DynamicRouteDefs, RouteDefs } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
 import { CURRENT_USER } from '@services/api/generations';
-import { AudioLines, FolderUp, History, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
+import { AudioLines, Expand, FolderUp, History, ImagePlus, LayoutDashboard, Mic, Newspaper, WandSparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { matchPath } from 'react-router';
 
@@ -29,7 +29,8 @@ export const WORKFLOW_SECTIONS: NavSection[] = [
   {
     items: [
       { category: 'image', icon: ImagePlus, path: DynamicRouteDefs.workflowById('image-generate'), title: 'Generate Image' },
-      { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('image-edit'), title: 'Edit Image' }
+      { category: 'image', icon: WandSparkles, path: DynamicRouteDefs.workflowById('image-edit'), title: 'Edit Image' },
+      { category: 'image', icon: Expand, path: DynamicRouteDefs.workflowById('image-upscale'), title: 'Upscale Image' }
     ],
     title: 'Image Generation'
   },

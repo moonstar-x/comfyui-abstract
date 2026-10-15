@@ -23,6 +23,42 @@ workflows:
       clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
       vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
 
+  - alias: 4x-ultrasharp
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x-UltraSharp.pth'
+
+  - alias: 4x-nomos-8k-atd-jpg
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4xNomos8k_atd_jpg.safetensors'
+
+  - alias: 4x-nomos-web-photo-real-plksr
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4xNomosWebPhoto_RealPLKSR.pth'
+
+  - alias: 4x-nmkd-superscale-sp
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x_NMKD-Superscale-SP_17800_G.pth'
+
+  - alias: 4x-foolhardy-remacri
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x_foolhardy_Remacri.pth'
+
+  - alias: 4x-real-esrgan-plus
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: 'RealESRGAN_x4plus.safetensors'
+
   - alias: minimax-music3
     workflow: music-generate-minimax-music3
     type: music-generate
