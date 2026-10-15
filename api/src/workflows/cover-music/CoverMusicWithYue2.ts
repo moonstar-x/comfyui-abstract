@@ -3,7 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { makeRandomSeed } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utils.js';
 import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
 import prompt from '../json/cover-music-yue2.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
@@ -36,7 +36,7 @@ const CoverMusicWithYue2ParamsSchema: z.ZodType<CoverMusicWithYue2Params> = z.ob
   stylePrompt: z.string().min(1),
   sampler: z.string().min(1).default(prompt['51'].inputs.sampler_name),
   scheduler: z.string().min(1).default(prompt['51'].inputs.scheduler),
-  seed: z.number().int().default(makeRandomSeed),
+  seed: SeedSchema,
   song: makeUploadReferenceSchema(UPLOAD_KINDS.AUDIO),
   steps: z.number().int().positive().default(prompt['52'].inputs.value)
 });

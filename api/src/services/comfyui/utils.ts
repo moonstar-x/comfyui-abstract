@@ -1,7 +1,14 @@
 import type { CallWrapperResult, ComfyApi, NodeData, OutputValuesMap, PromptBuilder } from '@saintno/comfyui-sdk';
 import { CallWrapper } from '@saintno/comfyui-sdk';
+import { z } from 'zod';
 
 export const makeRandomSeed = (): number => Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+
+/**
+ * Seed param that falls back to a random seed when omitted. A transform is used instead of a default so the random value
+ * is not reported as the default of the param, which would make the client prefill a fixed seed.
+ */
+export const SeedSchema: z.ZodType<number, number | undefined> = z.number().int().optional().transform((seed) => seed ?? makeRandomSeed());
 
 /**
  * Queues a workflow and waits for it to finish executing, resolving with the outputs mapped by the builder.

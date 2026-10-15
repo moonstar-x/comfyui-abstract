@@ -32,6 +32,24 @@ export abstract class ComfyUiWorkflow<TParams extends object = object> {
   protected abstract readonly schema: z.ZodType<TParams>;
 
   /**
+   * Defaults the schema fills in for omitted params, keyed by param name. Params without a static default, such as random seeds, are left out.
+   */
+  public getSchemaDefaults(): Record<string, unknown> {
+    if (!(this.schema instanceof z.ZodObject)) {
+      return {};
+    }
+
+    const defaults: Record<string, unknown> = {};
+    for (const [key, schema] of Object.entries(this.schema.shape)) {
+      if (schema instanceof z.ZodDefault) {
+        defaults[key] = schema.def.defaultValue;
+      }
+    }
+
+    return defaults;
+  }
+
+  /**
    * Every param this workflow uses.
    */
   public getWorkflowParams(): Array<keyof TParams> {
@@ -60,7 +78,8 @@ export abstract class ComfyUiWorkflow<TParams extends object = object> {
  */
 export interface ComfyUiWorkflowInstance {
   readonly advancedParams: readonly PropertyKey[];
-  readonly getClientParams: () => PropertyKey[];
+  readonly getSchemaDefaults: () => Record<string, unknown>;
+  readonly getWorkflowParams: () => PropertyKey[];
   readonly makePrompt: (rawParams: unknown) => WorkflowPrompt;
   readonly outputKind: WorkflowOutputKind;
   readonly outputNodeId: string;

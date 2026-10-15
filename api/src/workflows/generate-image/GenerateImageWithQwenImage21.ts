@@ -2,7 +2,7 @@ import { PromptBuilder } from '@saintno/comfyui-sdk';
 import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { makeRandomSeed } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utils.js';
 import prompt from '../json/generate-image-qwen-image-2_1.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
@@ -33,7 +33,7 @@ const GenerateImageWithQwenImage21ParamsSchema: z.ZodType<GenerateImageWithQwenI
   positivePrompt: z.string().min(1),
   sampler: z.string().min(1).default(prompt['19'].inputs.sampler_name),
   scheduler: z.string().min(1).default(prompt['19'].inputs.scheduler),
-  seed: z.number().int().default(makeRandomSeed),
+  seed: SeedSchema,
   steps: z.number().int().positive().default(prompt['22'].inputs.value),
   vae: z.string().min(1).default(prompt['14'].inputs.vae_name),
   width: z.number().int().positive().default(prompt['9'].inputs.width)

@@ -3,7 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { makeRandomSeed } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utils.js';
 import prompt from '../json/generate-music-minimax-music3.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';
@@ -36,7 +36,7 @@ const GenerateMusicWithMiniMaxMusic3ParamsSchema: z.ZodType<GenerateMusicWithMin
   cfg: z.number().positive().default(prompt['23'].inputs.value),
   sampler: z.string().min(1).default(prompt['39'].inputs.sampler_name),
   scheduler: z.string().min(1).default(prompt['39'].inputs.scheduler),
-  seed: z.number().int().default(makeRandomSeed),
+  seed: SeedSchema,
   steps: z.number().int().positive().default(prompt['22'].inputs.value),
   maxDuration: z.number().positive().max(MINIMAX_MUSIC3_MAX_DURATION).default(prompt['36'].inputs.value),
   tiledDecode: z.boolean().default(prompt['33'].inputs.value)

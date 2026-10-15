@@ -2,7 +2,7 @@ import { PromptBuilder } from '@saintno/comfyui-sdk';
 import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { makeRandomSeed } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utils.js';
 import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
 import prompt from '../json/image-edit/image-edit-qwen-image-2.1.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
@@ -46,7 +46,7 @@ const ImageEditWithQwenImage21ParamsSchema: z.ZodType<ImageEditWithQwenImage21Pa
   resolution: z.number().min(0).default(prompt['7:14'].inputs.resolution),
   sampler: z.string().min(1).default(prompt['7:15'].inputs.sampler_name),
   scheduler: z.string().min(1).default(prompt['7:15'].inputs.scheduler),
-  seed: z.number().int().default(makeRandomSeed),
+  seed: SeedSchema,
   steps: z.number().int().positive().default(prompt['7:15'].inputs.steps),
   vae: z.string().min(1).default(prompt['7:11'].inputs.vae_name)
 });

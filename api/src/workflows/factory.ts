@@ -109,15 +109,15 @@ const getImplementation = (config: WorkflowConfig): ComfyUiWorkflowClass => {
   return implementation;
 };
 
-const makeFieldDefinition = (config: WorkflowConfig, implementation: ComfyUiWorkflowClass, key: string, isAdvanced: boolean): WorkflowFieldDefinition => {
+const makeFieldDefinition = (implementation: ComfyUiWorkflowClass, defaults: Record<string, unknown>, key: string, isAdvanced: boolean): WorkflowFieldDefinition => {
   const field = implementation.fields[key];
   if (field === undefined) {
-    throw new Error(`Workflow ${config.workflow} does not accept the param ${key}.`);
+    throw new Error(`Workflow ${implementation.id} does not accept the param ${key}.`);
   }
 
   const definition: WorkflowFieldDefinition = { ...field, key, isAdvanced };
-  if (Object.hasOwn(config.params.defaults, key)) {
-    definition.defaultValue = config.params.defaults[key];
+  if (Object.hasOwn(defaults, key)) {
+    definition.defaultValue = defaults[key];
   }
 
   return definition;
@@ -132,12 +132,15 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
     .filter((config) => config.type === type)
     .map((config) => {
       const Implementation = getImplementation(config);
-      const { visible, advanced } = getClientParamKeys(config, new Implementation());
+      const workflow = new Implementation();
+      const { visible, advanced } = getClientParamKeys(config, workflow);
+      // The config defaults take precedence, falling back to the defaults of the workflow schema for the params the config omits.
+      const defaults = { ...workflow.getSchemaDefaults(), ...config.params.defaults };
       return {
         alias: config.alias,
         fields: [
-          ...visible.map((key) => makeFieldDefinition(config, Implementation, key, false)),
-          ...advanced.map((key) => makeFieldDefinition(config, Implementation, key, true))
+          ...visible.map((key) => makeFieldDefinition(Implementation, defaults, key, false)),
+          ...advanced.map((key) => makeFieldDefinition(Implementation, defaults, key, true))
         ]
       };
     });

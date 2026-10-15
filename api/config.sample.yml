@@ -2,16 +2,6 @@ workflows:
   - alias: krea2
     workflow: generate-image-krea2
     type: generate-image
-    params:
-      defaults:
-        width: 1024
-        height: 1024
-        negativePrompt: ''
-        steps: 8
-        cfg: 1
-        sampler: euler
-        scheduler: simple
-        loras: []
     serverParams:
       model: krea2.safetensors
       clip: qwen3vl_4b_fp8_scaled.safetensors
@@ -19,13 +9,6 @@ workflows:
   - alias: qwen-image-2.1
     workflow: image-edit-qwen-image-2.1
     type: image-edit
-    params:
-      defaults:
-        negativePrompt: ''
-        steps: 25
-        cfg: 1
-        sampler: euler
-        scheduler: simple
     serverParams:
       model: qwen_image_2.1_int8_convrot.safetensors
       clip: qwen3vl_8b_int8_convrot.safetensors

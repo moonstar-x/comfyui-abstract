@@ -20,9 +20,10 @@ export interface AppConfig {
 export const AppConfigSchema: z.ZodType<AppConfig> = z.object({
   workflows: z.array(z.object({
     alias: z.string(),
+    // Params the config omits fall back to the defaults of the workflow schema.
     params: z.object({
-      defaults: z.record(z.string(), z.unknown())
-    }),
+      defaults: z.record(z.string(), z.unknown()).default({})
+    }).default({ defaults: {} }),
     serverParams: z.record(z.string(), z.unknown()),
     type: z.enum(Object.values(WORKFLOW_TYPES)),
     workflow: z.string()
