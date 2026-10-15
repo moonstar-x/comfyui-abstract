@@ -6,8 +6,8 @@ import CoverMusicWithYue2 from './cover-music/CoverMusicWithYue2.js';
 import GenerateMusicWithMiniMaxMusic3 from './generate-music/GenerateMusicWithMiniMaxMusic3.js';
 import GenerateMusicWithYue2 from './generate-music/GenerateMusicWithYue2.js';
 import ImageEditWithQwenImage21 from './image-edit/ImageEditWithQwenImage21.js';
-import GenerateImageWithQwenImage21 from './image-generate/GenerateImageWithQwenImage21.js';
 import ImageGenerateWithKrea2 from './image-generate/ImageGenerateWithKrea2.js';
+import ImageGenerateWithQwenImage21 from './image-generate/ImageGenerateWithQwenImage21.js';
 import type { WorkflowField, WorkflowType } from './types.js';
 
 export interface WorkflowRequestParams {
@@ -46,7 +46,7 @@ export interface ConfiguredWorkflow {
 }
 
 const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
-  GenerateImageWithQwenImage21,
+  ImageGenerateWithQwenImage21,
   ImageGenerateWithKrea2,
   ImageEditWithQwenImage21,
   GenerateMusicWithMiniMaxMusic3,

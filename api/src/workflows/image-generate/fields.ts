@@ -19,11 +19,13 @@ const KSAMPLER_SAMPLERS = [
 
 const KSAMPLER_SCHEDULERS = ['simple', 'normal', 'karras', 'exponential', 'sgm_uniform', 'beta', 'linear_quadratic', 'kl_optimal', 'ddim_uniform'] as const;
 
+export const NEGATIVE_PROMPT_FIELD: WorkflowField = { kind: 'text', label: 'Negative Prompt', multiline: true, placeholder: 'What to avoid in the image (optional)' };
+
 type TextToImageParam = 'cfg' | 'clip' | 'height' | 'model' | 'negativePrompt' | 'positivePrompt' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'vae' | 'width';
 
 export const TEXT_TO_IMAGE_FIELDS: Readonly<Record<TextToImageParam, WorkflowField>> = {
   positivePrompt: { kind: 'text', label: 'Prompt', multiline: true, required: true, placeholder: 'Describe the image you want to generate…' },
-  negativePrompt: { kind: 'text', label: 'Negative Prompt', multiline: true, placeholder: 'What to avoid in the image (optional)' },
+  negativePrompt: NEGATIVE_PROMPT_FIELD,
   width: { kind: 'number', label: 'Width', integer: true, min: 64, step: 64 },
   height: { kind: 'number', label: 'Height', integer: true, min: 64, step: 64 },
   steps: { kind: 'number', label: 'Steps', integer: true, min: 1 },
@@ -35,6 +37,8 @@ export const TEXT_TO_IMAGE_FIELDS: Readonly<Record<TextToImageParam, WorkflowFie
   clip: { kind: 'text', label: 'Text Encoder' },
   vae: { kind: 'text', label: 'VAE' }
 };
+
+export const RESOLUTION_FIELD: WorkflowField = { kind: 'number', label: 'Resolution', integer: true, min: 64, step: 64 };
 
 export const LORAS_FIELD: LoraListWorkflowField = { kind: 'lora-list', label: 'LoRA Models', minStrength: 0, maxStrength: 2 };
 
