@@ -47,7 +47,7 @@ export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete,
   return (
     <Dialog.Root open={generation !== null} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/80 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs" />
+        <Dialog.Backdrop forceRender className="fixed inset-0 z-50 bg-black/80 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs" />
         <Dialog.Popup
           className="fixed inset-0 z-50 flex scrollbar-none overflow-y-auto overscroll-contain p-4 transition duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 md:p-8"
           onClick={handleOutsideClick}
