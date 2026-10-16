@@ -364,3 +364,12 @@ export const deleteGeneration = async (id: string, username: string): Promise<Nu
   const query = 'DELETE FROM generations WHERE id = $1 AND username = $2 RETURNING *';
   return await database.oneOrNone<GenerationRow>(query, [id, username]);
 };
+
+/**
+ * Deletes the generations of the given IDs that belong to the given user, skipping the rest. Returns the deleted generations
+ * so their output files can be cleaned up.
+ */
+export const deleteGenerations = async (ids: string[], username: string): Promise<GenerationRow[]> => {
+  const query = 'DELETE FROM generations WHERE id = ANY($1::uuid[]) AND username = $2 RETURNING *';
+  return await database.manyOrNone<GenerationRow>(query, [ids, username]);
+};

@@ -1,4 +1,5 @@
 import type { Nullable } from '@core/utils/types';
+import type { WorkflowLora } from '@core/workflows/definitions';
 import { AudioLines, Image } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -153,6 +154,23 @@ export const groupGenerationsByDay = (generations: readonly GenerationRecord[]):
 
   return days;
 };
+
+const isWorkflowLora = (value: unknown): value is WorkflowLora => typeof value === 'object' &&
+  value !== null &&
+  'lora' in value &&
+  typeof value.lora === 'string' &&
+  'strength' in value &&
+  typeof value.strength === 'number';
+
+/**
+ * Tells whether a param is the value of a LoRA list field, which is shown as a badge per LoRA rather than as a single value.
+ */
+export const isWorkflowLoraList = (value: unknown): value is WorkflowLora[] => Array.isArray(value) && value.every((item) => isWorkflowLora(item));
+
+/**
+ * Renders a LoRA of a generation as its name followed by its strength, such as "detail-tweaker:0.8".
+ */
+export const formatLora = ({ lora, strength }: WorkflowLora): string => `${lora}:${strength.toString()}`;
 
 /**
  * Renders a workflow param for display, keeping strings as they are and serializing everything else.

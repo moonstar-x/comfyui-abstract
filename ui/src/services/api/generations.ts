@@ -1,5 +1,6 @@
 import { isGenerationRecord } from '@core/generations/generations';
 import type { GenerationRecord, MediaType } from '@core/generations/generations';
+import { chunk } from '@core/utils/arrays';
 import { apiRequest, apiRequestWithMeta } from '@services/api/client';
 
 // Keep in sync with the reserved usernames of the API.
@@ -45,6 +46,20 @@ export const fetchGenerations = async ({ username, mediaType }: GenerationsFilte
 
 export const deleteGeneration = async (id: string): Promise<void> => {
   await apiRequest(`/generations/${encodeURIComponent(id)}`, { method: 'DELETE', isAuthenticated: true });
+};
+
+// Keep in sync with MAX_BULK_DELETE_GENERATIONS of the API.
+const MAX_BULK_DELETE_GENERATIONS = 100;
+
+/**
+ * Deletes several generations of the current user, in as few requests as the API allows.
+ */
+export const deleteGenerations = async (ids: readonly string[]): Promise<void> => {
+  for (const batch of chunk(ids, MAX_BULK_DELETE_GENERATIONS)) {
+    // Sent one after another so a large selection doesn't flood the API, and ComfyUI with file deletions.
+    // eslint-disable-next-line no-await-in-loop
+    await apiRequest('/generations', { method: 'DELETE', body: { ids: batch }, isAuthenticated: true });
+  }
 };
 
 /**

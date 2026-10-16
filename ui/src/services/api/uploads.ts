@@ -1,5 +1,6 @@
 import { isMediaType } from '@core/generations/generations';
 import type { MediaType } from '@core/generations/generations';
+import { chunk } from '@core/utils/arrays';
 import { apiRequest, apiRequestFile, apiRequestWithMeta } from '@services/api/client';
 import { CURRENT_USER } from '@services/api/generations';
 
@@ -109,4 +110,18 @@ export const fetchUploadFile = async (id: string): Promise<Blob> => await apiReq
  */
 export const deleteUpload = async (id: string): Promise<void> => {
   await apiRequest(`/uploads/${encodeURIComponent(id)}`, { method: 'DELETE', isAuthenticated: true });
+};
+
+// Keep in sync with MAX_BULK_DELETE_UPLOADS of the API.
+const MAX_BULK_DELETE_UPLOADS = 100;
+
+/**
+ * Deletes several uploads of the current user along with their files, in as few requests as the API allows.
+ */
+export const deleteUploads = async (ids: readonly string[]): Promise<void> => {
+  for (const batch of chunk(ids, MAX_BULK_DELETE_UPLOADS)) {
+    // Sent one after another so a large selection doesn't flood the API, and ComfyUI with file deletions.
+    // eslint-disable-next-line no-await-in-loop
+    await apiRequest('/uploads', { method: 'DELETE', body: { ids: batch }, isAuthenticated: true });
+  }
 };

@@ -60,10 +60,15 @@ export interface GenerationListProps {
   allowDelete: boolean;
   emptyMessage: string;
   filter: GenerationsFilter;
+  /**
+   * Makes the tiles of the grid toggle whether their generation is selected when clicked, see GenerationTile.
+   */
+  onSelect?: ((generation: GenerationRecord) => void) | undefined;
+  selectedIds?: ReadonlySet<string> | undefined;
   variant: GenerationListVariant;
 }
 
-export const GenerationList: FC<GenerationListProps> = ({ allowDelete, emptyMessage, filter, variant }) => {
+export const GenerationList: FC<GenerationListProps> = ({ allowDelete, emptyMessage, filter, onSelect, selectedIds, variant }) => {
   const { user } = useAuth();
   const { data, error, fetchNextPage, hasNextPage, isFetchingNextPage, isPending } = useGenerations(filter);
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
@@ -103,7 +108,13 @@ export const GenerationList: FC<GenerationListProps> = ({ allowDelete, emptyMess
         return (
           <div className={GRID_CLASSES}>
             {generations.map((generation) => (
-              <GenerationTile generation={generation} key={generation.id} onOpen={() => { setOpenedGeneration(generation); }} />
+              <GenerationTile
+                generation={generation}
+                isSelected={selectedIds?.has(generation.id)}
+                key={generation.id}
+                onOpen={() => { setOpenedGeneration(generation); }}
+                onSelect={onSelect}
+              />
             ))}
           </div>
         );

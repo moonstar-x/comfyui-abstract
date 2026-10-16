@@ -1,4 +1,3 @@
-import { logger } from '@moonstar-x/logger';
 import type { Request, RequestHandler } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { DeleteController } from '../../app/controller/DeleteController.js';
@@ -9,7 +8,7 @@ import { requireAuth } from '../../middleware/auth.js';
 import type { AuthenticatedResponse } from '../../middleware/auth.js';
 import { deleteUpload, findUploadById, toPublicUpload } from '../../services/database/repositories/uploads.js';
 import { UploadIdSchema } from '../../services/uploads/schemas.js';
-import { deleteUploadFile } from '../../services/uploads/uploads.js';
+import { deleteUploadFiles } from '../../services/uploads/uploads.js';
 
 /**
  * Deletes an upload of the current user along with its file in the ComfyUI input directory.
@@ -37,13 +36,7 @@ export default class DeleteUploadController extends DeleteController {
       throw new ResourceNotFoundError(`Upload ${upload.id} does not exist.`);
     }
 
-    // The upload is already gone from the user's uploads, so a file that could not be deleted is only logged.
-    try {
-      await deleteUploadFile(deletedUpload);
-    } catch (error) {
-      logger.error(`Could not delete the file of upload ${deletedUpload.id}.`, error);
-    }
-
+    await deleteUploadFiles([deletedUpload]);
     return new ResponseBuilder().withStatus(StatusCodes.OK).withData(toPublicUpload(deletedUpload));
   }
 }

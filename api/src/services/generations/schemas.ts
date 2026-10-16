@@ -30,3 +30,13 @@ export const GenerationSummariesQuerySchema: z.ZodType<GenerationSummariesQuery>
 export const GenerationIdSchema: z.ZodUUID = z.uuid();
 
 export const GenerationOutputIndexSchema: z.ZodType<number> = z.coerce.number().int().min(0);
+
+export const MAX_BULK_DELETE_GENERATIONS = 100;
+
+export interface DeleteGenerationsBody {
+  ids: string[];
+}
+
+export const DeleteGenerationsBodySchema: z.ZodType<DeleteGenerationsBody> = z.object({
+  ids: z.array(GenerationIdSchema).min(1).max(MAX_BULK_DELETE_GENERATIONS)
+});

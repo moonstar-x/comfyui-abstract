@@ -2,8 +2,11 @@ import { useAuth } from '@components/auth/AuthContext';
 import { FeedViewToggle } from '@components/history/FeedViewToggle';
 import { GenerationList } from '@components/history/GenerationList';
 import { useFeedViewParam } from '@components/history/hooks/useFeedViewParam';
+import { useDeleteGenerations } from '@components/history/hooks/useGenerations';
 import { useMediaTypeParam } from '@components/history/hooks/useMediaTypeParam';
 import { MediaTypeFilter } from '@components/history/MediaTypeFilter';
+import { useSelection } from '@components/selection/hooks/useSelection';
+import { SelectionActions } from '@components/selection/SelectionActions';
 import { CATEGORY_TILE_CLASSES } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
 import { CURRENT_USER } from '@services/api/generations';
@@ -40,6 +43,9 @@ const HistoryPage: FC = () => {
   const scope = getScope(username, user?.username);
   const isFeed = scope.username === undefined;
   const isOwnHistory = scope.username === CURRENT_USER;
+  const selection = useSelection(`${scope.username ?? ''}/${mediaType ?? ''}`);
+  const generationsDeletion = useDeleteGenerations();
+  const isSelecting = isOwnHistory && selection.isSelecting;
 
   return (
     <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
@@ -58,6 +64,14 @@ const HistoryPage: FC = () => {
               <h1 className="sr-only">{scope.title}</h1>
               <MediaTypeFilter value={mediaType} onChange={setMediaType} />
               {isFeed && <FeedViewToggle value={feedView} onChange={setFeedView} />}
+              {isOwnHistory && (
+                <SelectionActions
+                  confirmDescription="The selected generations and their files will be removed permanently."
+                  deletion={generationsDeletion}
+                  itemName="generation"
+                  selection={selection}
+                />
+              )}
             </div>
           )}
 
@@ -67,7 +81,9 @@ const HistoryPage: FC = () => {
         emptyMessage={mediaType === undefined ? scope.emptyMessage : `${scope.emptyMessage} of this type`}
         filter={{ mediaType, username: scope.username }}
         key={scope.username ?? ''}
+        selectedIds={isSelecting ? selection.selectedIds : undefined}
         variant={isFeed ? feedView : (isOwnHistory ? 'grid' : 'timeline')}
+        onSelect={isSelecting ? (generation): void => { selection.toggle(generation.id); } : undefined}
       />
     </div>
   );

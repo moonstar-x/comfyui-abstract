@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { logger } from '@moonstar-x/logger';
+import type { ComfyApi } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { COMFYUI_UPLOAD_SUBFOLDER, MAX_AUDIO_UPLOAD_MB, MAX_IMAGE_UPLOAD_MB } from '../../config/environment.js';
 import { connectComfyUiClient, createComfyUiClient } from '../comfyui/client.js';
@@ -144,18 +146,38 @@ export const readUploadFile = async (upload: UploadRow): Promise<Uint8Array> => 
 };
 
 /**
- * Deletes the file of an upload from the ComfyUI input directory. ComfyUI has no endpoint for it, so it runs a workflow,
- * which requires a client with a websocket instead of the HTTP-only one used for the rest of the uploads.
+ * Deletes the files of uploads from the ComfyUI input directory. ComfyUI has no endpoint for it, so it runs a workflow per file,
+ * which requires a client with a websocket instead of the HTTP-only one used for the rest of the uploads. A single client is shared
+ * by every file. The uploads are already gone from the user's uploads, so files that could not be deleted are only logged.
  */
-export const deleteUploadFile = async (upload: UploadRow): Promise<void> => {
-  const client = await connectComfyUiClient();
+export const deleteUploadFiles = async (uploads: UploadRow[]): Promise<void> => {
+  if (uploads.length === 0) {
+    return;
+  }
+
+  let client: ComfyApi;
+  try {
+    client = await connectComfyUiClient();
+  } catch (error) {
+    logger.error(`Could not connect to ComfyUI to delete the files of ${uploads.length.toString()} upload(s).`, error);
+    return;
+  }
+
   const timeout = Promise.withResolvers<never>();
   const timer = setTimeout(() => {
-    timeout.reject(new Error(`Deleting the file of upload ${upload.id} timed out.`));
+    timeout.reject(new Error('Deleting the files of the uploads timed out.'));
   }, DELETE_UPLOAD_FILE_TIMEOUT_MS);
 
   try {
-    await Promise.race([deleteInputFile(client, upload.comfy_filename), timeout.promise]);
+    const results = await Promise.allSettled(uploads.map(async (upload) => {
+      await Promise.race([deleteInputFile(client, upload.comfy_filename), timeout.promise]);
+    }));
+
+    for (const [index, result] of results.entries()) {
+      if (result.status === 'rejected') {
+        logger.error(`Could not delete the file of upload ${uploads[index]?.id ?? ''}.`, result.reason);
+      }
+    }
   } finally {
     clearTimeout(timer);
     client.destroy();

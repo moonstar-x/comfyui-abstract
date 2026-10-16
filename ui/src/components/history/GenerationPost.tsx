@@ -3,7 +3,7 @@ import { findWorkflowNavItem } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { UserAvatar } from '@components/users/UserAvatar';
-import { formatDateTime, formatParamLabel, formatParamValue, formatRelativeTime, splitGenerationParams } from '@core/generations/generations';
+import { formatDateTime, formatLora, formatParamLabel, formatParamValue, formatRelativeTime, isWorkflowLoraList, splitGenerationParams } from '@core/generations/generations';
 import type { GenerationPrompt, GenerationRecord } from '@core/generations/generations';
 import { DynamicRouteDefs } from '@core/router/routes';
 import { downloadFile } from '@core/utils/files';
@@ -51,10 +51,29 @@ const PostDescription: FC<{ prompts: GenerationPrompt[] }> = ({ prompts }) => (
   </div>
 );
 
+interface ParamBadge {
+  key: string;
+  label: string;
+  text: string;
+}
+
+// LoRA lists get a badge per LoRA, in the order they were applied, so their names aren't buried in serialized JSON.
+const toParamBadges = ([key, value]: [string, unknown]): ParamBadge[] => {
+  if (isWorkflowLoraList(value)) {
+    return value.map((lora, index) => ({ key: `${key}-${index.toString()}`, label: 'LoRA', text: formatLora(lora) }));
+  }
+
+  return [{ key, label: formatParamLabel(key), text: formatParamValue(value) }];
+};
+
 const ParamBadges: FC<{ settings: Array<[string, unknown]> }> = ({ settings }) => {
+  // The sort is stable, so the LoRAs keep their order.
   const badges = settings
-    .map(([key, value]) => ({ key, label: formatParamLabel(key), text: formatParamValue(value) }))
+    .flatMap((setting) => toParamBadges(setting))
     .toSorted((a, b) => a.label.localeCompare(b.label));
+  if (badges.length === 0) {
+    return null;
+  }
 
   return (
     <ul aria-label="Parameters" className="flex flex-wrap gap-1.5">

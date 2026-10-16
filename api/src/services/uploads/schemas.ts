@@ -18,3 +18,13 @@ export const UploadsQuerySchema: z.ZodType<UploadsQuery> = z.object({
 });
 
 export const UploadIdSchema: z.ZodUUID = z.uuid();
+
+export const MAX_BULK_DELETE_UPLOADS = 100;
+
+export interface DeleteUploadsBody {
+  ids: string[];
+}
+
+export const DeleteUploadsBodySchema: z.ZodType<DeleteUploadsBody> = z.object({
+  ids: z.array(UploadIdSchema).min(1).max(MAX_BULK_DELETE_UPLOADS)
+});

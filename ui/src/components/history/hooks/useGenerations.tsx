@@ -1,4 +1,4 @@
-import { deleteGeneration, fetchGenerationCount, fetchGenerations } from '@services/api/generations';
+import { deleteGeneration, deleteGenerations, fetchGenerationCount, fetchGenerations } from '@services/api/generations';
 import type { GenerationsFilter, GenerationsPage } from '@services/api/generations';
 import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResult, UseQueryResult } from '@tanstack/react-query';
@@ -38,6 +38,20 @@ export const useDeleteGeneration = (): UseMutationResult<void, Error, string> =>
       await deleteGeneration(id);
     },
     onSuccess: async () => {
+      await invalidateGenerationHistory(queryClient);
+    }
+  });
+};
+
+export const useDeleteGenerations = (): UseMutationResult<void, Error, readonly string[]> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: readonly string[]) => {
+      await deleteGenerations(ids);
+    },
+    // Also refetched when only some batches went through, so the list drops whatever was deleted.
+    onSettled: async () => {
       await invalidateGenerationHistory(queryClient);
     }
   });

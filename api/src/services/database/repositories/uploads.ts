@@ -93,3 +93,12 @@ export const deleteUpload = async (id: string, username: string): Promise<Nullab
   const query = 'DELETE FROM user_uploads WHERE id = $1 AND username = $2 RETURNING *';
   return await database.oneOrNone<UploadRow>(query, [id, username]);
 };
+
+/**
+ * Deletes the uploads of the given IDs that belong to the given user, skipping the rest. Returns the deleted uploads
+ * so their files can be cleaned up.
+ */
+export const deleteUploads = async (ids: string[], username: string): Promise<UploadRow[]> => {
+  const query = 'DELETE FROM user_uploads WHERE id = ANY($1::uuid[]) AND username = $2 RETURNING *';
+  return await database.manyOrNone<UploadRow>(query, [ids, username]);
+};

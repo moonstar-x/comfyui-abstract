@@ -1,7 +1,7 @@
-import { deleteUpload, fetchUploadFile, fetchUploads } from '@services/api/uploads';
+import { deleteUpload, deleteUploads, fetchUploadFile, fetchUploads } from '@services/api/uploads';
 import type { UploadsFilter, UploadsPage } from '@services/api/uploads';
 import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { InfiniteData, UseInfiniteQueryResult, UseMutationResult } from '@tanstack/react-query';
+import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResult } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 const PAGE_SIZE = 24;
@@ -15,6 +15,11 @@ export const useUploads = ({ mediaType }: UploadsFilter): UseInfiniteQueryResult
   getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.uploads.length : undefined
 }));
 
+// Only the lists are refetched, the files of the remaining uploads haven't changed.
+const invalidateUploadLists = async (queryClient: QueryClient): Promise<void> => {
+  await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === UPLOADS_QUERY_KEY && query.queryKey[1] !== 'file' });
+};
+
 export const useDeleteUpload = (): UseMutationResult<void, Error, string> => {
   const queryClient = useQueryClient();
 
@@ -22,9 +27,22 @@ export const useDeleteUpload = (): UseMutationResult<void, Error, string> => {
     mutationFn: async (id: string) => {
       await deleteUpload(id);
     },
-    // Only the lists are refetched, the files of the remaining uploads haven't changed.
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === UPLOADS_QUERY_KEY && query.queryKey[1] !== 'file' });
+      await invalidateUploadLists(queryClient);
+    }
+  });
+};
+
+export const useDeleteUploads = (): UseMutationResult<void, Error, readonly string[]> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (ids: readonly string[]) => {
+      await deleteUploads(ids);
+    },
+    // Also refetched when only some batches went through, so the list drops whatever was deleted.
+    onSettled: async () => {
+      await invalidateUploadLists(queryClient);
     }
   });
 };
