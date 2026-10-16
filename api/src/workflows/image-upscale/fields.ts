@@ -21,3 +21,20 @@ export const DIFFUSION_IMAGE_UPSCALE_FIELDS: Readonly<Record<DiffusionImageUpsca
   model: TEXT_TO_IMAGE_FIELDS.model,
   vae: TEXT_TO_IMAGE_FIELDS.vae
 };
+
+type RefinedImageUpscaleParam = 'cfg' | 'clip' | 'denoise' | 'images' | 'model' | 'prompt' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'upscaleModel' | 'vae';
+
+export const REFINED_IMAGE_UPSCALE_FIELDS: Readonly<Record<RefinedImageUpscaleParam, WorkflowField>> = {
+  images: IMAGE_UPSCALE_FIELDS.images,
+  prompt: { kind: 'text', label: 'Prompt', multiline: true, placeholder: 'Describe the details to bring out in the image…' },
+  seed: TEXT_TO_IMAGE_FIELDS.seed,
+  steps: TEXT_TO_IMAGE_FIELDS.steps,
+  cfg: TEXT_TO_IMAGE_FIELDS.cfg,
+  sampler: TEXT_TO_IMAGE_FIELDS.sampler,
+  scheduler: TEXT_TO_IMAGE_FIELDS.scheduler,
+  denoise: IMAGE_GENERATE_FIELDS.denoise,
+  model: TEXT_TO_IMAGE_FIELDS.model,
+  clip: TEXT_TO_IMAGE_FIELDS.clip,
+  vae: TEXT_TO_IMAGE_FIELDS.vae,
+  upscaleModel: IMAGE_UPSCALE_FIELDS.model
+};

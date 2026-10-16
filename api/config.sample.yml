@@ -23,6 +23,22 @@ workflows:
       clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
       vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
 
+  - alias: z-image-turbo
+    workflow: image-upscale-z-image
+    type: image-upscale
+    serverParams:
+      model: 'z-image\z_image_turbo_bf16.safetensors'
+      clip: 'z-image\qwen_3_4b.safetensors'
+      vae: 'z-image\ae.safetensors'
+      upscaleModel: 'RealESRGAN_x4plus.safetensors'
+
+  - alias: seedvr2-7b
+    workflow: image-upscale-seedvr2
+    type: image-upscale
+    serverParams:
+      model: 'seedvr2\seedvr2_7b_int8_convrot.safetensors'
+      vae: 'seedvr2\seedvr2_ema_vae_fp16.safetensors'
+
   - alias: 4x-ultrasharp
     workflow: image-upscale-esrgan
     type: image-upscale
@@ -58,13 +74,6 @@ workflows:
     type: image-upscale
     serverParams:
       model: 'RealESRGAN_x4plus.safetensors'
-
-  - alias: seedvr2-7b
-    workflow: image-upscale-seedvr2
-    type: image-upscale
-    serverParams:
-      model: 'seedvr2\seedvr2_7b_int8_convrot.safetensors'
-      vae: 'seedvr2\seedvr2_ema_vae_fp16.safetensors'
 
   - alias: minimax-music3
     workflow: music-generate-minimax-music3
