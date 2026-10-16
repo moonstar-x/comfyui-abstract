@@ -59,6 +59,13 @@ workflows:
     serverParams:
       model: 'RealESRGAN_x4plus.safetensors'
 
+  - alias: seedvr2-7b
+    workflow: image-upscale-seedvr2
+    type: image-upscale
+    serverParams:
+      model: 'seedvr2\seedvr2_7b_int8_convrot.safetensors'
+      vae: 'seedvr2\seedvr2_ema_vae_fp16.safetensors'
+
   - alias: minimax-music3
     workflow: music-generate-minimax-music3
     type: music-generate

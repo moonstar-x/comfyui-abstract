@@ -6,6 +6,7 @@ import ImageEditWithQwenImage21 from './image-edit/ImageEditWithQwenImage21.js';
 import ImageGenerateWithKrea2 from './image-generate/ImageGenerateWithKrea2.js';
 import ImageGenerateWithQwenImage21 from './image-generate/ImageGenerateWithQwenImage21.js';
 import ImageUpscaleWithESRGAN from './image-upscale/ImageUpscaleWithEsrgan.js';
+import ImageUpscaleWithSeedVR2 from './image-upscale/ImageUpscaleWithSeedVr2.js';
 import MusicCoverWithYue2 from './music-cover/MusicCoverWithYue2.js';
 import MusicGenerateWithMiniMaxMusic3 from './music-generate/MusicGenerateWithMiniMaxMusic3.js';
 import MusicGenerateWithYue2 from './music-generate/MusicGenerateWithYue2.js';
@@ -51,6 +52,7 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
   ImageGenerateWithKrea2,
   ImageEditWithQwenImage21,
   ImageUpscaleWithESRGAN,
+  ImageUpscaleWithSeedVR2,
   MusicGenerateWithMiniMaxMusic3,
   MusicGenerateWithYue2,
   MusicCoverWithYue2
