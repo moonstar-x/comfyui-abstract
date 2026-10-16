@@ -6,11 +6,12 @@ import { GenerationTile } from '@components/history/GenerationTile';
 import { useGenerations } from '@components/history/hooks/useGenerations';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
-import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import { toWiderGallery, WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import { groupGenerationsByDay } from '@core/generations/generations';
 import type { GenerationRecord } from '@core/generations/generations';
 import type { Nullable } from '@core/utils/types';
+import { toOutputUrl } from '@core/workflows/outputs';
 import type { GenerationsFilter } from '@services/api/generations';
 import { cn } from 'cn';
 import { useState } from 'react';
@@ -83,8 +84,13 @@ export const GenerationList: FC<GenerationListProps> = ({ allowDelete, emptyMess
 
   const canDelete = (generation: GenerationRecord): boolean => allowDelete && generation.username === user?.username;
 
+  // Every loaded image in list order, so the preview and its slideshow carry on into the other generations.
+  const imageUrls = generations
+    .filter((generation) => generation.mediaType === 'image')
+    .flatMap((generation) => generation.outputs.map((output) => toOutputUrl(output)));
+
   const handleOpenImage = (images: string[], index: number): void => {
-    setGallery({ images, index });
+    setGallery(toWiderGallery(imageUrls, images, index));
   };
 
   const renderGenerations = (): ReactNode => {
@@ -124,7 +130,12 @@ export const GenerationList: FC<GenerationListProps> = ({ allowDelete, emptyMess
       )}
 
       <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
-      <GenerationPostDialog canDelete={openedGeneration !== null && canDelete(openedGeneration)} generation={openedGeneration} onClose={() => { setOpenedGeneration(null); }} />
+      <GenerationPostDialog
+        canDelete={openedGeneration !== null && canDelete(openedGeneration)}
+        galleryImages={imageUrls}
+        generation={openedGeneration}
+        onClose={() => { setOpenedGeneration(null); }}
+      />
     </div>
   );
 };

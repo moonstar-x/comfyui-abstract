@@ -1,7 +1,7 @@
 import { Dialog } from '@base-ui/react/dialog';
 import { GenerationPost } from '@components/history/GenerationPost';
 import { Button } from '@components/ui/third-party/shadcn/button';
-import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import { toWiderGallery, WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import type { GenerationRecord } from '@core/generations/generations';
 import type { Nullable } from '@core/utils/types';
@@ -14,6 +14,10 @@ export interface GenerationPostDialogProps {
    * Lets the post be deleted from the modal, which closes once it is.
    */
   canDelete: boolean;
+  /**
+   * The images of every generation in the list the post was opened from, which its image preview pages through.
+   */
+  galleryImages: readonly string[];
   generation: Nullable<GenerationRecord>;
   onClose: () => void;
 }
@@ -21,7 +25,7 @@ export interface GenerationPostDialogProps {
 /**
  * Shows a generation from the grid view as a feed post, in a modal.
  */
-export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete, generation, onClose }) => {
+export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete, galleryImages, generation, onClose }) => {
   // Keep showing the last generation after closing so it stays visible while the popup fades out.
   const [shownGeneration, setShownGeneration] = useState<Nullable<GenerationRecord>>(generation);
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
@@ -30,6 +34,10 @@ export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete,
     setShownGeneration(generation);
     setGallery(null);
   }
+
+  const handleOpenImage = (images: string[], index: number): void => {
+    setGallery(toWiderGallery(galleryImages, images, index));
+  };
 
   const handleOpenChange = (isOpen: boolean): void => {
     if (!isOpen) {
@@ -56,7 +64,7 @@ export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete,
           {shownGeneration !== null && (
             <div className="m-auto w-full max-w-xl">
               <Dialog.Title className="sr-only">{`${shownGeneration.username}'s generation`}</Dialog.Title>
-              <GenerationPost framed generation={shownGeneration} onDeleted={canDelete ? onClose : undefined} onOpenImage={(images, index) => { setGallery({ images, index }); }} />
+              <GenerationPost framed generation={shownGeneration} onDeleted={canDelete ? onClose : undefined} onOpenImage={handleOpenImage} />
             </div>
           )}
           <Dialog.Close
