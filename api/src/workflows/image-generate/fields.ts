@@ -40,7 +40,7 @@ export const TEXT_TO_IMAGE_FIELDS: Readonly<Record<TextToImageParam, WorkflowFie
 
 export const RESOLUTION_FIELD: WorkflowField = { kind: 'number', label: 'Resolution', integer: true, min: 64, step: 64 };
 
-export const LORAS_FIELD: LoraListWorkflowField = { kind: 'lora-list', label: 'LoRA Models', minStrength: 0, maxStrength: 2 };
+export const LORAS_FIELD: LoraListWorkflowField = { kind: 'lora-list', label: 'LoRA Models', minStrength: 0, maxStrength: 2, options: [] };
 
 type ImageGenerateParam = 'cfg' | 'clip' | 'denoise' | 'height' | 'model' | 'prompt' | 'sampler' | 'scheduler' | 'seed' | 'steps' | 'vae' | 'width';
 

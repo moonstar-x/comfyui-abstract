@@ -41,7 +41,10 @@ export interface LoraListWorkflowField extends BaseWorkflowField {
   kind: 'lora-list';
   maxStrength: number;
   minStrength: number;
-  placeholder?: string;
+  /**
+   * Names of the LoRA models that can be picked, filled in from the allowedLoras option of the config.
+   */
+  options: readonly string[];
 }
 
 /**

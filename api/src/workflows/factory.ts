@@ -62,12 +62,22 @@ const WORKFLOW_IMPLEMENTATIONS: readonly ComfyUiWorkflowClass[] = [
 
 const findImplementation = (id: string): ComfyUiWorkflowClass | undefined => WORKFLOW_IMPLEMENTATIONS.find((implementation) => implementation.id === id);
 
+const isLoraListKey = (implementation: ComfyUiWorkflowClass, key: string): boolean => implementation.fields[key]?.kind === 'lora-list';
+
 /**
- * Params the client may send: the visible and advanced params of the implementation, except the ones the config sets as server params.
+ * Params the client may send: the visible and advanced params of the implementation, except the ones the config sets as server params
+ * and the LoRA params when the config allows no LoRAs.
  */
-const getClientParamKeys = (config: WorkflowConfig, workflow: ComfyUiWorkflowInstance): { advanced: string[]; visible: string[] } => {
-  const omitServerParamKeys = (keys: readonly PropertyKey[]): string[] => keys.map(String).filter((key) => !Object.hasOwn(config.serverParams, key));
-  return { visible: omitServerParamKeys(workflow.visibleParams), advanced: omitServerParamKeys(workflow.advancedParams) };
+const getClientParamKeys = (
+  config: WorkflowConfig,
+  implementation: ComfyUiWorkflowClass,
+  workflow: ComfyUiWorkflowInstance
+): { advanced: string[]; visible: string[] } => {
+  const hasAllowedLoras = config.options.allowedLoras.length > 0;
+  const omitHiddenKeys = (keys: readonly PropertyKey[]): string[] => keys
+    .map(String)
+    .filter((key) => !Object.hasOwn(config.serverParams, key) && (hasAllowedLoras || !isLoraListKey(implementation, key)));
+  return { visible: omitHiddenKeys(workflow.visibleParams), advanced: omitHiddenKeys(workflow.advancedParams) };
 };
 
 const findDuplicates = (values: readonly string[]): string[] => [...new Set(values.filter((value, index) => values.indexOf(value) !== index))];
@@ -89,6 +99,10 @@ const validateWorkflowConfig = (config: WorkflowConfig): string[] => {
     errors.push(`unknown params ${unknownKeys.join(', ')}. Available params: ${Object.keys(implementation.fields).join(', ')}.`);
   }
 
+  if (config.options.allowedLoras.length > 0 && Object.keys(implementation.fields).every((key) => !isLoraListKey(implementation, key))) {
+    errors.push(`workflow "${config.workflow}" does not accept LoRAs, so options.allowedLoras cannot be set.`);
+  }
+
   return errors;
 };
 
@@ -105,6 +119,13 @@ export const validateWorkflowConfigs = (config: AppConfig): void => {
     throw new Error(`Config has invalid workflows:\n${errors.join('\n')}`);
   }
 };
+
+/**
+ * Fills in the field options that come from the config, such as the LoRAs that can be picked.
+ */
+const withConfigOptions = (config: WorkflowConfig, definition: WorkflowFieldDefinition): WorkflowFieldDefinition => definition.kind === 'lora-list'
+  ? { ...definition, options: config.options.allowedLoras }
+  : definition;
 
 const getImplementation = (config: WorkflowConfig): ComfyUiWorkflowClass => {
   const implementation = findImplementation(config.workflow);
@@ -139,7 +160,7 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
     .map((config) => {
       const Implementation = getImplementation(config);
       const workflow = new Implementation();
-      const { visible, advanced } = getClientParamKeys(config, workflow);
+      const { visible, advanced } = getClientParamKeys(config, Implementation, workflow);
       // The config defaults take precedence, falling back to the defaults of the workflow schema for the params the config omits.
       const defaults = { ...workflow.getSchemaDefaults(), ...config.params.defaults };
       return {
@@ -147,7 +168,7 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
         fields: [
           ...visible.map((key) => makeFieldDefinition(Implementation, defaults, key, false)),
           ...advanced.map((key) => makeFieldDefinition(Implementation, defaults, key, true))
-        ]
+        ].map((definition) => withConfigOptions(config, definition))
       };
     });
 
@@ -170,6 +191,22 @@ export const omitServerParams = (request: WorkflowRequestParams, params: Record<
   return Object.fromEntries(Object.entries(params).filter(([key]) => !Object.hasOwn(config.serverParams, key)));
 };
 
+const isNamedLora = (value: unknown): value is { lora: string } => typeof value === 'object' &&
+  value !== null &&
+  'lora' in value &&
+  typeof value.lora === 'string';
+
+/**
+ * Names of the LoRAs the client picked that the config does not allow. Malformed entries are left for the workflow schema to reject.
+ */
+const findForbiddenLoras = (config: WorkflowConfig, implementation: ComfyUiWorkflowClass, clientParams: Record<string, unknown>): string[] => {
+  const allowedLoras = new Set(config.options.allowedLoras);
+  return Object.entries(clientParams)
+    .filter(([key]) => isLoraListKey(implementation, key))
+    .flatMap(([, value]) => Array.isArray(value) ? value.filter((entry) => isNamedLora(entry)).map(({ lora }) => lora) : [])
+    .filter((lora) => !allowedLoras.has(lora));
+};
+
 export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParams: Record<string, unknown>): ConfiguredWorkflow => {
   const config = findWorkflowConfig({ type, model });
   if (config === undefined) {
@@ -178,11 +215,16 @@ export const makeWorkflow = ({ type, model }: WorkflowRequestParams, clientParam
 
   const Implementation = getImplementation(config);
   const workflow = new Implementation();
-  const { visible, advanced } = getClientParamKeys(config, workflow);
+  const { visible, advanced } = getClientParamKeys(config, Implementation, workflow);
   const clientKeys = new Set([...visible, ...advanced]);
   const forbiddenKeys = Object.keys(clientParams).filter((key) => !clientKeys.has(key));
   if (forbiddenKeys.length > 0) {
     throw new BadRequestError(`The ${type} workflow with the model ${model} does not accept the params: ${forbiddenKeys.join(', ')}.`);
+  }
+
+  const forbiddenLoras = findForbiddenLoras(config, Implementation, clientParams);
+  if (forbiddenLoras.length > 0) {
+    throw new BadRequestError(`The ${type} workflow with the model ${model} does not allow the LoRAs: ${[...new Set(forbiddenLoras)].join(', ')}.`);
   }
 
   return {

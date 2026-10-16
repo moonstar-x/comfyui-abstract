@@ -237,6 +237,10 @@ const parseLoras = (field: LoraListWorkflowField, entries: readonly LoraFormEntr
       continue;
     }
 
+    if (!field.options.includes(lora)) {
+      return `LoRA ${(index + 1).toString()}: ${lora} is not available.`;
+    }
+
     const rawStrength = entry.strength.trim();
     const strength = rawStrength === '' ? DEFAULT_LORA_STRENGTH : Number(rawStrength);
     if (!Number.isFinite(strength) || strength < field.minStrength || strength > field.maxStrength) {

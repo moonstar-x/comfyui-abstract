@@ -14,6 +14,9 @@ workflows:
       model: 'krea2\krea2_turbo_int8_convrot.safetensors'
       clip: 'krea2\qwen3vl_4b_fp8_scaled.safetensors'
       vae: 'qwen-image\qwen_image_vae.safetensors'
+    options:
+      allowedLoras:
+        - 'krea2\krea2_darkbrush.safetensors'
 
   - alias: qwen-image-2.1
     workflow: image-edit-qwen-image-2.1

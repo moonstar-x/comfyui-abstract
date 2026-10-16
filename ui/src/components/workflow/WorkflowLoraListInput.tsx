@@ -1,5 +1,6 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Input } from '@components/ui/third-party/shadcn/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/third-party/shadcn/select';
 import type { Optional } from '@core/utils/types';
 import type { LoraListWorkflowField } from '@core/workflows/definitions';
 import { DEFAULT_LORA_STRENGTH, makeLoraFormEntry } from '@core/workflows/params';
@@ -51,17 +52,22 @@ export const WorkflowLoraListInput: FC<WorkflowLoraListInputProps> = ({ field, v
 
                 return (
                   <li className="flex items-center gap-2" key={entry.id}>
-                    <Input
-                      aria-invalid={isInvalid}
-                      aria-label={`LoRA ${position} name`}
-                      className="min-w-0 flex-1"
+                    <Select<string>
                       disabled={disabled}
-                      placeholder={field.placeholder}
-                      value={entry.lora}
-                      onChange={(event) => {
-                        handleEntryChange(index, { lora: event.target.value });
+                      value={entry.lora === '' ? null : entry.lora}
+                      onValueChange={(next) => {
+                        handleEntryChange(index, { lora: next ?? '' });
                       }}
-                    />
+                    >
+                      <SelectTrigger aria-invalid={isInvalid} aria-label={`LoRA ${position} name`} className="w-full min-w-0 flex-1">
+                        <SelectValue placeholder="Select a LoRA" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {field.options.map((option) => (
+                          <SelectItem key={option} value={option}>{option}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Input
                       aria-invalid={isInvalid}
                       aria-label={`LoRA ${position} strength`}
