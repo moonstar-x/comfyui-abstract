@@ -1,5 +1,5 @@
 import type { Nullable } from '@core/utils/types';
-import { deleteConversation, fetchConversation, fetchConversations } from '@services/api/conversations';
+import { deleteConversation, fetchConversation, fetchConversations, setConversationPinned } from '@services/api/conversations';
 import type { ContextUsage, ConversationDetail, ConversationRecord, ConversationsPage, MessageRecord } from '@services/api/conversations';
 import { infiniteQueryOptions, queryOptions, useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { InfiniteData, QueryClient, UseInfiniteQueryResult, UseMutationResult, UseQueryResult } from '@tanstack/react-query';
@@ -65,6 +65,24 @@ export const useDeleteConversation = (): UseMutationResult<void, Error, string> 
     },
     onSuccess: async (_, id) => {
       queryClient.removeQueries({ queryKey: getConversationQueryKey(id) });
+      await invalidateConversationList(queryClient);
+    }
+  });
+};
+
+export interface SetConversationPinnedData {
+  id: string;
+  isPinned: boolean;
+}
+
+export const useSetConversationPinned = (): UseMutationResult<ConversationRecord, Error, SetConversationPinnedData> => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, isPinned }: SetConversationPinnedData) => await setConversationPinned(id, isPinned),
+    onSuccess: async (conversation) => {
+      // Only the conversation itself changed, so its messages are kept.
+      queryClient.setQueryData<ConversationDetail>(getConversationQueryKey(conversation.id), (previous) => previous && { ...previous, ...conversation });
       await invalidateConversationList(queryClient);
     }
   });

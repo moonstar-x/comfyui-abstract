@@ -7,6 +7,7 @@ import type { ConversationRow, MessageRole, MessageRow } from '../models/convers
 export interface PublicConversation {
   createdAt: Date;
   id: string;
+  pinnedAt: Nullable<Date>;
   title: string;
   updatedAt: Date;
   username: string;
@@ -44,6 +45,7 @@ export const toPublicConversation = (conversation: ConversationRow): PublicConve
   id: conversation.id,
   username: conversation.username,
   title: conversation.title,
+  pinnedAt: conversation.pinned_at,
   createdAt: conversation.created_at,
   updatedAt: conversation.updated_at
 });
@@ -70,12 +72,12 @@ export const findConversationById = async (id: string): Promise<Nullable<Convers
 };
 
 /**
- * Returns a user's conversations, most recently active first.
+ * Returns a user's conversations, pinned first, then most recently active first.
  */
 export const findConversations = async ({ username, limit, offset }: FindConversationsFilter): Promise<ConversationRow[]> => {
   const query = `SELECT * FROM conversations
     WHERE username = $1
-    ORDER BY updated_at DESC, id DESC
+    ORDER BY pinned_at IS NULL, updated_at DESC, id DESC
     LIMIT $2 OFFSET $3`;
 
   return await database.manyOrNone<ConversationRow>(query, [username, limit, offset]);
@@ -87,6 +89,16 @@ export const findConversations = async ({ username, limit, offset }: FindConvers
 export const touchConversation = async (id: string, connection: DatabaseConnection = database): Promise<ConversationRow> => {
   const query = 'UPDATE conversations SET updated_at = now() WHERE id = $1 RETURNING *';
   return await connection.one<ConversationRow>(query, [id]);
+};
+
+/**
+ * Pins the conversation to the top of the list of its user, or unpins it. Keeps when it was pinned if it already was.
+ */
+export const setConversationPinned = async (id: string, isPinned: boolean): Promise<ConversationRow> => {
+  const query = isPinned
+    ? 'UPDATE conversations SET pinned_at = COALESCE(pinned_at, now()) WHERE id = $1 RETURNING *'
+    : 'UPDATE conversations SET pinned_at = NULL WHERE id = $1 RETURNING *';
+  return await database.one<ConversationRow>(query, [id]);
 };
 
 /**

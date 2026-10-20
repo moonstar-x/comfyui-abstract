@@ -1,6 +1,7 @@
 import { isReplyShownIn, useChat } from '@components/chat/ChatContext';
 import { AssistantMessage, UserMessage } from '@components/chat/ChatMessage';
 import { ChatPaneHeader } from '@components/chat/ChatPaneHeader';
+import { ChatPinButton } from '@components/chat/ChatPinButton';
 import { ChatPromptInput } from '@components/chat/ChatPromptInput';
 import { useConversation } from '@components/chat/hooks/useConversations';
 import { Button } from '@components/ui/third-party/shadcn/button';
@@ -151,6 +152,8 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
   return (
     <>
       <ChatPaneHeader
+        // A new chat can only be pinned once its first message creates the conversation.
+        actions={data !== undefined && <ChatPinButton conversation={data} size="icon-sm" />}
         title={getTitle()}
         leading={(
           <Button aria-label="Back to chats" size="icon-sm" type="button" variant="ghost" onClick={showList}>

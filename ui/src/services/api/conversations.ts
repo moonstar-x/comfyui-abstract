@@ -9,6 +9,8 @@ export type MessageRole = 'assistant' | 'user';
 export interface ConversationRecord {
   createdAt: string;
   id: string;
+  // When the conversation was pinned to the top of the list, null when it is not pinned.
+  pinnedAt: Nullable<string>;
   title: string;
   // Bumped by every message, so the most recently active conversations come first.
   updatedAt: string;
@@ -57,6 +59,7 @@ const isNullableString = (value: unknown): value is Nullable<string> => value ==
 const isConversationRecord = (value: unknown): value is ConversationRecord => isRecord(value) &&
   typeof value['id'] === 'string' &&
   typeof value['title'] === 'string' &&
+  isNullableString(value['pinnedAt']) &&
   typeof value['createdAt'] === 'string' &&
   typeof value['updatedAt'] === 'string';
 
@@ -85,7 +88,7 @@ const isConversationDetail = (value: unknown): value is ConversationDetail => is
   isContextUsage(value['context']);
 
 /**
- * Returns a page of the current user's conversations, most recently active first.
+ * Returns a page of the current user's conversations, pinned first, then most recently active first.
  */
 export const fetchConversations = async (offset: number, limit: number): Promise<ConversationsPage> => {
   const search = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
@@ -100,6 +103,18 @@ export const fetchConversations = async (offset: number, limit: number): Promise
 export const fetchConversation = async (id: string): Promise<ConversationDetail> => {
   const data = await apiRequest(`/conversations/${encodeURIComponent(id)}`, { isAuthenticated: true });
   if (!isConversationDetail(data)) {
+    throw new Error('The server returned an invalid conversation.');
+  }
+
+  return data;
+};
+
+/**
+ * Pins a conversation of the current user to the top of their list, or unpins it.
+ */
+export const setConversationPinned = async (id: string, isPinned: boolean): Promise<ConversationRecord> => {
+  const data = await apiRequest(`/conversations/${encodeURIComponent(id)}`, { method: 'PATCH', body: { pinned: isPinned }, isAuthenticated: true });
+  if (!isConversationRecord(data)) {
     throw new Error('The server returned an invalid conversation.');
   }
 

@@ -29,3 +29,11 @@ export const SendMessageBodySchema: z.ZodType<SendMessageBody> = z.object({
   content: z.string().trim().min(1).max(MAX_MESSAGE_LENGTH),
   conversationId: ConversationIdSchema.optional()
 });
+
+export interface UpdateConversationBody {
+  pinned: boolean;
+}
+
+export const UpdateConversationBodySchema: z.ZodType<UpdateConversationBody> = z.object({
+  pinned: z.boolean()
+});

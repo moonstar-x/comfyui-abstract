@@ -10,6 +10,10 @@ export type MessageRole = typeof MESSAGE_ROLES[keyof typeof MESSAGE_ROLES];
 export interface ConversationRow {
   created_at: Date;
   id: string;
+  /**
+   * When the conversation was pinned to the top of the list of its user, or null when it is not pinned.
+   */
+  pinned_at: Date | null;
   title: string;
   updated_at: Date;
   username: string;

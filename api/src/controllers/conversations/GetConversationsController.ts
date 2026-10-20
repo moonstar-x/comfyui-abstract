@@ -8,7 +8,7 @@ import { findConversations, toPublicConversation } from '../../services/database
 import { ConversationsQuerySchema } from '../../services/lmstudio/schemas.js';
 
 /**
- * LM Studio conversations of the current user, most recently active first. One extra row is fetched to tell whether there is a next page.
+ * LM Studio conversations of the current user, pinned first, then most recently active first. One extra row is fetched to tell whether there is a next page.
  */
 export default class GetConversationsController extends GetController {
   public override readonly middleware: RequestHandler[] = [requireAuth];

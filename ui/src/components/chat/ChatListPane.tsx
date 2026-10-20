@@ -1,6 +1,7 @@
 import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { useChat } from '@components/chat/ChatContext';
 import { ChatPaneHeader } from '@components/chat/ChatPaneHeader';
+import { ChatPinButton } from '@components/chat/ChatPinButton';
 import { useConversations, useDeleteConversation } from '@components/chat/hooks/useConversations';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
@@ -98,7 +99,7 @@ const DeleteConversationButton: FC<{ conversation: ConversationRecord; disabled:
 };
 
 /**
- * The chat history, most recently active first, with a button to start a new chat.
+ * The chat history, pinned first, then most recently active first, with a button to start a new chat.
  */
 export const ChatListPane: FC = () => {
   const { conversationId, openConversation, reply, startNewChat } = useChat();
@@ -155,6 +156,10 @@ export const ChatListPane: FC = () => {
                   {isStreamingHere ? 'Replying…' : formatRelativeTime(conversation.updatedAt)}
                 </span>
               </button>
+              <ChatPinButton
+                className="opacity-0 group-hover/chat-item:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+                conversation={conversation}
+              />
               <DeleteConversationButton conversation={conversation} disabled={isStreamingHere} />
             </li>
           );
