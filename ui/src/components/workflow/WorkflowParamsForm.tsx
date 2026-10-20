@@ -189,7 +189,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button className="w-full md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
+          <Button className="w-full cursor-pointer md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
             <Play data-icon="inline-start" />
             {getSubmitLabel(isUploading, isSubmitting, isRunning)}
             {!isBusy && (
@@ -199,7 +199,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
             )}
           </Button>
           <Button
-            className="w-full md:w-auto"
+            className="w-full cursor-pointer md:w-auto"
             disabled={isBusy}
             size="lg"
             type="button"

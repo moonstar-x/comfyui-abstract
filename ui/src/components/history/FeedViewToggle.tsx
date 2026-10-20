@@ -31,6 +31,7 @@ export const FeedViewToggle: FC<FeedViewToggleProps> = ({ onChange, value }) => 
         <Button
           aria-label={option.label}
           aria-pressed={isSelected}
+          className="cursor-pointer"
           key={option.value}
           size="icon-sm"
           title={option.label}

@@ -211,7 +211,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
   );
 
   const playButton = (
-    <Button aria-label={isPlaying ? 'Pause' : 'Play'} className="rounded-full" size={isCompact ? 'icon' : 'icon-lg'} type="button" onClick={() => { void handleTogglePlay(); }}>
+    <Button aria-label={isPlaying ? 'Pause' : 'Play'} className="cursor-pointer rounded-full" size={isCompact ? 'icon' : 'icon-lg'} type="button" onClick={() => { void handleTogglePlay(); }}>
       {isPlaying ? <Pause aria-hidden="true" className="fill-current" /> : <Play aria-hidden="true" className="translate-x-px fill-current" />}
     </Button>
   );
@@ -225,7 +225,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
   );
 
   const muteButton = (
-    <Button aria-label={isMuted ? 'Unmute' : 'Mute'} size="icon-sm" type="button" variant="ghost" onClick={handleToggleMute}>
+    <Button aria-label={isMuted ? 'Unmute' : 'Mute'} className="cursor-pointer" size="icon-sm" type="button" variant="ghost" onClick={handleToggleMute}>
       <VolumeIcon aria-hidden="true" />
     </Button>
   );

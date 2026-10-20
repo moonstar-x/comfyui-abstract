@@ -92,7 +92,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                   // Labelled by the children of the menu trigger, which replace its own.
                   // eslint-disable-next-line jsx-a11y/control-has-associated-label
                   <button
-                    className="flex h-24 w-full flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-accent data-popup-open:text-accent-foreground"
+                    className="flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-accent data-popup-open:text-accent-foreground"
                     type="button"
                   />
                 )}
@@ -108,7 +108,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                   <span className="min-w-0 flex-1 truncate text-sm" title={value.name}>{value.name}</span>
                   <WorkflowFileSourceMenu
                     disabled={disabled}
-                    trigger={<Button aria-label={`Replace ${value.name}`} size="icon-xs" type="button" variant="ghost" />}
+                    trigger={<Button aria-label={`Replace ${value.name}`} className="cursor-pointer" size="icon-xs" type="button" variant="ghost" />}
                     onBrowse={() => inputRef.current?.click()}
                     onPickGeneration={() => { setIsGenerationPickerOpen(true); }}
                     onPickUpload={() => { setIsPickerOpen(true); }}
@@ -117,6 +117,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                   </WorkflowFileSourceMenu>
                   <Button
                     aria-label={`Remove ${value.name}`}
+                    className="cursor-pointer"
                     disabled={disabled}
                     size="icon-xs"
                     type="button"

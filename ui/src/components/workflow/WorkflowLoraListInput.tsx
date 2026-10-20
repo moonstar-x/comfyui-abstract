@@ -71,7 +71,7 @@ export const WorkflowLoraListInput: FC<WorkflowLoraListInputProps> = ({ field, v
                     <Input
                       aria-invalid={isInvalid}
                       aria-label={`LoRA ${position} strength`}
-                      className="w-24 shrink-0"
+                      className="w-18 shrink-0 px-2 tabular-nums"
                       disabled={disabled}
                       inputMode="decimal"
                       max={field.maxStrength}
@@ -86,6 +86,7 @@ export const WorkflowLoraListInput: FC<WorkflowLoraListInputProps> = ({ field, v
                     />
                     <Button
                       aria-label={`Remove LoRA ${position}`}
+                      className="cursor-pointer"
                       disabled={disabled}
                       size="icon"
                       type="button"
@@ -102,7 +103,7 @@ export const WorkflowLoraListInput: FC<WorkflowLoraListInputProps> = ({ field, v
             </ul>
           )}
 
-      <Button className="self-start" disabled={disabled} size="sm" type="button" variant="outline" onClick={handleAdd}>
+      <Button className="w-full cursor-pointer md:w-auto md:self-start" disabled={disabled} size="sm" type="button" variant="outline" onClick={handleAdd}>
         <Plus data-icon="inline-start" />
         Add LoRA
       </Button>

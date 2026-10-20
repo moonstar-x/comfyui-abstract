@@ -96,7 +96,7 @@ export const UploadList: FC<UploadListProps> = ({ canDelete, emptyMessage, filte
       </div>
 
       {hasNextPage && (
-        <Button className="mt-4 self-center" disabled={isFetchingNextPage} type="button" variant="outline" onClick={() => { void fetchNextPage(); }}>
+        <Button className="mt-4 cursor-pointer self-center" disabled={isFetchingNextPage} type="button" variant="outline" onClick={() => { void fetchNextPage(); }}>
           {isFetchingNextPage ? 'Loading…' : 'Load more'}
         </Button>
       )}

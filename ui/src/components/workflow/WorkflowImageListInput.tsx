@@ -64,7 +64,7 @@ const SortableImage: FC<SortableImageProps> = ({ entry, disabled, onOpen, onRemo
       </button>
       <Button
         aria-label={`Remove ${entry.name}`}
-        className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm"
+        className="absolute top-1 right-1 cursor-pointer bg-background/80 backdrop-blur-sm"
         disabled={disabled}
         size="icon-xs"
         type="button"
@@ -197,7 +197,7 @@ export const WorkflowImageListInput: FC<WorkflowImageListInputProps> = ({ field,
                 // Labelled by the children of the menu trigger, which replace its own.
                 // eslint-disable-next-line jsx-a11y/control-has-associated-label
                 <button
-                  className="flex size-full flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-accent data-popup-open:text-accent-foreground"
+                  className="flex size-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50 data-popup-open:bg-accent data-popup-open:text-accent-foreground"
                   type="button"
                 />
               )}
