@@ -13,7 +13,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarRail
+  SidebarRail,
+  useSidebar
 } from '@components/ui/third-party/shadcn/sidebar';
 import { RouteDefs } from '@core/router/routes';
 import { cn } from 'cn';
@@ -37,6 +38,7 @@ interface NavMenuItemProps {
 
 const NavMenuItem: FC<NavMenuItemProps> = ({ isActive, item }) => {
   const Icon = item.icon;
+  const { setOpenMobile } = useSidebar();
 
   return (
     <SidebarMenuItem>
@@ -45,6 +47,9 @@ const NavMenuItem: FC<NavMenuItemProps> = ({ isActive, item }) => {
         isActive={isActive}
         render={<NavLink end to={item.path} />}
         tooltip={item.title}
+        onClick={() => {
+          setOpenMobile(false);
+        }}
       >
         <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-md transition-colors', CATEGORY_TILE_CLASSES[item.category], ACTIVE_TILE_CLASSES)}>
           <Icon />
@@ -76,6 +81,7 @@ const NavMenuSection: FC<NavMenuSectionProps> = ({ pathname, section }) => (
 export const AppSidebar: FC = () => {
   const { user } = useAuth();
   const pathname = toNavPathname(useLocation().pathname, user?.username);
+  const { setOpenMobile } = useSidebar();
 
   return (
     <Sidebar collapsible="icon">
@@ -87,6 +93,9 @@ export const AppSidebar: FC = () => {
               render={<Link to={RouteDefs.home} />}
               size="lg"
               tooltip="ComfyUI Abstract"
+              onClick={() => {
+                setOpenMobile(false);
+              }}
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                 <Workflow />

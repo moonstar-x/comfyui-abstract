@@ -48,7 +48,7 @@ const UserIdentity: FC<{ user: PublicUser }> = ({ user }) => (
  */
 export const UserMenu: FC = () => {
   const { user, logout } = useAuth();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpenMobile } = useSidebar();
   const { resolvedTheme, setTheme } = useTheme();
   if (user === null) {
     return null;
@@ -70,7 +70,12 @@ export const UserMenu: FC = () => {
             </DropdownMenuLabel>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem render={<Link to={RouteDefs.settings} />}>
+          <DropdownMenuItem
+            render={<Link to={RouteDefs.settings} />}
+            onClick={() => {
+              setOpenMobile(false);
+            }}
+          >
             <Settings />
             Settings
           </DropdownMenuItem>
