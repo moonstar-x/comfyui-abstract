@@ -76,6 +76,12 @@ export const PORT: number = getInteger('PORT', 4000);
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
 export const COMFYUI_UPLOAD_SUBFOLDER: string = getRelativePath('COMFYUI_UPLOAD_SUBFOLDER', 'comfyui-abstract');
 
+export const LMSTUDIO_URL: string = getRequired('LMSTUDIO_URL');
+/**
+ * Sent as a bearer token to LM Studio. Empty when its server does not require authentication.
+ */
+export const LMSTUDIO_API_KEY: string = getString('LMSTUDIO_API_KEY', '');
+
 export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
 
 export const CONFIG_FILE: string = path.resolve(getString('CONFIG_FILE', 'config.yml'));

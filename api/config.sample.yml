@@ -1,3 +1,7 @@
+lmstudio:
+  model: 'qwen/qwen3-8b'
+  contextLength: 8192
+
 workflows:
   - alias: qwen-image-2.1
     workflow: image-generate-qwen-image-2.1

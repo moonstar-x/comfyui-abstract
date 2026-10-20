@@ -2,10 +2,16 @@ import { Buffer } from 'node:buffer';
 import type { RequestHandler } from 'express';
 import { Router } from 'express';
 import type { Controller } from '../controller/Controller.js';
+import { sendEventStream } from '../http/events.js';
 
 const wrapController = (controller: Controller): RequestHandler => async (req, res) => {
   const response = await controller.handle(req, res);
-  const { file } = response;
+  const { events, file } = response;
+  if (events !== undefined) {
+    await sendEventStream(res, response.statusCode, events);
+    return;
+  }
+
   if (file !== undefined) {
     res.status(response.statusCode).type(file.contentType).send(Buffer.from(file.data.buffer, file.data.byteOffset, file.data.byteLength));
     return;

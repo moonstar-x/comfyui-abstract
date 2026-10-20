@@ -12,9 +12,18 @@ export interface ResponseFile {
   data: Uint8Array;
 }
 
+/**
+ * An event sent through a server-sent event stream. The data is serialized as JSON.
+ */
+export interface ResponseEvent {
+  data: ResponseData;
+  event: string;
+}
+
 export class ResponseBuilder {
   private _data: ResponseData | undefined;
   private _error: object | undefined;
+  private _events: AsyncIterable<ResponseEvent> | undefined;
   private _file: ResponseFile | undefined;
   private _meta: ResponseMeta | undefined;
   private _status: number;
@@ -23,8 +32,13 @@ export class ResponseBuilder {
     this._status = StatusCodes.OK;
     this._data = undefined;
     this._error = undefined;
+    this._events = undefined;
     this._file = undefined;
     this._meta = {};
+  }
+
+  public get events(): AsyncIterable<ResponseEvent> | undefined {
+    return this._events;
   }
 
   public get file(): ResponseFile | undefined {
@@ -67,9 +81,22 @@ export class ResponseBuilder {
     return this.withStatus(error.status);
   }
 
+  /**
+   * Streams the events as server-sent events instead of sending the JSON envelope. The events are only consumed once the
+   * response starts, so errors thrown while producing them are sent as an error event rather than an error status.
+   */
+  public withEventStream(events: AsyncIterable<ResponseEvent>): this {
+    if (this._data !== undefined || this._error !== undefined || this._file !== undefined) {
+      throw new Error('Body already has data, error or file.');
+    }
+
+    this._events = events;
+    return this;
+  }
+
   public withFile(file: ResponseFile): this {
-    if (this._data !== undefined || this._error !== undefined) {
-      throw new Error('Body already has data or error.');
+    if (this._data !== undefined || this._error !== undefined || this._events !== undefined) {
+      throw new Error('Body already has data, error or event stream.');
     }
 
     this._file = file;

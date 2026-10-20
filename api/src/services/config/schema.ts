@@ -19,11 +19,27 @@ export interface WorkflowConfig {
   workflow: string;
 }
 
+export interface LmStudioConfig {
+  /**
+   * Context length in tokens the model is loaded with in LM Studio. Conversations are trimmed to their latest messages to fit in it.
+   */
+  contextLength: number;
+  /**
+   * Identifier of the LM Studio model that answers every conversation, as listed by its /v1/models endpoint.
+   */
+  model: string;
+}
+
 export interface AppConfig {
+  lmstudio: LmStudioConfig;
   workflows: WorkflowConfig[];
 }
 
 export const AppConfigSchema: z.ZodType<AppConfig> = z.object({
+  lmstudio: z.object({
+    model: z.string().min(1),
+    contextLength: z.number().int().positive()
+  }),
   workflows: z.array(z.object({
     alias: z.string(),
     options: z.object({

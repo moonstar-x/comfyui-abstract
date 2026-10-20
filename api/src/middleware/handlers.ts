@@ -11,7 +11,7 @@ type ErrorLike = Error & {
   toApiResponseError?: () => ApiResponseError;
 };
 
-const resolveApiResponseError = (error: ErrorLike): ApiResponseError => {
+export const resolveApiResponseError = (error: ErrorLike): ApiResponseError => {
   if (error instanceof ApiResponseError) {
     return error;
   }
