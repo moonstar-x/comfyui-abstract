@@ -1,7 +1,15 @@
 import { formatDateTime } from '@core/generations/generations';
 import type { GenerationRecord } from '@core/generations/generations';
 import type { Nullable } from '@core/utils/types';
-import type { AudioWorkflowField, ImageListWorkflowField, LoraListWorkflowField, NumberWorkflowField, WorkflowField, WorkflowLora } from '@core/workflows/definitions';
+import type {
+  AudioWorkflowField,
+  ImageListWorkflowField,
+  LoraListWorkflowField,
+  NumberWorkflowField,
+  WorkflowField,
+  WorkflowLora,
+  WorkflowModelDefinition
+} from '@core/workflows/definitions';
 import type { UploadRecord } from '@services/api/uploads';
 
 // LoRA rows keep their raw input strings so the strength can be edited freely before it's validated.
@@ -131,6 +139,28 @@ export const getLoraFormEntries = (value: WorkflowFormValue): LoraFormEntry[] =>
 export const getImageFormEntries = (value: WorkflowFormValue): ImageFormEntry[] => Array.isArray(value) ? value.filter((entry) => 'url' in entry) : [];
 
 export const getAudioFormEntry = (value: WorkflowFormValue): Nullable<AudioFormEntry> => typeof value === 'object' && value !== null && !Array.isArray(value) ? value : null;
+
+export interface WorkflowInstruction {
+  // Unique among the instructions of a form, since the same markdown can belong to several models.
+  key: string;
+  markdown: string;
+}
+
+/**
+ * Markdown instructions that apply to the form as it is filled: the ones of the model first, then the ones of each picked LoRA in the order
+ * they were picked. A LoRA picked more than once only shows its instructions once.
+ */
+export const getWorkflowInstructions = ({ documentation, fields }: WorkflowModelDefinition, values: WorkflowFormValues): WorkflowInstruction[] => {
+  const loras = fields
+    .filter((field) => field.kind === 'lora-list')
+    .flatMap((field) => getLoraFormEntries(values[field.key] ?? null).map(({ lora }) => lora));
+  const loraInstructions = [...new Set(loras)].flatMap((lora) => {
+    const markdown = documentation.loras[lora];
+    return markdown === undefined ? [] : [{ key: `lora:${lora}`, markdown }];
+  });
+
+  return documentation.model === null ? loraInstructions : [{ key: 'model', markdown: documentation.model }, ...loraInstructions];
+};
 
 const isWorkflowLora = (value: unknown): value is Partial<WorkflowLora> & Pick<WorkflowLora, 'lora'> => typeof value === 'object' &&
   value !== null &&

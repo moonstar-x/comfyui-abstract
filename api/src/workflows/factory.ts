@@ -1,6 +1,8 @@
 import { BadRequestError } from '../app/http/errors/BadRequestError.js';
 import type { ComfyUiWorkflowClass, ComfyUiWorkflowInstance } from '../services/comfyui/ComfyUiWorkflow.js';
 import { getConfig } from '../services/config/config.js';
+import { getDocumentation } from '../services/config/documentation.js';
+import type { AppDocumentation } from '../services/config/documentation.js';
 import type { AppConfig, WorkflowConfig } from '../services/config/schema.js';
 import ImageEditWithQwenImage21 from './image-edit/ImageEditWithQwenImage21.js';
 import ImageGenerateWithKrea2 from './image-generate/ImageGenerateWithKrea2.js';
@@ -26,8 +28,20 @@ export interface WorkflowRequestParams {
  */
 export type WorkflowFieldDefinition = WorkflowField & { defaultValue?: unknown; isAdvanced: boolean; key: string };
 
+/**
+ * Markdown instructions from the docs file. The diffusion model is a server param, so its documentation is sent without its name.
+ */
+export interface WorkflowModelDocumentation {
+  /**
+   * Documentation of the allowed LoRAs, keyed by LoRA name. LoRAs without documentation are left out.
+   */
+  loras: Record<string, string>;
+  model: null | string;
+}
+
 export interface WorkflowModelDefinition {
   alias: string;
+  documentation: WorkflowModelDocumentation;
   fields: WorkflowFieldDefinition[];
 }
 
@@ -121,6 +135,31 @@ export const validateWorkflowConfigs = (config: AppConfig): void => {
 };
 
 /**
+ * Name of the diffusion model of a workflow, which the docs file is keyed by.
+ */
+const getModelName = ({ serverParams }: WorkflowConfig): null | string => typeof serverParams['model'] === 'string' ? serverParams['model'] : null;
+
+/**
+ * Names of the docs entries that match no diffusion model or allowed LoRA of the config, most likely because of a typo or a removed model.
+ */
+export const findUnusedDocumentation = (config: AppConfig, documentation: AppDocumentation): string[] => {
+  const names = new Set(config.workflows.flatMap((workflow) => [getModelName(workflow), ...workflow.options.allowedLoras]));
+  return Object.keys(documentation).filter((name) => !names.has(name));
+};
+
+const findInstructions = (documentation: AppDocumentation, name: null | string): null | string => name !== null && Object.hasOwn(documentation, name)
+  ? documentation[name] ?? null
+  : null;
+
+const getModelDocumentation = (config: WorkflowConfig, documentation: AppDocumentation): WorkflowModelDocumentation => ({
+  model: findInstructions(documentation, getModelName(config)),
+  loras: Object.fromEntries(config.options.allowedLoras.flatMap((lora) => {
+    const instructions = findInstructions(documentation, lora);
+    return instructions === null ? [] : [[lora, instructions]];
+  }))
+});
+
+/**
  * Fills in the field options that come from the config, such as the LoRAs that can be picked.
  */
 const withConfigOptions = (config: WorkflowConfig, definition: WorkflowFieldDefinition): WorkflowFieldDefinition => definition.kind === 'lora-list'
@@ -155,6 +194,7 @@ const makeFieldDefinition = (implementation: ComfyUiWorkflowClass, defaults: Rec
  * Server params are never included.
  */
 export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition => {
+  const documentation = getDocumentation();
   const models = getConfig().workflows
     .filter((config) => config.type === type)
     .map((config) => {
@@ -165,6 +205,7 @@ export const getWorkflowDefinition = (type: WorkflowType): WorkflowDefinition =>
       const defaults = { ...workflow.getSchemaDefaults(), ...config.params.defaults };
       return {
         alias: config.alias,
+        documentation: getModelDocumentation(config, documentation),
         fields: [
           ...visible.map((key) => makeFieldDefinition(Implementation, defaults, key, false)),
           ...advanced.map((key) => makeFieldDefinition(Implementation, defaults, key, true))

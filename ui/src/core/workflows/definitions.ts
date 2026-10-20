@@ -72,8 +72,17 @@ export type WorkflowField =
   SelectWorkflowField |
   TextWorkflowField;
 
+// Markdown instructions from the API docs file.
+export interface WorkflowModelDocumentation {
+  // Keyed by LoRA name, only holding the allowed LoRAs that have documentation.
+  loras: Readonly<Record<string, string>>;
+  // Documentation of the diffusion model, whose name the API keeps to itself.
+  model: Nullable<string>;
+}
+
 export interface WorkflowModelDefinition {
   alias: string;
+  documentation: WorkflowModelDocumentation;
   // Ordered as listed in the API config, visible fields first.
   fields: readonly WorkflowField[];
 }

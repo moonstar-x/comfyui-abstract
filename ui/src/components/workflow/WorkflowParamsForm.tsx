@@ -5,13 +5,14 @@ import { useAppWebSocket } from '@components/websocket/WebSocketContext';
 import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
 import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
+import { WorkflowInstructions } from '@components/workflow/WorkflowInstructions';
 import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
 import { getWorkflowOutputKind } from '@core/workflows/outputs';
-import { makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
+import { getWorkflowInstructions, makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues, WorkflowPrefill } from '@core/workflows/params';
 import { uploadWorkflowFiles } from '@core/workflows/uploads';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
@@ -165,6 +166,8 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
       {/* The key handler only catches shortcuts bubbling up from the fields, the form itself is not interactive. */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <form noValidate className="@container flex min-w-0 flex-col gap-6" onKeyDown={handleKeyDown} onSubmit={handleSubmit}>
+        <WorkflowInstructions instructions={getWorkflowInstructions(model, values)} />
+
         {visibleFields.length > 0 && renderFields(visibleFields)}
 
         {advancedFields.length > 0 && (

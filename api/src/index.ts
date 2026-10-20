@@ -3,12 +3,19 @@ import { logger } from '@moonstar-x/logger';
 import { createApp } from './app/express/app.js';
 import { PORT } from './config/environment.js';
 import { loadConfig } from './services/config/config.js';
+import { loadDocumentation } from './services/config/documentation.js';
 import { runMigrationsForApp } from './services/database/migration/migration.js';
 import { WebSocketServer } from './websocket/WebSocketServer.js';
-import { validateWorkflowConfigs } from './workflows/factory.js';
+import { findUnusedDocumentation, validateWorkflowConfigs } from './workflows/factory.js';
 
 try {
-  validateWorkflowConfigs(await loadConfig());
+  const config = await loadConfig();
+  validateWorkflowConfigs(config);
+
+  const unusedDocumentation = findUnusedDocumentation(config, await loadDocumentation());
+  if (unusedDocumentation.length > 0) {
+    logger.warn(`Docs file has entries for models that are not in the config: ${unusedDocumentation.join(', ')}.`);
+  }
 
   const migrationsDirectory = path.join(import.meta.dirname, '../migrations');
   await runMigrationsForApp(migrationsDirectory);

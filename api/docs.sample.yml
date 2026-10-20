@@ -1,0 +1,12 @@
+# Markdown instructions shown under the form of a workflow, keyed by the name of the diffusion model (serverParams.model)
+# or LoRA model (options.allowedLoras) as written in config.yml. The docs of the selected model and of every picked LoRA are shown together.
+
+'krea2\krea2_turbo_int8_convrot.safetensors': |
+  **Krea 2 Turbo**
+
+  Notes about how to prompt this model.
+
+'krea2\krea2_darkbrush.safetensors': |
+  **Darkbrush**
+
+  Notes about how to trigger this LoRA, such as its trigger words.
