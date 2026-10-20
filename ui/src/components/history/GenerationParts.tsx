@@ -16,19 +16,28 @@ const getQueueWaitMs = (generation: GenerationRecord): Nullable<number> => gener
   ? null
   : new Date(generation.startedAt).getTime() - new Date(generation.createdAt).getTime();
 
-export const DurationLabel: FC<{ generation: GenerationRecord }> = ({ generation }) => {
-  const waitMs = getQueueWaitMs(generation);
-  const title = waitMs === null
+interface DurationTextProps {
+  className?: string;
+  durationMs: number;
+  queueWaitMs: Nullable<number>;
+}
+
+export const DurationText: FC<DurationTextProps> = ({ className, durationMs, queueWaitMs }) => {
+  const title = queueWaitMs === null
     ? undefined
-    : `Waited ${formatDuration(waitMs)} in the queue, ran for ${formatDuration(generation.durationMs - waitMs)}`;
+    : `Waited ${formatDuration(queueWaitMs)} in the queue, ran for ${formatDuration(durationMs - queueWaitMs)}`;
 
   return (
-    <span className="inline-flex items-center gap-1 tabular-nums" title={title}>
+    <span className={cn('inline-flex items-center gap-1 tabular-nums', className)} title={title}>
       <Clock aria-hidden="true" className="size-3.5" />
-      {formatDuration(generation.durationMs)}
+      {formatDuration(durationMs)}
     </span>
   );
 };
+
+export const DurationLabel: FC<{ generation: GenerationRecord }> = ({ generation }) => (
+  <DurationText durationMs={generation.durationMs} queueWaitMs={getQueueWaitMs(generation)} />
+);
 
 export const WorkflowBadge: FC<{ generation: GenerationRecord }> = ({ generation }) => {
   const navItem = findWorkflowNavItem(generation.workflowType);

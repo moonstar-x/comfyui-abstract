@@ -17,11 +17,14 @@ import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues, Workflo
 import { uploadWorkflowFiles } from '@core/workflows/uploads';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { FC, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
 
 // Multiline and list fields span the whole row, see WorkflowFieldInput.
 const FIELDS_LAYOUT_CLASSES = 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4';
+
+// Matches the lg breakpoint where the result moves beside the form instead of below it.
+const SIDE_BY_SIDE_QUERY = '(min-width: 64rem)';
 
 // Matches the modifier handleKeyDown accepts on each platform.
 const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
@@ -68,6 +71,7 @@ export interface WorkflowParamsFormProps {
 
 export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, prefill = null, runner }) => {
   const { isConnected } = useAppWebSocket();
+  const resultRef = useRef<HTMLElement>(null);
   const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
   const outputKind = getWorkflowOutputKind(type);
   const { current, previous: history, generations } = useGenerationSession(outputKind);
@@ -105,6 +109,11 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
     setErrors(parsed.errors);
     if (Object.keys(parsed.errors).length > 0) {
       return;
+    }
+
+    // While the layout is stacked the result sits below the form, so bring it into view to follow the run.
+    if (!matchMedia(SIDE_BY_SIDE_QUERY).matches) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     setIsUploading(true);
@@ -180,7 +189,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button disabled={!isConnected || isBusy} size="lg" type="submit">
+          <Button className="w-full md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
             <Play data-icon="inline-start" />
             {getSubmitLabel(isUploading, isSubmitting, isRunning)}
             {!isBusy && (
@@ -189,7 +198,14 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
               </kbd>
             )}
           </Button>
-          <Button disabled={isBusy} size="lg" type="button" variant="ghost" onClick={handleReset}>
+          <Button
+            className="w-full md:w-auto"
+            disabled={isBusy}
+            size="lg"
+            type="button"
+            variant="ghost"
+            onClick={handleReset}
+          >
             <RotateCcw data-icon="inline-start" />
             Reset
           </Button>
@@ -197,7 +213,11 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         </div>
       </form>
 
-      <section aria-label="Result" className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20 lg:self-start">
+      <section
+        aria-label="Result"
+        className="flex min-w-0 scroll-mt-18 flex-col gap-3 lg:sticky lg:top-20 lg:self-start"
+        ref={resultRef}
+      >
         {error !== null && (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
@@ -208,7 +228,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.
-          : <WorkflowRunResult animate={current.promptId === promptId} files={current.files} kind={outputKind} onOpen={handleOpenSessionImage} />}
+          : <WorkflowRunResult animate={current.promptId === promptId} generation={current} kind={outputKind} onOpen={handleOpenSessionImage} />}
         {/* While a run is in progress the status takes the result's place, so the latest result joins the history. */}
         <WorkflowRunHistory generations={isBusy ? generations : history} kind={outputKind} onOpen={handleOpenSessionImage} />
       </section>

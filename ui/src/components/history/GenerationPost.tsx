@@ -186,7 +186,7 @@ const DownloadOutputsButton: FC<{ urls: string[] }> = ({ urls }) => {
 /**
  * Opens the workflow that made the generation with the same model picked and the form filled with its params, as long as the workflow still exists.
  */
-const OpenWorkflowButton: FC<{ generation: GenerationRecord }> = ({ generation }) => {
+const OpenWorkflowButton: FC<{ className?: string; generation: GenerationRecord }> = ({ className, generation }) => {
   const navItem = findWorkflowNavItem(generation.workflowType);
   if (navItem === null) {
     return null;
@@ -194,6 +194,7 @@ const OpenWorkflowButton: FC<{ generation: GenerationRecord }> = ({ generation }
 
   return (
     <Button
+      className={className}
       nativeButton={false}
       render={<Link state={makeWorkflowPrefillState(generation.model, generation.params)} to={DynamicRouteDefs.workflowWithModel(generation.workflowType, generation.model)} />}
       size="sm"
@@ -205,11 +206,20 @@ const OpenWorkflowButton: FC<{ generation: GenerationRecord }> = ({ generation }
   );
 };
 
+export type GenerationPostFrame = 'card' | 'feed' | 'none';
+
+const FRAME_CLASSES: Record<GenerationPostFrame, string> = {
+  card: 'rounded-xl border bg-card p-4 shadow-xl',
+  feed: 'border-b px-1 py-4 sm:rounded-xl sm:border sm:bg-card sm:p-4',
+  none: 'p-4'
+};
+
 export interface GenerationPostProps {
   /**
-   * Always draws the post as a card. Otherwise it is only one on wider screens, and a plain row of the feed on phones.
+   * How the post is set apart from what's around it: `feed` is a plain row of the feed on phones and a card on wider screens,
+   * `card` is always a card, and `none` leaves it bare to fill the page it is on.
    */
-  framed?: boolean;
+  frame?: GenerationPostFrame;
   generation: GenerationRecord;
   /**
    * Shows a button to delete the generation, called once it is deleted.
@@ -221,13 +231,13 @@ export interface GenerationPostProps {
 /**
  * A generation in the feed of everyone's generations, laid out like a social media post.
  */
-export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, generation, onDeleted, onOpenImage }) => {
+export const GenerationPost: FC<GenerationPostProps> = ({ frame = 'feed', generation, onDeleted, onOpenImage }) => {
   const profilePath = DynamicRouteDefs.historyByUser(generation.username);
   const { prompts, settings } = splitGenerationParams(generation.workflowType, generation.params);
   const outputUrls = generation.outputs.map((output) => toOutputUrl(output));
 
   return (
-    <article className={cn('flex flex-col gap-3', framed ? 'rounded-xl border bg-card p-4 shadow-xl' : 'border-b px-1 py-4 sm:rounded-xl sm:border sm:bg-card sm:p-4')}>
+    <article className={cn('flex flex-col gap-3', FRAME_CLASSES[frame])}>
       <header className="flex items-center gap-3">
         <Link className="shrink-0" to={profilePath}>
           <UserAvatar className="size-10" pictureUrl={null} username={generation.username} />
@@ -250,12 +260,15 @@ export const GenerationPost: FC<GenerationPostProps> = ({ framed = false, genera
       <PostMedia generation={generation} onOpenImage={onOpenImage} />
 
       <footer className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <WorkflowBadge generation={generation} />
-          <DurationLabel generation={generation} />
-          <div className="ml-auto flex items-center gap-1.5">
+        {/* On phones the details and the actions each get their own row, with the open button taking the rest of the width. */}
+        <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex items-center justify-between gap-3 sm:justify-start">
+            <WorkflowBadge generation={generation} />
+            <DurationLabel generation={generation} />
+          </div>
+          <div className="flex items-center gap-1.5 sm:ml-auto">
             {outputUrls.length > 0 && <DownloadOutputsButton urls={outputUrls} />}
-            <OpenWorkflowButton generation={generation} />
+            <OpenWorkflowButton className="flex-1 sm:flex-none" generation={generation} />
           </div>
         </div>
         {settings.length > 0 && <ParamBadges settings={settings} />}

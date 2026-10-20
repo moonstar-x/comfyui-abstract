@@ -164,8 +164,14 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       // Stored as <type>/<promptId>-<n>.<ext>, keeping the extension ComfyUI saved the file with.
       const urls = await Promise.all(files.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
 
-      await saveGeneration(run, { mediaType: OUTPUT_MEDIA_TYPES[workflow.outputKind], outputs: urls, startedAt, completedAt: new Date() });
-      this.emit('message', { type: 'workflow_complete', payload: { promptId, files: urls } });
+      const completedAt = new Date();
+      await saveGeneration(run, { mediaType: OUTPUT_MEDIA_TYPES[workflow.outputKind], outputs: urls, startedAt, completedAt });
+      // Same timings as the stored generation, so the result shows the duration before the history is fetched.
+      const durationMs = completedAt.getTime() - run.createdAt.getTime();
+      // TS can't see the assignment inside the progress callback, so it would narrow this to null.
+      const runStartedAt = startedAt as Nullable<Date>;
+      const queueWaitMs = runStartedAt === null ? null : runStartedAt.getTime() - run.createdAt.getTime();
+      this.emit('message', { type: 'workflow_complete', payload: { promptId, files: urls, durationMs, queueWaitMs } });
     } catch (error) {
       logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
       const message = error instanceof Error ? error.message : 'Could not retrieve the workflow outputs.';

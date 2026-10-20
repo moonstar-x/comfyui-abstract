@@ -1,4 +1,6 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
+import type { Generation } from '@components/generation/GenerationSessionContext';
+import { DurationText } from '@components/history/GenerationParts';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { cn } from 'cn';
 import { Download } from 'lucide-react';
@@ -10,6 +12,7 @@ const STAGGER_MS = 120;
 
 interface RunResultImageProps {
   animate: boolean;
+  generation: Generation;
   index: number;
   onOpen: (url: string) => void;
   url: string;
@@ -22,7 +25,14 @@ const DownloadLink: FC<{ url: string }> = ({ url }) => (
   </a>
 );
 
-const RunResultImage: FC<RunResultImageProps> = ({ animate, index, url, onOpen }) => {
+const RunResultCaption: FC<{ generation: Generation; url: string }> = ({ generation, url }) => (
+  <figcaption className="flex items-center justify-between gap-2">
+    <DownloadLink url={url} />
+    <DurationText className="text-sm text-muted-foreground" durationMs={generation.durationMs} queueWaitMs={generation.queueWaitMs} />
+  </figcaption>
+);
+
+const RunResultImage: FC<RunResultImageProps> = ({ animate, generation, index, url, onOpen }) => {
   // The entrance waits for the image to load, otherwise it would play on an empty frame.
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -38,21 +48,20 @@ const RunResultImage: FC<RunResultImageProps> = ({ animate, index, url, onOpen }
       <button className="cursor-zoom-in overflow-hidden rounded-lg border bg-muted/40" type="button" onClick={() => { onOpen(url); }}>
         <img alt={`Workflow output ${(index + 1).toString()}`} className="h-auto w-full" src={url} onLoad={() => { setIsLoaded(true); }} />
       </button>
-      <figcaption>
-        <DownloadLink url={url} />
-      </figcaption>
+      <RunResultCaption generation={generation} url={url} />
     </figure>
   );
 };
 
 interface RunResultAudioProps {
   animate: boolean;
+  generation: Generation;
   index: number;
   url: string;
 }
 
 // Audio has nothing to wait for before it can be shown, unlike images, so it animates in right away.
-const RunResultAudio: FC<RunResultAudioProps> = ({ animate, index, url }) => (
+const RunResultAudio: FC<RunResultAudioProps> = ({ animate, generation, index, url }) => (
   <figure
     style={animate ? { animationDelay: `${(index * STAGGER_MS).toString()}ms` } : undefined}
     className={cn(
@@ -61,9 +70,7 @@ const RunResultAudio: FC<RunResultAudioProps> = ({ animate, index, url }) => (
     )}
   >
     <AudioPlayer label={`Workflow output ${(index + 1).toString()}`} src={url} />
-    <figcaption>
-      <DownloadLink url={url} />
-    </figcaption>
+    <RunResultCaption generation={generation} url={url} />
   </figure>
 );
 
@@ -72,12 +79,13 @@ export interface WorkflowRunResultProps {
    * Plays an entrance animation, meant for results that just finished rather than ones shown when opening the page.
    */
   animate?: boolean;
-  files: string[];
+  generation: Generation;
   kind: WorkflowOutputKind;
   onOpen: (url: string) => void;
 }
 
-export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ animate = false, files, kind, onOpen }) => {
+export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ animate = false, generation, kind, onOpen }) => {
+  const { files } = generation;
   if (files.length === 0) {
     return (
       <p className="rounded-lg border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
@@ -91,7 +99,7 @@ export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ animate = false,
     return (
       <div className="grid gap-4">
         {files.map((url, index) => (
-          <RunResultAudio animate={animate} index={index} key={url} url={url} />
+          <RunResultAudio animate={animate} generation={generation} index={index} key={url} url={url} />
         ))}
       </div>
     );
@@ -100,7 +108,7 @@ export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ animate = false,
   return (
     <div className={files.length > 1 ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4'}>
       {files.map((url, index) => (
-        <RunResultImage animate={animate} index={index} key={url} url={url} onOpen={onOpen} />
+        <RunResultImage animate={animate} generation={generation} index={index} key={url} url={url} onOpen={onOpen} />
       ))}
     </div>
   );

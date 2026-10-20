@@ -9,9 +9,11 @@ import type { Context, FC, ReactNode } from 'react';
 
 export interface Generation {
   createdAt: number;
+  durationMs: number;
   files: string[];
   kind: WorkflowOutputKind;
   promptId: string;
+  queueWaitMs: Nullable<number>;
 }
 
 interface ContextValue {
@@ -43,10 +45,12 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     const files = payload.files.map((path) => toOutputUrl(path));
     const generation: Generation = {
       createdAt: Date.now(),
+      durationMs: payload.durationMs,
       files,
       // A run only ever produces one kind of file. An empty run has nothing to show, so its kind doesn't matter.
       kind: files[0] === undefined ? 'image' : getOutputKind(files[0]),
-      promptId: payload.promptId
+      promptId: payload.promptId,
+      queueWaitMs: payload.queueWaitMs
     };
 
     setGenerations((previous) => previous.some((item) => item.promptId === generation.promptId) ? previous : [generation, ...previous]);
