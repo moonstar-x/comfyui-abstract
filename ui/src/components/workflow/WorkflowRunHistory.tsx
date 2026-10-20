@@ -1,24 +1,29 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
-import type { Generation } from '@components/generation/GenerationSessionContext';
+import { Button } from '@components/ui/third-party/shadcn/button';
+import type { Nullable } from '@core/utils/types';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { Download } from 'lucide-react';
 import type { FC } from 'react';
 
 export interface WorkflowRunHistoryProps {
-  generations: Generation[];
+  error: Nullable<Error>;
+  files: readonly string[];
+  hasMore: boolean;
+  isLoadingMore: boolean;
   kind: WorkflowOutputKind;
+  onLoadMore: () => void;
   onOpen: (url: string) => void;
 }
 
-export const WorkflowRunHistory: FC<WorkflowRunHistoryProps> = ({ generations, kind, onOpen }) => {
-  const files = generations.flatMap((generation) => generation.files);
-  if (files.length === 0) {
+export const WorkflowRunHistory: FC<WorkflowRunHistoryProps> = ({ error, files, hasMore, isLoadingMore, kind, onLoadMore, onOpen }) => {
+  if (error === null && files.length === 0) {
     return null;
   }
 
   return (
     <section className="flex flex-col gap-2">
       <h2 className="text-sm font-semibold">Previous generations</h2>
+      {error !== null && <p className="text-sm text-destructive" role="alert">{error.message}</p>}
       {kind === 'audio'
         ? (
             <ul className="flex flex-col gap-2">
@@ -42,6 +47,11 @@ export const WorkflowRunHistory: FC<WorkflowRunHistoryProps> = ({ generations, k
               ))}
             </div>
           )}
+      {hasMore && (
+        <Button className="self-center" disabled={isLoadingMore} size="sm" type="button" variant="outline" onClick={onLoadMore}>
+          {isLoadingMore ? 'Loading…' : 'Load more'}
+        </Button>
+      )}
     </section>
   );
 };

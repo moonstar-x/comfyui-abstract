@@ -15,12 +15,16 @@ export const invalidateGenerationHistory = async (queryClient: QueryClient): Pro
   await queryClient.invalidateQueries({ queryKey: [GENERATIONS_QUERY_KEY] });
 };
 
-export const useGenerations = ({ username, mediaType }: GenerationsFilter): UseInfiniteQueryResult<InfiniteData<GenerationsPage, number>> => useInfiniteQuery(infiniteQueryOptions({
-  queryKey: [GENERATIONS_QUERY_KEY, username ?? null, mediaType ?? null],
-  queryFn: async ({ pageParam }) => await fetchGenerations({ username, mediaType }, pageParam, PAGE_SIZE),
-  initialPageParam: 0,
-  getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.generations.length : undefined
-}));
+export const useGenerations = (filter: GenerationsFilter): UseInfiniteQueryResult<InfiniteData<GenerationsPage, number>> => {
+  const { username, mediaType, workflowType, model } = filter;
+
+  return useInfiniteQuery(infiniteQueryOptions({
+    queryKey: [GENERATIONS_QUERY_KEY, username ?? null, mediaType ?? null, workflowType ?? null, model ?? null],
+    queryFn: async ({ pageParam }) => await fetchGenerations({ username, mediaType, workflowType, model }, pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.offset + lastPage.generations.length : undefined
+  }));
+};
 
 /**
  * How many generations the current user has made. Kept under the history query key so it refreshes along with the history.

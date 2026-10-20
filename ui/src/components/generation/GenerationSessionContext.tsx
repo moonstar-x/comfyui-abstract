@@ -30,7 +30,6 @@ export interface UseGenerationSessionReturn {
   clear: () => void;
   current: Nullable<Generation>;
   generations: Generation[];
-  previous: Generation[];
   /**
    * Drops a result from the session, such as once its generation is deleted.
    */
@@ -103,7 +102,6 @@ export const useGenerationSession = (kind: WorkflowOutputKind): UseGenerationSes
       clear,
       current: generations[0] ?? null,
       generations,
-      previous: generations.slice(1),
       remove
     };
   }, [allGenerations, clear, kind, remove]);

@@ -117,11 +117,13 @@ export interface CreateGenerationData {
 export interface FindGenerationsFilter {
   limit: number;
   mediaType?: MediaType | undefined;
+  model?: string | undefined;
   offset: number;
   /**
    * Only returns the generations of this user when given, otherwise the generations of every user.
    */
   username?: string | undefined;
+  workflowType?: undefined | WorkflowType;
 }
 
 export const toPublicGeneration = (generation: GenerationRow): PublicGeneration => ({
@@ -224,13 +226,14 @@ export const findGenerationById = async (id: string): Promise<Nullable<Generatio
 /**
  * Returns the generations matching the filter, newest first.
  */
-export const findGenerations = async ({ username, mediaType, limit, offset }: FindGenerationsFilter): Promise<GenerationRow[]> => {
+export const findGenerations = async ({ username, mediaType, workflowType, model, limit, offset }: FindGenerationsFilter): Promise<GenerationRow[]> => {
   const query = `SELECT * FROM generations
     WHERE ($1::varchar IS NULL OR username = $1) AND ($2::varchar IS NULL OR media_type = $2)
+      AND ($3::varchar IS NULL OR workflow_type = $3) AND ($4::varchar IS NULL OR model = $4)
     ORDER BY created_at DESC, id DESC
-    LIMIT $3 OFFSET $4`;
+    LIMIT $5 OFFSET $6`;
 
-  return await database.manyOrNone<GenerationRow>(query, [username ?? null, mediaType ?? null, limit, offset]);
+  return await database.manyOrNone<GenerationRow>(query, [username ?? null, mediaType ?? null, workflowType ?? null, model ?? null, limit, offset]);
 };
 
 export const countGenerationsByUsername = async (username: string): Promise<number> => {

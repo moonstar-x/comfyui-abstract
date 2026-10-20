@@ -2,6 +2,7 @@ import { isGenerationRecord } from '@core/generations/generations';
 import type { GenerationRecord, MediaType } from '@core/generations/generations';
 import { chunk } from '@core/utils/arrays';
 import { apiRequest, apiRequestWithMeta } from '@services/api/client';
+import type { WorkflowType } from '@services/websocket/messages/client';
 
 // Keep in sync with the reserved usernames of the API.
 export const CURRENT_USER = 'me';
@@ -9,9 +10,14 @@ export const CURRENT_USER = 'me';
 export interface GenerationsFilter {
   mediaType?: MediaType | undefined;
   /**
+   * The alias of the model the generations were made with.
+   */
+  model?: string | undefined;
+  /**
    * Only the generations of this user when given, otherwise the generations of every user.
    */
   username?: string | undefined;
+  workflowType?: undefined | WorkflowType;
 }
 
 export interface GenerationsPage {
@@ -34,9 +40,9 @@ const buildQuery = (params: Record<string, number | string | undefined>): string
   return query === '' ? '' : `?${query}`;
 };
 
-export const fetchGenerations = async ({ username, mediaType }: GenerationsFilter, offset: number, limit: number): Promise<GenerationsPage> => {
+export const fetchGenerations = async ({ username, mediaType, workflowType, model }: GenerationsFilter, offset: number, limit: number): Promise<GenerationsPage> => {
   const path = username === undefined ? '/generations' : `/users/${encodeURIComponent(username)}/generations`;
-  const { data, meta } = await apiRequestWithMeta(`${path}${buildQuery({ mediaType, limit, offset })}`, { isAuthenticated: true });
+  const { data, meta } = await apiRequestWithMeta(`${path}${buildQuery({ mediaType, workflowType, model, limit, offset })}`, { isAuthenticated: true });
   if (!isGenerationRecordList(data)) {
     throw new Error('The server returned an invalid generation history.');
   }

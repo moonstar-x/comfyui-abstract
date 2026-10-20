@@ -18,8 +18,8 @@ export const toHistoryGeneration = (row: GenerationRow): PublicGeneration => {
 /**
  * Responds with a page of generations, newest first. One extra row is fetched to tell whether there is a next page.
  */
-export const respondWithGenerationsPage = async ({ mediaType, limit, offset }: GenerationsQuery, username?: string): Promise<ResponseBuilder> => {
-  const rows = await findGenerations({ username, mediaType, limit: limit + 1, offset });
+export const respondWithGenerationsPage = async ({ mediaType, workflowType, model, limit, offset }: GenerationsQuery, username?: string): Promise<ResponseBuilder> => {
+  const rows = await findGenerations({ username, mediaType, workflowType, model, limit: limit + 1, offset });
   const hasMore = rows.length > limit;
 
   return new ResponseBuilder()

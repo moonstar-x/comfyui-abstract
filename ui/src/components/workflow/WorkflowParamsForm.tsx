@@ -1,4 +1,5 @@
 import { useGenerationSession } from '@components/generation/GenerationSessionContext';
+import { useGenerations } from '@components/history/hooks/useGenerations';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import type { UseRunWorkflowReturn } from '@components/websocket/hooks/useRunWorkflow';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
@@ -11,10 +12,11 @@ import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
 import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
-import { getWorkflowOutputKind } from '@core/workflows/outputs';
+import { getWorkflowOutputKind, toOutputUrl } from '@core/workflows/outputs';
 import { getWorkflowInstructions, makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
 import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues, WorkflowPrefill } from '@core/workflows/params';
 import { uploadWorkflowFiles } from '@core/workflows/uploads';
+import { CURRENT_USER } from '@services/api/generations';
 import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
 import { Play, RotateCcw } from 'lucide-react';
 import { useRef, useState } from 'react';
@@ -74,13 +76,20 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
   const resultRef = useRef<HTMLElement>(null);
   const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
   const outputKind = getWorkflowOutputKind(type);
-  const { current, previous: history, generations } = useGenerationSession(outputKind);
+  const { current } = useGenerationSession(outputKind);
+  const history = useGenerations({ username: CURRENT_USER, workflowType: type, model: model.alias });
   const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields, prefill));
   const [errors, setErrors] = useState<WorkflowFormErrors>({});
   const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
   const [isUploading, setIsUploading] = useState(false);
   // The form stays locked from submission until the run settles, not just until it is queued.
   const isBusy = isUploading || isSubmitting || isRunning;
+  // While a run is in progress the status takes the result's place, so the latest result joins the history.
+  const shownResult = isBusy ? null : current;
+  const historyFiles = (history.data?.pages ?? [])
+    .flatMap((page) => page.generations)
+    .filter((generation) => generation.promptId !== shownResult?.promptId)
+    .flatMap((generation) => generation.outputs.map((path) => toOutputUrl(path)));
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -93,7 +102,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
 
   // The latest result and the previous generations browse together as one gallery, newest first.
   const handleOpenSessionImage = (url: string): void => {
-    const images = generations.flatMap((generation) => generation.files);
+    const images = [...shownResult?.files ?? [], ...historyFiles];
     setGallery({ images, index: Math.max(images.indexOf(url), 0) });
   };
 
@@ -221,16 +230,23 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         {error !== null && (
           <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
         )}
-        {isBusy || current === null
+        {shownResult === null
           ? (
               <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
                 <ResultPlaceholderContent isSubmitting={isSubmitting} isUploading={isUploading} promptId={isRunning ? promptId : null} />
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.
-          : <WorkflowRunResult animate={current.promptId === promptId} generation={current} kind={outputKind} onOpen={handleOpenSessionImage} />}
-        {/* While a run is in progress the status takes the result's place, so the latest result joins the history. */}
-        <WorkflowRunHistory generations={isBusy ? generations : history} kind={outputKind} onOpen={handleOpenSessionImage} />
+          : <WorkflowRunResult animate={shownResult.promptId === promptId} generation={shownResult} kind={outputKind} onOpen={handleOpenSessionImage} />}
+        <WorkflowRunHistory
+          error={history.error}
+          files={historyFiles}
+          hasMore={history.hasNextPage}
+          isLoadingMore={history.isFetchingNextPage}
+          kind={outputKind}
+          onLoadMore={() => { void history.fetchNextPage(); }}
+          onOpen={handleOpenSessionImage}
+        />
       </section>
 
       <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
