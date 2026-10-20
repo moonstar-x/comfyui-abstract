@@ -109,7 +109,7 @@ const ImageStage: FC<ImageStageProps> = ({ images, index, isFullscreen, outgoing
   );
 };
 
-const TOOLBAR_BUTTON_CLASSES = 'cursor-pointer bg-black/30 text-white hover:bg-white/15 hover:text-white';
+const TOOLBAR_BUTTON_CLASSES = 'bg-black/30 text-white hover:bg-white/15 hover:text-white';
 
 // The trigger's own background and icon colors are meant for the page, not for sitting over the dark preview.
 const INTERVAL_TRIGGER_CLASSES = 'border-white/20 bg-black/30 text-white hover:bg-white/15 dark:bg-black/30 dark:hover:bg-white/15 [&_svg]:text-white/70';
@@ -250,7 +250,7 @@ export const WorkflowImageViewer: FC<WorkflowImageViewerProps> = ({ gallery, onC
     }
   };
 
-  const navigationButtonClasses = 'absolute top-1/2 z-10 -translate-y-1/2 cursor-pointer bg-black/30 text-white hover:bg-white/15 hover:text-white disabled:opacity-0';
+  const navigationButtonClasses = 'absolute top-1/2 z-10 -translate-y-1/2 bg-black/30 text-white hover:bg-white/15 hover:text-white disabled:opacity-0';
   const popupLayoutClasses = isFullscreen ? 'bg-black' : 'gap-3 p-4 md:p-8';
 
   return (

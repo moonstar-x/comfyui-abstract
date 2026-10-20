@@ -24,7 +24,6 @@ export const ChatPaneHeader: FC<ChatPaneHeaderProps> = ({ actions, leading, titl
       {actions}
       <Button
         aria-label="Hide chat"
-        className="cursor-pointer"
         size="icon-sm"
         type="button"
         variant="ghost"

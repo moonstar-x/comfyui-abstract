@@ -29,7 +29,7 @@ export const ComfyUiQueueStatus: FC<ComfyUiQueueStatusProps> = ({ queue, onRefre
         render={(
           <Button
             aria-label={`ComfyUI queue: ${formatJobCount(queue.size)}`}
-            className="cursor-pointer gap-1.5 rounded-full px-3 text-xs"
+            className="gap-1.5 rounded-full px-3 text-xs"
             variant="outline"
             onClick={onRefresh}
           />

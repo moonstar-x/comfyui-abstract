@@ -13,7 +13,7 @@ export const ChatToggleButton: FC = () => {
   return (
     <Button
       aria-label={isReplying ? 'Show chat, a reply is streaming' : 'Show chat'}
-      className="relative shrink-0 cursor-pointer"
+      className="relative shrink-0"
       size="icon-sm"
       type="button"
       variant="ghost"

@@ -81,7 +81,7 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
       return (
         <CenteredNotice>
           <p>{isMissing ? 'This chat no longer exists.' : error.message}</p>
-          <Button className="cursor-pointer" size="sm" type="button" variant="outline" onClick={showList}>Back to chats</Button>
+          <Button size="sm" type="button" variant="outline" onClick={showList}>Back to chats</Button>
         </CenteredNotice>
       );
     }
@@ -153,7 +153,7 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
       <ChatPaneHeader
         title={getTitle()}
         leading={(
-          <Button aria-label="Back to chats" className="cursor-pointer" size="icon-sm" type="button" variant="ghost" onClick={showList}>
+          <Button aria-label="Back to chats" size="icon-sm" type="button" variant="ghost" onClick={showList}>
             <ArrowLeft aria-hidden="true" />
           </Button>
         )}

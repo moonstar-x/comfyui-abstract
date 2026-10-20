@@ -122,7 +122,7 @@ const GenerationOutputList: FC<GenerationOutputListProps> = ({ emptyMessage, med
       </div>
 
       {hasNextPage && (
-        <Button className="mt-4 cursor-pointer self-center" disabled={isFetchingNextPage} type="button" variant="outline" onClick={() => { void fetchNextPage(); }}>
+        <Button className="mt-4 self-center" disabled={isFetchingNextPage} type="button" variant="outline" onClick={() => { void fetchNextPage(); }}>
           {isFetchingNextPage ? 'Loading…' : 'Load more'}
         </Button>
       )}
@@ -189,7 +189,7 @@ export const GenerationOutputPickerDialog: FC<GenerationOutputPickerDialogProps>
         <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-5xl -translate-1/2 flex-col overflow-hidden rounded-xl border bg-background shadow-2xl transition duration-150 outline-none data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
           <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
             <Dialog.Title className="text-base font-medium">{title}</Dialog.Title>
-            <Dialog.Close render={<Button className="cursor-pointer" size="icon-sm" variant="ghost" />}>
+            <Dialog.Close render={<Button size="icon-sm" variant="ghost" />}>
               <XIcon />
               <span className="sr-only">Close</span>
             </Dialog.Close>
@@ -204,8 +204,8 @@ export const GenerationOutputPickerDialog: FC<GenerationOutputPickerDialogProps>
               {`Selected ${selected.length.toString()}/${maxSelected.toString()} files`}
             </p>
             <div className="flex gap-2">
-              <Dialog.Close render={<Button className="cursor-pointer" variant="outline" />}>Cancel</Dialog.Close>
-              <Button className="cursor-pointer" disabled={selected.length === 0} type="button" onClick={handleConfirm}>Select</Button>
+              <Dialog.Close render={<Button variant="outline" />}>Cancel</Dialog.Close>
+              <Button disabled={selected.length === 0} type="button" onClick={handleConfirm}>Select</Button>
             </div>
           </div>
         </Dialog.Popup>

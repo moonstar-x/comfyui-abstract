@@ -67,7 +67,7 @@ export const GenerationPostDialog: FC<GenerationPostDialogProps> = ({ canDelete,
         <Dialog.Portal>
           <Dialog.Popup className="fixed inset-0 z-50 flex flex-col scrollbar-none overflow-y-auto overscroll-contain bg-background transition-transform duration-300 ease-out outline-none data-ending-style:translate-x-full data-starting-style:translate-x-full">
             <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-2 supports-backdrop-filter:bg-background/80 supports-backdrop-filter:backdrop-blur">
-              <Dialog.Close render={<Button className="cursor-pointer" size="icon" type="button" variant="ghost" />}>
+              <Dialog.Close render={<Button size="icon" type="button" variant="ghost" />}>
                 <ArrowLeft aria-hidden="true" />
                 <span className="sr-only">Back</span>
               </Dialog.Close>

@@ -69,7 +69,7 @@ export const ChatPromptInput: FC<ChatPromptInputProps> = ({ isStreaming, onChang
           {usage !== null && <ChatContextIndicator usage={usage} />}
           <InputGroupButton
             aria-label={isStreaming ? 'Stop reply' : 'Send'}
-            className="ml-auto cursor-pointer rounded-full"
+            className="ml-auto rounded-full"
             disabled={!isStreaming && !canSend}
             size="icon-sm"
             type="submit"

@@ -64,7 +64,7 @@ const SortableImage: FC<SortableImageProps> = ({ entry, disabled, onOpen, onRemo
       </button>
       <Button
         aria-label={`Remove ${entry.name}`}
-        className="absolute top-1 right-1 cursor-pointer bg-background/80 backdrop-blur-sm"
+        className="absolute top-1 right-1 bg-background/80 backdrop-blur-sm"
         disabled={disabled}
         size="icon-xs"
         type="button"

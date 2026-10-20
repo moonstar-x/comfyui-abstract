@@ -63,7 +63,7 @@ const DeleteConversationButton: FC<{ conversation: ConversationRecord; disabled:
         render={(
           <Button
             aria-label={`Delete ${conversation.title}`}
-            className="cursor-pointer opacity-0 group-hover/chat-item:opacity-100 hover:text-destructive focus-visible:opacity-100 disabled:hidden pointer-coarse:opacity-100"
+            className="opacity-0 group-hover/chat-item:opacity-100 hover:text-destructive focus-visible:opacity-100 disabled:hidden pointer-coarse:opacity-100"
             size="icon-xs"
             variant="ghost"
           />
@@ -86,8 +86,8 @@ const DeleteConversationButton: FC<{ conversation: ConversationRecord; disabled:
           </div>
           {error !== null && <p className="text-sm text-destructive" role="alert">{error.message}</p>}
           <div className="flex justify-end gap-2">
-            <AlertDialog.Close disabled={isPending} render={<Button className="cursor-pointer" variant="outline" />}>Cancel</AlertDialog.Close>
-            <Button className="cursor-pointer" disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
+            <AlertDialog.Close disabled={isPending} render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
+            <Button disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
               {isPending ? 'Deleting…' : 'Delete'}
             </Button>
           </div>
@@ -124,7 +124,7 @@ export const ChatListPane: FC = () => {
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-6 text-center text-sm text-muted-foreground">
           <MessagesSquare aria-hidden="true" className="size-8 text-muted-foreground/60" />
           <p>You have no chats yet.</p>
-          <Button className="cursor-pointer" size="sm" type="button" variant="outline" onClick={startNewChat}>
+          <Button size="sm" type="button" variant="outline" onClick={startNewChat}>
             <SquarePen aria-hidden="true" data-icon="inline-start" />
             Start a chat
           </Button>
@@ -161,7 +161,7 @@ export const ChatListPane: FC = () => {
         })}
         {hasNextPage && (
           <li className="flex justify-center p-2">
-            <Button className="cursor-pointer" disabled={isFetchingNextPage} size="sm" type="button" variant="ghost" onClick={() => { void fetchNextPage(); }}>
+            <Button disabled={isFetchingNextPage} size="sm" type="button" variant="ghost" onClick={() => { void fetchNextPage(); }}>
               {isFetchingNextPage ? 'Loading…' : 'Load older chats'}
             </Button>
           </li>
@@ -175,7 +175,7 @@ export const ChatListPane: FC = () => {
       <ChatPaneHeader
         title="Chats"
         actions={(
-          <Button aria-label="New chat" className="cursor-pointer" size="icon-sm" type="button" variant="ghost" onClick={startNewChat}>
+          <Button aria-label="New chat" size="icon-sm" type="button" variant="ghost" onClick={startNewChat}>
             <SquarePen aria-hidden="true" />
           </Button>
         )}

@@ -47,7 +47,7 @@ export const DeleteRunResultButton: FC<DeleteRunResultButtonProps> = ({ generati
 
   return (
     <AlertDialog.Root open={open} onOpenChange={handleOpenChange}>
-      <AlertDialog.Trigger render={<Button className="cursor-pointer hover:border-destructive hover:bg-destructive hover:text-white dark:hover:bg-destructive" size="sm" variant="outline" />}>
+      <AlertDialog.Trigger render={<Button className="hover:border-destructive hover:bg-destructive hover:text-white dark:hover:bg-destructive" size="sm" variant="outline" />}>
         <Trash2 aria-hidden="true" data-icon="inline-start" />
         Delete
       </AlertDialog.Trigger>
@@ -64,8 +64,8 @@ export const DeleteRunResultButton: FC<DeleteRunResultButtonProps> = ({ generati
           </div>
           {error !== null && <p className="text-sm text-destructive" role="alert">{error.message}</p>}
           <div className="flex justify-end gap-2">
-            <AlertDialog.Close disabled={isPending} render={<Button className="cursor-pointer" variant="outline" />}>Cancel</AlertDialog.Close>
-            <Button className="cursor-pointer" disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
+            <AlertDialog.Close disabled={isPending} render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
+            <Button disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
               {isPending ? 'Deleting…' : 'Confirm'}
             </Button>
           </div>

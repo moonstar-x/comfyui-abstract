@@ -41,7 +41,7 @@ export const DeleteUploadButton: FC<DeleteUploadButtonProps> = ({ className, id 
   return (
     <AlertDialog.Root open={open} onOpenChange={handleOpenChange}>
       <AlertDialog.Trigger
-        render={<Button aria-label="Delete upload" className={cn('cursor-pointer bg-background/80 shadow-sm backdrop-blur-xs hover:border-destructive hover:bg-destructive hover:text-white dark:hover:bg-destructive', className)} size="icon-sm" variant="outline" />}
+        render={<Button aria-label="Delete upload" className={cn('bg-background/80 shadow-sm backdrop-blur-xs hover:border-destructive hover:bg-destructive hover:text-white dark:hover:bg-destructive', className)} size="icon-sm" variant="outline" />}
       >
         <Trash2 aria-hidden="true" />
       </AlertDialog.Trigger>
@@ -56,8 +56,8 @@ export const DeleteUploadButton: FC<DeleteUploadButtonProps> = ({ className, id 
           </div>
           {error !== null && <p className="text-sm text-destructive" role="alert">{error.message}</p>}
           <div className="flex justify-end gap-2">
-            <AlertDialog.Close disabled={isPending} render={<Button className="cursor-pointer" variant="outline" />}>Cancel</AlertDialog.Close>
-            <Button className="cursor-pointer" disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
+            <AlertDialog.Close disabled={isPending} render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
+            <Button disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
               {isPending ? 'Deleting…' : 'Confirm'}
             </Button>
           </div>

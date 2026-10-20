@@ -108,7 +108,7 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                   <span className="min-w-0 flex-1 truncate text-sm" title={value.name}>{value.name}</span>
                   <WorkflowFileSourceMenu
                     disabled={disabled}
-                    trigger={<Button aria-label={`Replace ${value.name}`} className="cursor-pointer" size="icon-xs" type="button" variant="ghost" />}
+                    trigger={<Button aria-label={`Replace ${value.name}`} size="icon-xs" type="button" variant="ghost" />}
                     onBrowse={() => inputRef.current?.click()}
                     onPickGeneration={() => { setIsGenerationPickerOpen(true); }}
                     onPickUpload={() => { setIsPickerOpen(true); }}
@@ -117,7 +117,6 @@ export const WorkflowAudioInput: FC<WorkflowAudioInputProps> = ({ field, value, 
                   </WorkflowFileSourceMenu>
                   <Button
                     aria-label={`Remove ${value.name}`}
-                    className="cursor-pointer"
                     disabled={disabled}
                     size="icon-xs"
                     type="button"

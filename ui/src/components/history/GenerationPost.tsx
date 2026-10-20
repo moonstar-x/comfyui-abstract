@@ -29,7 +29,7 @@ const PromptText: FC<{ text: string }> = ({ text }) => {
     <div className="flex flex-col items-start gap-0.5">
       <p className={cn('text-sm/6 break-words whitespace-pre-wrap', isLong && !isExpanded && 'line-clamp-4')}>{text}</p>
       {isLong && (
-        <button className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline" type="button" onClick={() => { setIsExpanded((value) => !value); }}>
+        <button className="cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground hover:underline" type="button" onClick={() => { setIsExpanded((value) => !value); }}>
           {isExpanded ? 'Show less' : 'Show more'}
         </button>
       )}
@@ -170,7 +170,6 @@ const DownloadOutputsButton: FC<{ urls: string[] }> = ({ urls }) => {
   return (
     <Button
       aria-label={urls.length === 1 ? 'Download' : `Download ${urls.length.toString()} files`}
-      className="cursor-pointer"
       disabled={isDownloading}
       size="icon-sm"
       title={urls.length === 1 ? 'Download' : `Download ${urls.length.toString()} files`}

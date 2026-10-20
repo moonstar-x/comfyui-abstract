@@ -21,7 +21,7 @@ interface RunResultImageProps {
 }
 
 const DownloadLink: FC<{ url: string }> = ({ url }) => (
-  <a download className={cn(buttonVariants({ size: 'sm', variant: 'outline' }), 'cursor-pointer')} href={url}>
+  <a download className={buttonVariants({ size: 'sm', variant: 'outline' })} href={url}>
     <Download aria-hidden="true" data-icon="inline-start" />
     Download
   </a>

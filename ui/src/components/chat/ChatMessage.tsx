@@ -39,7 +39,7 @@ const CopyButton: FC<{ text: string }> = ({ text }) => {
   };
 
   return (
-    <Button aria-label={isCopied ? 'Copied' : 'Copy reply'} className="cursor-pointer" size="icon-xs" type="button" variant="ghost" onClick={() => { void handleCopy(); }}>
+    <Button aria-label={isCopied ? 'Copied' : 'Copy reply'} size="icon-xs" type="button" variant="ghost" onClick={() => { void handleCopy(); }}>
       {isCopied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
     </Button>
   );
@@ -92,13 +92,13 @@ export const AssistantMessage: FC<AssistantMessageProps> = ({ content, error, is
           <MessageFooter className="gap-1 px-0">
             {content !== '' && <CopyButton text={content} />}
             {onEdit !== undefined && (
-              <Button className="cursor-pointer" size="xs" type="button" variant="ghost" onClick={onEdit}>
+              <Button size="xs" type="button" variant="ghost" onClick={onEdit}>
                 <Pencil aria-hidden="true" data-icon="inline-start" />
                 Edit
               </Button>
             )}
             {onRetry !== undefined && (
-              <Button className="cursor-pointer" size="xs" type="button" variant="ghost" onClick={onRetry}>
+              <Button size="xs" type="button" variant="ghost" onClick={onRetry}>
                 <RotateCcw aria-hidden="true" data-icon="inline-start" />
                 Retry
               </Button>

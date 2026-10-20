@@ -29,7 +29,7 @@ export const SelectionActions: FC<SelectionActionsProps> = ({ confirmDescription
 
   if (!selection.isSelecting) {
     return (
-      <Button className="cursor-pointer" size="sm" type="button" variant="outline" onClick={selection.start}>
+      <Button size="sm" type="button" variant="outline" onClick={selection.start}>
         <ListChecks aria-hidden="true" />
         Select
       </Button>
@@ -63,11 +63,11 @@ export const SelectionActions: FC<SelectionActionsProps> = ({ confirmDescription
   return (
     <div className="flex items-center gap-2">
       <span aria-live="polite" className="text-sm text-muted-foreground tabular-nums">{`${count.toString()} selected`}</span>
-      <Button className="cursor-pointer" size="sm" type="button" variant="outline" onClick={selection.stop}>
+      <Button size="sm" type="button" variant="outline" onClick={selection.stop}>
         Cancel
       </Button>
       <AlertDialog.Root open={open} onOpenChange={handleOpenChange}>
-        <AlertDialog.Trigger disabled={count === 0} render={<Button className="cursor-pointer" size="sm" variant="destructive" />}>
+        <AlertDialog.Trigger disabled={count === 0} render={<Button size="sm" variant="destructive" />}>
           <Trash2 aria-hidden="true" />
           Delete
         </AlertDialog.Trigger>
@@ -80,8 +80,8 @@ export const SelectionActions: FC<SelectionActionsProps> = ({ confirmDescription
             </div>
             {error !== null && <p className="text-sm text-destructive" role="alert">{error.message}</p>}
             <div className="flex justify-end gap-2">
-              <AlertDialog.Close disabled={isPending} render={<Button className="cursor-pointer" variant="outline" />}>Cancel</AlertDialog.Close>
-              <Button className="cursor-pointer" disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
+              <AlertDialog.Close disabled={isPending} render={<Button variant="outline" />}>Cancel</AlertDialog.Close>
+              <Button disabled={isPending} type="button" variant="destructive" onClick={handleConfirm}>
                 {isPending ? 'Deleting…' : 'Confirm'}
               </Button>
             </div>
