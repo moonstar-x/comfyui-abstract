@@ -14,7 +14,7 @@ const UploadsPage: FC = () => {
   const uploadsDeletion = useDeleteUploads();
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="sr-only">My Uploads</h1>
         <MediaTypeFilter value={mediaType} onChange={setMediaType} />

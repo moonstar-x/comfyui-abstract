@@ -171,7 +171,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
   const advancedFields = model.fields.filter((field) => field.isAdvanced);
 
   return (
-    <div className="grid flex-1 grid-cols-1 gap-6 lg:grid-cols-2">
+    <div className="grid flex-1 grid-cols-1 content-start gap-6 page-lg:grid-cols-2">
       {/* The key handler only catches shortcuts bubbling up from the fields, the form itself is not interactive. */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <form noValidate className="@container flex min-w-0 flex-col gap-6" onKeyDown={handleKeyDown} onSubmit={handleSubmit}>
@@ -189,7 +189,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         )}
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button className="w-full md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
+          <Button className="w-full page-md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
             <Play data-icon="inline-start" />
             {getSubmitLabel(isUploading, isSubmitting, isRunning)}
             {!isBusy && (
@@ -199,7 +199,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
             )}
           </Button>
           <Button
-            className="w-full md:w-auto"
+            className="w-full page-md:w-auto"
             disabled={isBusy}
             size="lg"
             type="button"
@@ -215,7 +215,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
 
       <section
         aria-label="Result"
-        className="flex min-w-0 scroll-mt-18 flex-col gap-3 lg:sticky lg:top-20 lg:self-start"
+        className="flex min-w-0 scroll-mt-18 flex-col gap-3 page-lg:sticky page-lg:top-20 page-lg:self-start"
         ref={resultRef}
       >
         {error !== null && (

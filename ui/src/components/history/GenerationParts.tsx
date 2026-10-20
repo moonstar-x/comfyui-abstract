@@ -61,7 +61,7 @@ export const GenerationParams: FC<{ params: Record<string, unknown> }> = ({ para
         <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" />
         Parameters
       </summary>
-      <dl className="grid gap-x-4 gap-y-1.5 border-t px-3 py-2 sm:grid-cols-[max-content_1fr]">
+      <dl className="grid gap-x-4 gap-y-1.5 border-t px-3 py-2 page-sm:grid-cols-[max-content_1fr]">
         {entries.map(([key, value]) => (
           <div className="contents" key={key}>
             <dt className="font-medium text-muted-foreground">{key}</dt>

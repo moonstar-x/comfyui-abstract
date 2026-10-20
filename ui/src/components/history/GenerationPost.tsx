@@ -209,7 +209,7 @@ export type GenerationPostFrame = 'card' | 'feed' | 'none';
 
 const FRAME_CLASSES: Record<GenerationPostFrame, string> = {
   card: 'rounded-xl border bg-card p-4 shadow-xl',
-  feed: 'border-b px-1 py-4 sm:rounded-xl sm:border sm:bg-card sm:p-4',
+  feed: 'border-b px-1 py-4 page-sm:rounded-xl page-sm:border page-sm:bg-card page-sm:p-4',
   none: 'p-4'
 };
 
@@ -260,14 +260,14 @@ export const GenerationPost: FC<GenerationPostProps> = ({ frame = 'feed', genera
 
       <footer className="flex flex-col gap-3">
         {/* On phones the details and the actions each get their own row, with the open button taking the rest of the width. */}
-        <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:gap-3">
-          <div className="flex items-center justify-between gap-3 sm:justify-start">
+        <div className="flex flex-col gap-2 text-xs text-muted-foreground page-sm:flex-row page-sm:items-center page-sm:gap-3">
+          <div className="flex items-center justify-between gap-3 page-sm:justify-start">
             <WorkflowBadge generation={generation} />
             <DurationLabel generation={generation} />
           </div>
-          <div className="flex items-center gap-1.5 sm:ml-auto">
+          <div className="flex items-center gap-1.5 page-sm:ml-auto">
             {outputUrls.length > 0 && <DownloadOutputsButton urls={outputUrls} />}
-            <OpenWorkflowButton className="flex-1 sm:flex-none" generation={generation} />
+            <OpenWorkflowButton className="flex-1 page-sm:flex-none" generation={generation} />
           </div>
         </div>
         {settings.length > 0 && <ParamBadges settings={settings} />}

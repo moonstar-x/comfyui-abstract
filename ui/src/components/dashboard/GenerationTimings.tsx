@@ -44,7 +44,7 @@ export const GenerationTimings: FC<GenerationTimingsProps> = ({ timing }) => (
     {timing.sampleCount === 0
       ? <DashboardEmptyState>No generation has timing data yet</DashboardEmptyState>
       : (
-          <div className="-mx-4 overflow-x-auto px-4 md:-mx-6 md:px-6">
+          <div className="-mx-4 overflow-x-auto px-4 page-md:-mx-6 page-md:px-6">
             <table className="w-full min-w-xl text-sm">
               <thead>
                 <tr className="text-xs text-muted-foreground">

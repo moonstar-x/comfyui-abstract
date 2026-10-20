@@ -195,7 +195,7 @@ export const GenerationOutputPickerDialog: FC<GenerationOutputPickerDialogProps>
             </Dialog.Close>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
+          <div className="@container/page min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
             <GenerationOutputList emptyMessage={emptyMessage} mediaType={mediaType} selectedKeys={selectedKeys} onToggle={handleToggle} />
           </div>
 

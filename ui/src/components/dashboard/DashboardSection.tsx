@@ -13,7 +13,7 @@ export interface DashboardSectionProps {
 }
 
 export const DashboardSection: FC<DashboardSectionProps> = ({ aside, children, className, description, title }) => (
-  <section className={cn('flex min-w-0 flex-col gap-3 rounded-xl border p-4 md:p-6', className)}>
+  <section className={cn('flex min-w-0 flex-col gap-3 rounded-xl border p-4 page-md:p-6', className)}>
     <div className="flex items-start justify-between gap-3">
       <div className="flex flex-col gap-1">
         <h2 className="text-base font-semibold">{title}</h2>

@@ -1,6 +1,7 @@
 import { useChat } from '@components/chat/ChatContext';
 import { ChatPanel } from '@components/chat/ChatPanel';
 import { Sheet, SheetContent, SheetTitle } from '@components/ui/third-party/shadcn/sheet';
+import { useSidebar } from '@components/ui/third-party/shadcn/sidebar';
 import type { Nullable } from '@core/utils/types';
 import { useIsMobile } from '@hooks/useMobile';
 import { cn } from 'cn';
@@ -9,12 +10,27 @@ import type { FC, KeyboardEvent, PointerEvent } from 'react';
 
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 760;
-// Left for the page and the app sidebar, so the chat can't squeeze them away.
-const MIN_PAGE_WIDTH = 480;
+// Left for the page beside the app sidebar, so the chat can't squeeze it away.
+const MIN_PAGE_WIDTH = 375;
 const KEYBOARD_STEP = 24;
 
-const clampWidth = (width: number): number => {
-  const maxWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, window.innerWidth - MIN_PAGE_WIDTH));
+/**
+ * The width the app sidebar settles at, read from the widths the sidebar provider sets in rem.
+ * Read from the target width rather than measured, since the sidebar animates when toggled.
+ */
+const getSidebarWidth = (isExpanded: boolean): number => {
+  const wrapper = document.querySelector('[data-slot="sidebar-wrapper"]');
+  if (wrapper === null) {
+    return 0;
+  }
+
+  const rem = Number(getComputedStyle(wrapper).getPropertyValue(isExpanded ? '--sidebar-width' : '--sidebar-width-icon').trim().replace(/rem$/u, ''));
+  const rootFontSize = Number(getComputedStyle(document.documentElement).fontSize.replace(/px$/u, ''));
+  return Number.isNaN(rem) ? 0 : rem * rootFontSize;
+};
+
+const clampWidth = (width: number, sidebarWidth: number): number => {
+  const maxWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, window.innerWidth - sidebarWidth - MIN_PAGE_WIDTH));
   return Math.round(Math.min(Math.max(width, MIN_WIDTH), maxWidth));
 };
 
@@ -28,10 +44,12 @@ interface DragState {
  */
 const DesktopChatSidecar: FC = () => {
   const { isOpen, updateWidth, width: storedWidth } = useChat();
+  const { state: sidebarState } = useSidebar();
+  const sidebarWidth = getSidebarWidth(sidebarState === 'expanded');
   const dragRef = useRef<Nullable<DragState>>(null);
   const [dragWidth, setDragWidth] = useState<Nullable<number>>(null);
-  // The stored width may not fit a window that got smaller since.
-  const width = dragWidth ?? clampWidth(storedWidth);
+  // The stored width may not fit a window that got smaller, or a sidebar that expanded, since.
+  const width = dragWidth ?? clampWidth(storedWidth, sidebarWidth);
   const isResizing = dragWidth !== null;
 
   const handlePointerDown = (event: PointerEvent<HTMLButtonElement>): void => {
@@ -49,7 +67,7 @@ const DesktopChatSidecar: FC = () => {
     const drag = dragRef.current;
     if (drag !== null) {
       // The handle is on the left edge, so moving left makes the chat wider.
-      setDragWidth(clampWidth(drag.startWidth + drag.startX - event.clientX));
+      setDragWidth(clampWidth(drag.startWidth + drag.startX - event.clientX, sidebarWidth));
     }
   };
 
@@ -72,7 +90,7 @@ const DesktopChatSidecar: FC = () => {
     }
 
     event.preventDefault();
-    updateWidth(clampWidth(width + (event.key === 'ArrowLeft' ? KEYBOARD_STEP : -KEYBOARD_STEP)));
+    updateWidth(clampWidth(width + (event.key === 'ArrowLeft' ? KEYBOARD_STEP : -KEYBOARD_STEP), sidebarWidth));
   };
 
   return (

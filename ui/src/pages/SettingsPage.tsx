@@ -11,7 +11,7 @@ const SettingsPage: FC = () => {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-sm text-muted-foreground">{`Manage the profile of ${user.username}.`}</p>

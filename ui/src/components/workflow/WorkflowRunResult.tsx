@@ -112,7 +112,7 @@ export const WorkflowRunResult: FC<WorkflowRunResultProps> = ({ animate = false,
   }
 
   return (
-    <div className={files.length > 1 ? 'grid gap-4 sm:grid-cols-2' : 'grid gap-4'}>
+    <div className={files.length > 1 ? 'grid gap-4 page-sm:grid-cols-2' : 'grid gap-4'}>
       {files.map((url, index) => (
         <RunResultImage animate={animate} generation={generation} index={index} key={url} url={url} onOpen={onOpen} />
       ))}

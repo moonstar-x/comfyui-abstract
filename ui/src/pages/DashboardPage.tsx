@@ -9,14 +9,14 @@ import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
 import { CalendarDays, CalendarRange, Clock, Sparkles, Users } from 'lucide-react';
 import type { FC, ReactNode } from 'react';
 
-const STAT_GRID_CLASSES = 'grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5';
-const SPLIT_GRID_CLASSES = 'grid gap-5 lg:grid-cols-2';
+const STAT_GRID_CLASSES = 'grid grid-cols-2 gap-3 page-sm:grid-cols-3 page-lg:grid-cols-5';
+const SPLIT_GRID_CLASSES = 'grid gap-5 page-lg:grid-cols-2';
 
 // The odd card out spans the whole row on phones.
-const USERS_CARD_CLASSES = 'col-span-2 sm:col-span-1';
+const USERS_CARD_CLASSES = 'col-span-2 page-sm:col-span-1';
 
 const PageShell: FC<{ children: ReactNode }> = ({ children }) => (
-  <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+  <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
     <div className="flex flex-col gap-1">
       <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
       <p className="text-sm text-muted-foreground">How everyone is using the app.</p>

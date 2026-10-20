@@ -34,7 +34,7 @@ export const WorkflowRunHistory: FC<WorkflowRunHistoryProps> = ({ generations, k
             </ul>
           )
         : (
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            <div className="grid grid-cols-3 gap-2 page-sm:grid-cols-4">
               {files.map((url) => (
                 <button className="aspect-square cursor-zoom-in overflow-hidden rounded-md border bg-muted/40" key={url} type="button" onClick={() => { onOpen(url); }}>
                   <img alt="Previous workflow output" className="size-full object-cover" loading="lazy" src={url} />

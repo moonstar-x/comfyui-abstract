@@ -39,7 +39,7 @@ export const ComfyUiQueueStatus: FC<ComfyUiQueueStatusProps> = ({ queue, onRefre
           <ListOrdered aria-hidden="true" className="size-3.5 text-muted-foreground" />
           {isProcessing && <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 size-1.5 animate-pulse rounded-full bg-status-online" />}
         </span>
-        <span className="hidden font-medium text-muted-foreground md:inline">Queue</span>
+        <span className="hidden font-medium text-muted-foreground page-md:inline">Queue</span>
         <span aria-live="polite" className={cn('min-w-[1ch] font-medium tabular-nums', queue.size === 0 && 'text-muted-foreground')}>
           {queue.size}
         </span>

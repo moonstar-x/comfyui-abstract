@@ -5,6 +5,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * The viewport breakpoints, measured against the nearest `@container/page` instead of the window.
+ * The page shares the window with the app sidebar and the chat sidecar, so its own width is what decides its layout.
+ */
+@custom-variant page-sm (@container page (width >= 40rem));
+@custom-variant page-md (@container page (width >= 48rem));
+@custom-variant page-lg (@container page (width >= 64rem));
+@custom-variant page-xl (@container page (width >= 80rem));
+
 /* Keeps an element scrollable while hiding its scrollbar. */
 @utility scrollbar-none {
   scrollbar-width: none;

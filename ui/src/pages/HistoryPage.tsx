@@ -48,10 +48,10 @@ const HistoryPage: FC = () => {
   const isSelecting = isOwnHistory && selection.isSelecting;
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+    <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
       {scope.hasHeader
         ? (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-4 page-sm:flex-row page-sm:items-end page-sm:justify-between">
               <div className="flex flex-col items-start gap-2">
                 <Badge className={CATEGORY_TILE_CLASSES.general}>History</Badge>
                 <h1 className="text-2xl font-semibold tracking-tight">{scope.title}</h1>

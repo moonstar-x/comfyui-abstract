@@ -66,8 +66,8 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   };
 
   return (
-    <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
+      <div className="flex flex-col gap-5 page-sm:flex-row page-sm:items-end page-sm:justify-between">
         <div className="flex flex-col items-start gap-2">
           {match !== null && match.section !== null && (
             <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
@@ -87,7 +87,7 @@ const WorkflowPage: FC = () => {
   const { id } = useParams();
   if (!isWorkflowType(id)) {
     return (
-      <div className="flex flex-1 flex-col gap-5 p-4 md:p-6">
+      <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Workflow not found</h1>
         <Placeholder>
           There is no workflow named

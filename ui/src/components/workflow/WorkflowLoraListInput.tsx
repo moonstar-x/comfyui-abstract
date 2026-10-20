@@ -102,7 +102,7 @@ export const WorkflowLoraListInput: FC<WorkflowLoraListInputProps> = ({ field, v
             </ul>
           )}
 
-      <Button className="w-full md:w-auto md:self-start" disabled={disabled} size="sm" type="button" variant="outline" onClick={handleAdd}>
+      <Button className="w-full page-md:w-auto page-md:self-start" disabled={disabled} size="sm" type="button" variant="outline" onClick={handleAdd}>
         <Plus data-icon="inline-start" />
         Add LoRA
       </Button>

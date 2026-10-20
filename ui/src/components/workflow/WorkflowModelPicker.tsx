@@ -20,7 +20,7 @@ export const WorkflowModelPicker: FC<WorkflowModelPickerProps> = ({ models, valu
     <div className="flex flex-col gap-2">
       <Label htmlFor={id}>Model</Label>
       <Select<string> disabled={disabled} items={items} value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-full sm:w-72" id={id}>
+        <SelectTrigger className="w-full page-sm:w-72" id={id}>
           <SelectValue placeholder="Select a model" />
         </SelectTrigger>
         <SelectContent>

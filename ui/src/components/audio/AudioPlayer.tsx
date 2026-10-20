@@ -270,7 +270,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
               {time}
               {muteButton}
               {/* Narrow screens keep just the mute button so the seek bar isn't squeezed. */}
-              <div className="hidden w-16 sm:block">
+              <div className="hidden w-16 page-sm:block">
                 {volumeBar}
               </div>
             </div>

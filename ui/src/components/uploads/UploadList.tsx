@@ -15,7 +15,7 @@ const Placeholder: FC<{ children: ReactNode }> = ({ children }) => (
   </div>
 );
 
-const GRID_CLASSES = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5';
+const GRID_CLASSES = 'grid grid-cols-2 gap-2 page-sm:grid-cols-3 page-lg:grid-cols-4 page-xl:grid-cols-5';
 
 export interface UploadListProps {
   /**

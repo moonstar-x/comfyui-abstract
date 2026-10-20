@@ -72,7 +72,7 @@ export const ComfyUiUsageStats: FC<ComfyUiUsageStatsProps> = ({ usage }) => {
   }
 
   return (
-    <Badge className="hidden h-8 gap-3 rounded-full border-border bg-background px-3 md:inline-flex dark:border-input dark:bg-input/30" variant="outline">
+    <Badge className="hidden h-8 gap-3 rounded-full border-border bg-background px-3 page-md:inline-flex dark:border-input dark:bg-input/30" variant="outline">
       {metrics.map((metric) => <UsageStat key={metric.key} metric={metric} value={usage[metric.key]} />)}
     </Badge>
   );

@@ -20,7 +20,7 @@ export const AppLayout: FC = () => (
         <SidebarProvider style={SIDEBAR_STYLE}>
           <AppSidebar />
           {/* Shrinks below its content so the chat sidecar can push the page aside. */}
-          <SidebarInset className="min-w-0">
+          <SidebarInset className="@container/page min-w-0">
             <AppHeader />
             <Suspense fallback={null}>
               <Outlet />

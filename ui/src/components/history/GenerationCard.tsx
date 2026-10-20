@@ -21,7 +21,7 @@ const GenerationOutputs: FC<GenerationOutputsProps> = ({ generation, onOpenImage
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+    <div className="grid grid-cols-3 gap-2 page-sm:grid-cols-4 page-lg:grid-cols-6">
       {urls.map((url, index) => (
         <button className="aspect-square cursor-zoom-in overflow-hidden rounded-md border bg-muted/40" key={url} type="button" onClick={() => { onOpenImage(urls, index); }}>
           <img alt={`Output ${(index + 1).toString()}`} className="size-full object-cover" loading="lazy" src={url} />
@@ -41,7 +41,7 @@ export interface GenerationCardProps {
  * A generation in the history of a single user, which is shown as a timeline grouped by day.
  */
 export const GenerationCard: FC<GenerationCardProps> = ({ canDelete, generation, onOpenImage }) => (
-  <article className="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:p-4">
+  <article className="flex flex-col gap-3 rounded-xl border bg-card p-3 page-sm:p-4">
     <header className="flex items-start gap-3">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
