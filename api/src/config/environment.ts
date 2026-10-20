@@ -79,7 +79,7 @@ export const COMFYUI_UPLOAD_SUBFOLDER: string = getRelativePath('COMFYUI_UPLOAD_
 export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
 
 export const CONFIG_FILE: string = path.resolve(getString('CONFIG_FILE', 'config.yml'));
-export const DOCS_FILE: string = path.resolve(getString('DOCS_FILE', 'docs.yml'));
+export const MODEL_INSTRUCTIONS_DIRECTORY: string = path.resolve(getString('MODEL_INSTRUCTIONS_DIRECTORY', 'model_instructions'));
 
 export const POSTGRES_HOST: string = getRequired('POSTGRES_HOST');
 export const POSTGRES_PORT: number = getInteger('POSTGRES_PORT', 5432);

@@ -14,7 +14,7 @@ try {
 
   const unusedDocumentation = findUnusedDocumentation(config, await loadDocumentation());
   if (unusedDocumentation.length > 0) {
-    logger.warn(`Docs file has entries for models that are not in the config: ${unusedDocumentation.join(', ')}.`);
+    logger.warn(`Model instructions describe models that are not in the config: ${unusedDocumentation.join(', ')}.`);
   }
 
   const migrationsDirectory = path.join(import.meta.dirname, '../migrations');

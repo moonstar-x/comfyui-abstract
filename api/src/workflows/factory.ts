@@ -29,7 +29,7 @@ export interface WorkflowRequestParams {
 export type WorkflowFieldDefinition = WorkflowField & { defaultValue?: unknown; isAdvanced: boolean; key: string };
 
 /**
- * Markdown instructions from the docs file. The diffusion model is a server param, so its documentation is sent without its name.
+ * Markdown instructions from the model instructions directory. The diffusion model is a server param, so its documentation is sent without its name.
  */
 export interface WorkflowModelDocumentation {
   /**
@@ -135,12 +135,12 @@ export const validateWorkflowConfigs = (config: AppConfig): void => {
 };
 
 /**
- * Name of the diffusion model of a workflow, which the docs file is keyed by.
+ * Name of the diffusion model of a workflow, which the model instructions are keyed by.
  */
 const getModelName = ({ serverParams }: WorkflowConfig): null | string => typeof serverParams['model'] === 'string' ? serverParams['model'] : null;
 
 /**
- * Names of the docs entries that match no diffusion model or allowed LoRA of the config, most likely because of a typo or a removed model.
+ * Names of the model instructions that match no diffusion model or allowed LoRA of the config, most likely because of a typo or a removed model.
  */
 export const findUnusedDocumentation = (config: AppConfig, documentation: AppDocumentation): string[] => {
   const names = new Set(config.workflows.flatMap((workflow) => [getModelName(workflow), ...workflow.options.allowedLoras]));
