@@ -1,3 +1,5 @@
+import { ChatProvider } from '@components/chat/ChatContext';
+import { ChatSidecar } from '@components/chat/ChatSidecar';
 import { GenerationSessionProvider } from '@components/generation/GenerationSessionContext';
 import { AppHeader } from '@components/ui/app/AppHeader';
 import { AppSidebar } from '@components/ui/app/AppSidebar';
@@ -14,15 +16,19 @@ const SIDEBAR_STYLE: CSSProperties & Record<'--sidebar-width-icon', string> = { 
 export const AppLayout: FC = () => (
   <WebSocketProvider>
     <GenerationSessionProvider>
-      <SidebarProvider style={SIDEBAR_STYLE}>
-        <AppSidebar />
-        <SidebarInset>
-          <AppHeader />
-          <Suspense fallback={null}>
-            <Outlet />
-          </Suspense>
-        </SidebarInset>
-      </SidebarProvider>
+      <ChatProvider>
+        <SidebarProvider style={SIDEBAR_STYLE}>
+          <AppSidebar />
+          {/* Shrinks below its content so the chat sidecar can push the page aside. */}
+          <SidebarInset className="min-w-0">
+            <AppHeader />
+            <Suspense fallback={null}>
+              <Outlet />
+            </Suspense>
+          </SidebarInset>
+          <ChatSidecar />
+        </SidebarProvider>
+      </ChatProvider>
     </GenerationSessionProvider>
   </WebSocketProvider>
 );

@@ -12,8 +12,8 @@ import { SendMessageBodySchema } from '../../services/lmstudio/schemas.js';
 
 /**
  * Sends a message to LM Studio, continuing a conversation of the current user or starting a new one when no conversationId is given.
- * The reply is streamed as server-sent events: "reasoning" events carry pieces of what a reasoning model thinks before it replies,
- * "delta" events carry pieces of the reply, then a "done" event carries the saved
+ * The reply is streamed as server-sent events: a "conversation" event carries the conversation first, "reasoning" events carry pieces of
+ * what a reasoning model thinks before it replies, "delta" events carry pieces of the reply, then a "done" event carries the saved
  * conversation and messages, or an "error" event if the reply failed midway. Errors before the reply starts are regular error responses.
  * Disconnecting stops the reply and keeps what was generated so far.
  */

@@ -7,6 +7,7 @@ import {
   createAssistantMessage,
   createConversation,
   createUserMessage,
+  deleteConversation,
   findMessages,
   toPublicConversation,
   toPublicMessage,
@@ -19,6 +20,10 @@ import { getContextUsage, selectContextWindow, toTurnTokenCounts } from './conte
 import type { ContextUsage } from './context.js';
 
 export const LMSTUDIO_EVENTS = {
+  /**
+   * The conversation the message belongs to, sent first so a new conversation is known even if the reply is stopped.
+   */
+  CONVERSATION: 'conversation',
   /**
    * A piece of the reply, sent as LM Studio generates it.
    */
@@ -65,7 +70,7 @@ export interface SendLmStudioMessageData {
 interface SaveTurnData {
   content: string;
   contextLength: number;
-  conversation: Nullable<ConversationRow>;
+  conversation: ConversationRow;
   /**
    * Every message of the conversation before this turn, including those left out of the context.
    */
@@ -84,7 +89,12 @@ interface SaveTurnData {
   username: string;
 }
 
-type TurnContext = Omit<SaveTurnData, 'reasoning' | 'reply' | 'usage'>;
+type TurnContext = Omit<SaveTurnData, 'reasoning' | 'reply' | 'usage'> & {
+  /**
+   * Whether the conversation was started by this message, so it is removed again when the reply leaves nothing to save.
+   */
+  isNewConversation: boolean;
+};
 
 const MAX_TITLE_LENGTH = 100;
 
@@ -97,19 +107,18 @@ const toConversationTitle = (content: string): string => {
 };
 
 const saveTurn = async (data: SaveTurnData): Promise<LmStudioDoneEvent> => await database.tx(async (t) => {
-  const { content, conversation, model, reasoning, reply, username } = data;
+  const { content, conversation, model, reasoning, reply } = data;
   const tokenCounts = toTurnTokenCounts(data.usage, data.historyTokenCount, reply, reasoning);
 
-  const target = conversation ?? await createConversation(username, toConversationTitle(content), t);
-  const userMessage = await createUserMessage({ conversationId: target.id, content, tokenCount: tokenCounts.user }, t);
+  const userMessage = await createUserMessage({ conversationId: conversation.id, content, tokenCount: tokenCounts.user }, t);
   const assistantMessage = await createAssistantMessage({
-    conversationId: target.id,
+    conversationId: conversation.id,
     content: reply,
     reasoning: reasoning === '' ? null : reasoning,
     model,
     tokenCount: tokenCounts.reply
   }, t);
-  const updatedConversation = conversation ? await touchConversation(target.id, t) : target;
+  const updatedConversation = await touchConversation(conversation.id, t);
 
   return {
     conversation: toPublicConversation(updatedConversation),
@@ -119,8 +128,9 @@ const saveTurn = async (data: SaveTurnData): Promise<LmStudioDoneEvent> => await
 });
 
 /**
- * Sends the reply as reasoning and delta events and saves the turn once it is complete, followed by a done event. A failed reply saves nothing,
- * so the conversation is left as it was. A reply cut short by the client is saved as far as it got, so stopping a reply keeps it.
+ * Sends the conversation, then the reply as reasoning and delta events, and saves the turn once it is complete, followed by a done event.
+ * A failed reply saves nothing, so the conversation is left as it was, or removed if it was started by this message.
+ * A reply cut short by the client is saved as far as it got, so stopping a reply keeps it.
  */
 async function* streamReply(deltas: AsyncGenerator<LmStudioChatDelta, void, undefined>, context: TurnContext, signal: AbortSignal): AsyncGenerator<ResponseEvent, void, undefined> {
   let reasoning = '';
@@ -129,6 +139,8 @@ async function* streamReply(deltas: AsyncGenerator<LmStudioChatDelta, void, unde
   let state: 'complete' | 'failed' | 'streaming' = 'streaming';
 
   try {
+    yield { event: LMSTUDIO_EVENTS.CONVERSATION, data: toPublicConversation(context.conversation) };
+
     for await (const delta of deltas) {
       if (delta.type === 'usage') {
         ({ usage } = delta);
@@ -150,8 +162,11 @@ async function* streamReply(deltas: AsyncGenerator<LmStudioChatDelta, void, unde
     }
   } finally {
     // Also runs when the response stops consuming the events because the client disconnected.
-    if (state === 'streaming' && (reply !== '' || reasoning !== '')) {
+    const hasPartialReply = reply !== '' || reasoning !== '';
+    if (state === 'streaming' && hasPartialReply) {
       await saveTurn({ ...context, reasoning, reply, usage });
+    } else if (state !== 'complete' && context.isNewConversation) {
+      await deleteConversation(context.conversation.id, context.username);
     }
   }
 
@@ -176,7 +191,18 @@ export const sendLmStudioMessage = async ({ content, conversation, signal, usern
   ];
 
   const deltas = await streamChatCompletion(model, messages, signal);
-  return streamReply(deltas, { content, contextLength, conversation, fullHistory, historyTokenCount, model, username }, signal);
+  // Only created once LM Studio accepts the request, so a rejected message leaves nothing behind.
+  const target = conversation ?? await createConversation(username, toConversationTitle(content));
+  return streamReply(deltas, {
+    content,
+    contextLength,
+    conversation: target,
+    fullHistory,
+    historyTokenCount,
+    isNewConversation: conversation === null,
+    model,
+    username
+  }, signal);
 };
 
 /**

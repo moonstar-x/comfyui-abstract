@@ -5,6 +5,8 @@ import { getSession, setSession } from '@services/auth/session';
 // Keep in sync with api/src/app/http/errors/ErrorCodes.ts.
 export const ApiErrorCodes = {
   INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  LMSTUDIO_UNAVAILABLE: 'LMSTUDIO_UNAVAILABLE',
+  MESSAGE_TOO_LONG: 'MESSAGE_TOO_LONG',
   PAYLOAD_TOO_LARGE: 'PAYLOAD_TOO_LARGE',
   SESSION_INVALID: 'SESSION_INVALID',
   SESSION_NOT_PROVIDED: 'SESSION_NOT_PROVIDED',
@@ -65,11 +67,17 @@ export interface ApiRequestOptions {
   file?: Blob;
   isAuthenticated?: boolean;
   method?: 'DELETE' | 'GET' | 'PATCH' | 'POST' | 'PUT';
+  // Cancels the request, including a response that is still being streamed.
+  signal?: AbortSignal;
 }
 
-const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET' }: ApiRequestOptions): RequestInit => {
+const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET', signal }: ApiRequestOptions): RequestInit => {
   const headers = new Headers();
   const init: RequestInit = { method, headers };
+  if (signal !== undefined) {
+    init.signal = signal;
+  }
+
   if (file !== undefined) {
     headers.set('Content-Type', file.type);
     init.body = file;
@@ -90,6 +98,11 @@ const send = async (path: string, init: RequestInit): Promise<Response> => {
   try {
     return await fetch(new URL(path, API_URL), init);
   } catch (error) {
+    // Aborting is not a connection problem, so the caller gets the abort as is.
+    if (init.signal?.aborted === true) {
+      throw error;
+    }
+
     throw new ApiError('Could not reach the server.', { code: ApiErrorCodes.UNKNOWN_ERROR, status: 0, cause: error });
   }
 };
@@ -139,6 +152,18 @@ export const apiRequestFile = async (path: string, options: ApiRequestOptions = 
   const response = await send(path, buildRequestInit(options));
   if (response.ok) {
     return await response.blob();
+  }
+
+  return throwApiError(response, await readJson(response), options);
+};
+
+/**
+ * Sends a request to an API endpoint that streams its response, such as server-sent events, and returns the body as it arrives.
+ */
+export const apiRequestStream = async (path: string, options: ApiRequestOptions = {}): Promise<ReadableStream<Uint8Array>> => {
+  const response = await send(path, buildRequestInit(options));
+  if (response.ok && response.body !== null) {
+    return response.body;
   }
 
   return throwApiError(response, await readJson(response), options);
