@@ -57,7 +57,7 @@ export const AppHeader: FC = () => {
 
   return (
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/85 px-4 backdrop-blur">
-      <SidebarTrigger className="-ml-1 shrink-0" />
+      <SidebarTrigger className="-ml-1 shrink-0 cursor-pointer" />
       <Separator className="mx-1 h-4 shrink-0 self-center!" orientation="vertical" />
       <HeaderOverflowArea>
         <ComfyUiStatus />

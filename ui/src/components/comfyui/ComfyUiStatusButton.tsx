@@ -91,7 +91,7 @@ export const ComfyUiStatusButton: FC<ComfyUiStatusButtonProps> = ({ online, onRe
         render={(
           <Button
             aria-label={`ComfyUI status: ${status}`}
-            className={cn('rounded-full px-3', meta.buttonClassName)}
+            className={cn('cursor-pointer rounded-full px-3', meta.buttonClassName)}
             variant="outline"
           />
         )}
