@@ -1,6 +1,8 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
 import type { Generation } from '@components/generation/GenerationSessionContext';
 import { DurationText } from '@components/history/GenerationParts';
+import { buttonVariants } from '@components/ui/third-party/shadcn/button';
+import { DeleteRunResultButton } from '@components/workflow/DeleteRunResultButton';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { cn } from 'cn';
 import { Download } from 'lucide-react';
@@ -19,15 +21,19 @@ interface RunResultImageProps {
 }
 
 const DownloadLink: FC<{ url: string }> = ({ url }) => (
-  <a download className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground" href={url}>
-    <Download aria-hidden="true" className="size-4" />
+  <a download className={buttonVariants({ size: 'sm', variant: 'outline' })} href={url}>
+    <Download aria-hidden="true" data-icon="inline-start" />
     Download
   </a>
 );
 
 const RunResultCaption: FC<{ generation: Generation; url: string }> = ({ generation, url }) => (
   <figcaption className="flex items-center justify-between gap-2">
-    <DownloadLink url={url} />
+    <div className="flex items-center gap-2">
+      <DownloadLink url={url} />
+      {/* A run the API could not store has no generation to delete. */}
+      {generation.generationId !== null && <DeleteRunResultButton generation={generation} generationId={generation.generationId} />}
+    </div>
     <DurationText className="text-sm text-muted-foreground" durationMs={generation.durationMs} queueWaitMs={generation.queueWaitMs} />
   </figcaption>
 );

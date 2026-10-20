@@ -11,6 +11,10 @@ export interface Generation {
   createdAt: number;
   durationMs: number;
   files: string[];
+  /**
+   * The id of the stored generation, null when the API could not store it.
+   */
+  generationId: Nullable<string>;
   kind: WorkflowOutputKind;
   promptId: string;
   queueWaitMs: Nullable<number>;
@@ -19,6 +23,7 @@ export interface Generation {
 interface ContextValue {
   clear: () => void;
   generations: Generation[];
+  remove: (promptId: string) => void;
 }
 
 export interface UseGenerationSessionReturn {
@@ -26,6 +31,10 @@ export interface UseGenerationSessionReturn {
   current: Nullable<Generation>;
   generations: Generation[];
   previous: Generation[];
+  /**
+   * Drops a result from the session, such as once its generation is deleted.
+   */
+  remove: (promptId: string) => void;
 }
 
 const GenerationSessionContext: Context<Nullable<ContextValue>> = createContext<Nullable<ContextValue>>(null);
@@ -47,6 +56,7 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
       createdAt: Date.now(),
       durationMs: payload.durationMs,
       files,
+      generationId: payload.generationId,
       // A run only ever produces one kind of file. An empty run has nothing to show, so its kind doesn't matter.
       kind: files[0] === undefined ? 'image' : getOutputKind(files[0]),
       promptId: payload.promptId,
@@ -62,7 +72,11 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     setGenerations([]);
   }, []);
 
-  const context = useMemo<ContextValue>(() => ({ clear, generations }), [clear, generations]);
+  const remove = useCallback((promptId: string) => {
+    setGenerations((previous) => previous.filter((generation) => generation.promptId !== promptId));
+  }, []);
+
+  const context = useMemo<ContextValue>(() => ({ clear, generations, remove }), [clear, generations, remove]);
 
   return (
     <GenerationSessionContext value={context}>
@@ -80,7 +94,7 @@ export const useGenerationSession = (kind: WorkflowOutputKind): UseGenerationSes
     throw new Error('You must call useGenerationSession inside of a GenerationSessionProvider.');
   }
 
-  const { clear, generations: allGenerations } = context;
+  const { clear, generations: allGenerations, remove } = context;
 
   return useMemo(() => {
     const generations = allGenerations.filter((generation) => generation.kind === kind);
@@ -89,7 +103,8 @@ export const useGenerationSession = (kind: WorkflowOutputKind): UseGenerationSes
       clear,
       current: generations[0] ?? null,
       generations,
-      previous: generations.slice(1)
+      previous: generations.slice(1),
+      remove
     };
-  }, [allGenerations, clear, kind]);
+  }, [allGenerations, clear, kind, remove]);
 };

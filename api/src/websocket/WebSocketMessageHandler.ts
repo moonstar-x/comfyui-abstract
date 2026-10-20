@@ -43,9 +43,12 @@ const OUTPUT_MEDIA_TYPES: Readonly<Record<WorkflowOutputKind, MediaType>> = {
 /**
  * Failing to save a generation only loses it from the history, so the error is logged instead of failing the run whose files are already saved.
  */
-const saveGeneration = async (run: TrackedRun, result: { completedAt: Date; mediaType: MediaType; outputs: string[]; startedAt: Nullable<Date> }): Promise<void> => {
+/**
+ * Returns the id of the stored generation, or null when it could not be stored.
+ */
+const saveGeneration = async (run: TrackedRun, result: { completedAt: Date; mediaType: MediaType; outputs: string[]; startedAt: Nullable<Date> }): Promise<Nullable<string>> => {
   try {
-    await createGeneration({
+    const generation = await createGeneration({
       username: run.username,
       promptId: run.promptId,
       workflowType: run.type,
@@ -55,8 +58,10 @@ const saveGeneration = async (run: TrackedRun, result: { completedAt: Date; medi
       createdAt: run.createdAt,
       ...result
     });
+    return generation.id;
   } catch (error) {
     logger.error(`Could not save the generation of workflow ${run.promptId} for user ${run.username}.`, error);
+    return null;
   }
 };
 
@@ -165,13 +170,13 @@ export class WebSocketMessageHandler extends EventEmitter<WebSocketMessageHandle
       const urls = await Promise.all(files.map(async ({ filename, data }, index) => await saveFileToPublic(type, `${promptId}-${(index + 1).toString()}${path.extname(filename)}`, data)));
 
       const completedAt = new Date();
-      await saveGeneration(run, { mediaType: OUTPUT_MEDIA_TYPES[workflow.outputKind], outputs: urls, startedAt, completedAt });
+      const generationId = await saveGeneration(run, { mediaType: OUTPUT_MEDIA_TYPES[workflow.outputKind], outputs: urls, startedAt, completedAt });
       // Same timings as the stored generation, so the result shows the duration before the history is fetched.
       const durationMs = completedAt.getTime() - run.createdAt.getTime();
       // TS can't see the assignment inside the progress callback, so it would narrow this to null.
       const runStartedAt = startedAt as Nullable<Date>;
       const queueWaitMs = runStartedAt === null ? null : runStartedAt.getTime() - run.createdAt.getTime();
-      this.emit('message', { type: 'workflow_complete', payload: { promptId, files: urls, durationMs, queueWaitMs } });
+      this.emit('message', { type: 'workflow_complete', payload: { promptId, generationId, files: urls, durationMs, queueWaitMs } });
     } catch (error) {
       logger.error(`Could not retrieve the outputs of workflow ${promptId}.`, error);
       const message = error instanceof Error ? error.message : 'Could not retrieve the workflow outputs.';
