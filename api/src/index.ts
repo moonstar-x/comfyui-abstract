@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { logger } from '@moonstar-x/logger';
 import { createApp } from './app/express/app.js';
+import { registerShutdownHandlers } from './app/shutdown.js';
 import { PORT } from './config/environment.js';
 import { loadConfig } from './services/config/config.js';
 import { loadDocumentation } from './services/config/documentation.js';
@@ -25,11 +26,12 @@ try {
   await runMigrationsForApp(migrationsDirectory);
 
   const app = await createApp();
-  const server = app.listen(PORT, (): void => {
+  const httpServer = app.listen(PORT, (): void => {
     logger.info(`Server started on port ${PORT.toString()}`);
   });
 
-  WebSocketServer.create(server);
+  const webSocketServer = WebSocketServer.create(httpServer);
+  registerShutdownHandlers({ httpServer, webSocketServer });
 } catch (error) {
   logger.error(error);
 }
