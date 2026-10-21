@@ -126,7 +126,7 @@ POSTGRES_PASSWORD=password
 POSTGRES_DATABASE=comfyui
 
 ENABLE_SIGNUP=true
-JWT_SECRET=any-long-random-string
+JWT_SECRET=any-random-string-of-at-least-32-characters
 ```
 
 Then edit `config.yml` so it lists models that exist on your ComfyUI server, and start the watcher:
@@ -189,7 +189,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | `POSTGRES_PASSWORD` | *required* | |
 | `POSTGRES_DATABASE` | *required* | |
 | `POSTGRES_MAX_CONNECTIONS` | `25` | Size of the connection pool. |
-| `JWT_SECRET` | *required* | Secret used to sign session tokens. |
+| `JWT_SECRET` | *required* | Secret used to sign session tokens. Must be at least 32 characters, for example the output of `openssl rand -base64 32`. |
 | `JWT_EXPIRATION` | `7d` | Session lifetime, for example `12h` or `30d`. |
 | `ENABLE_SIGNUP` | `false` | Allows new accounts to be created from the sign-up page. |
 | `MAX_IMAGE_UPLOAD_MB` | `20` | Maximum size of each uploaded image. |

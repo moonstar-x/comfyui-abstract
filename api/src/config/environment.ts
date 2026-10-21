@@ -13,6 +13,15 @@ const getRequired = (key: string): string => {
   return value;
 };
 
+const getRequiredSecret = (key: string, minLength: number): string => {
+  const value = getRequired(key);
+  if (value.length < minLength) {
+    throw new Error(`Environment variable ${key} must be at least ${minLength.toString()} characters long, got ${value.length.toString()}.`);
+  }
+
+  return value;
+};
+
 const getString = (key: string, defaultValue: string): string => {
   const value = process.env[key];
   return typeof value === 'string' && value !== '' ? value : defaultValue;
@@ -131,5 +140,5 @@ export const MAX_IMAGE_UPLOAD_MB: number = getPositiveInteger('MAX_IMAGE_UPLOAD_
 
 export const IS_SIGNUP_ENABLED: boolean = isFlagEnabled('ENABLE_SIGNUP', false);
 
-export const JWT_SECRET: string = getRequired('JWT_SECRET');
+export const JWT_SECRET: string = getRequiredSecret('JWT_SECRET', 32);
 export const JWT_EXPIRATION: string = getString('JWT_EXPIRATION', '7d');
