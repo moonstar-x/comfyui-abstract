@@ -41,4 +41,10 @@ RUN mkdir -p public && chown node:node public
 USER node
 
 EXPOSE 4000
+
+# The slim image has no curl or wget, so Node itself calls the health route, which fails when ComfyUI or the database is down.
+# The start period leaves room for the migrations that run on startup.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + process.env.PORT + '/api/health').then((res) => process.exit(res.ok ? 0 : 1), () => process.exit(1))"
+
 CMD ["node", "dist/index.js"]

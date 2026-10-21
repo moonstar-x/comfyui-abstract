@@ -297,7 +297,7 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| `GET` | `/health` | Health check. |
+| `GET` | `/health` | Whether the API, ComfyUI and the database are up. Returns `503` if ComfyUI or the database is down. Used by the Docker image's `HEALTHCHECK`. |
 | `POST` | `/auth/login` | Log in and receive a JWT. Limited to 20 attempts per IP and 10 per username every 15 minutes; over the limit it returns `429` with a `Retry-After` header. |
 | `POST` | `/users` | Sign up. Only works when `ENABLE_SIGNUP=true`. |
 | `PATCH` | `/users/me` | Remove your profile picture. |
