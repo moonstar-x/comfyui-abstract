@@ -1,4 +1,7 @@
-import type { ComfyApi, ImageInfo, NodeData, QueueItem } from '@saintno/comfyui-sdk';
+import { EventEmitter } from 'node:events';
+import { logger } from '@moonstar-x/logger';
+import { ComfyApi } from '@saintno/comfyui-sdk';
+import type { HistoryEntry, ImageInfo, NodeData, QueueItem } from '@saintno/comfyui-sdk';
 import type { Nullable } from '../../utils/types.js';
 import { createComfyUiClient } from './client.js';
 import type { WorkflowOutputKind } from './ComfyUiWorkflow.js';
@@ -69,7 +72,45 @@ export interface PromptProgress {
   total: number;
 }
 
-type PromptResult = { message: string; status: 'error' } | { status: 'success' };
+/**
+ * How a prompt ended. Interrupted prompts are told apart from failed ones, since an interruption may be a cancellation.
+ */
+export type PromptOutcome = { message: string; status: 'error' } | { status: 'interrupted' } | { status: 'success' };
+
+/**
+ * Where a prompt is according to the ComfyUI queue and history. Unknown means ComfyUI has no record of it, such as when it was
+ * removed from the queue or ComfyUI restarted, since the history only lives in its memory.
+ */
+export type PromptState = PromptOutcome | { status: 'pending' } | { status: 'running' } | { status: 'unknown' };
+
+/**
+ * The files of a finished prompt, and when ComfyUI says it started and finished it, by the clock of the ComfyUI host.
+ */
+export interface PromptOutputs {
+  files: OutputFile[];
+  finishedAt: Nullable<Date>;
+  startedAt: Nullable<Date>;
+}
+
+export interface ComfyUiClientSessionEvents {
+  /**
+   * The websocket opened, either for the first time or after a drop. Events sent while it was down are lost.
+   */
+  connected: [];
+  prompt_cached: [promptId: string, nodes: string[]];
+  /**
+   * A node of the prompt started executing. A null node means the prompt is done.
+   */
+  prompt_executing: [promptId: string, node: Nullable<string>];
+  prompt_finished: [promptId: string, outcome: PromptOutcome];
+  prompt_started: [promptId: string];
+  prompt_step: [promptId: string, step: NodeProgress];
+}
+
+// A client that could not connect, or gave up reconnecting, is replaced with a new one after this delay.
+const CLIENT_RETRY_DELAY_MS = 15_000;
+// Dispatched by the SDK once it gives up reconnecting, but missing from its event map.
+const RECONNECTION_FAILED_EVENT = 'reconnection_failed';
 
 // ComfyUI queue items are tuples of [number, prompt_id, prompt, extra_data, outputs_to_execute].
 const getQueueItemNumber = (item: QueueItem): number => Number(item[0]);
@@ -100,29 +141,99 @@ const getMonitorUsage = (monitorData: CrysMonitorData): SystemUsage => {
   };
 };
 
-export class ComfyUiClientSession {
-  private readonly _client: ComfyApi;
-  private _monitorData: Nullable<CrysMonitorData> = null;
-  // Keyed by prompt ID. Created by whichever comes first, the prompt being awaited or ComfyUI reporting its result.
-  private readonly _promptResults = new Map<string, PromiseWithResolvers<PromptResult>>();
+const formatExecutionError = (nodeType: unknown, exceptionMessage: unknown): string => `${String(nodeType)} failed: ${String(exceptionMessage)}`;
 
-  constructor(client: ComfyApi) {
-    this._client = client;
-    this.registerEventHandlers();
+// The history keeps the execution events of a prompt as [type, data] pairs, with the time they were sent in milliseconds.
+const findHistoryMessage = (entry: HistoryEntry, type: string): Record<string, unknown> | undefined => entry.status.messages.find(([messageType]) => messageType === type)?.[1];
+
+const getHistoryTimestamp = (entry: HistoryEntry, type: string): Nullable<Date> => {
+  const timestamp = findHistoryMessage(entry, type)?.['timestamp'];
+  return typeof timestamp === 'number' ? new Date(timestamp) : null;
+};
+
+const getHistoryOutcome = (entry: HistoryEntry): PromptOutcome => {
+  if (entry.status.status_str === 'success') {
+    return { status: 'success' };
+  }
+
+  if (findHistoryMessage(entry, 'execution_interrupted') !== undefined) {
+    return { status: 'interrupted' };
+  }
+
+  const error = findHistoryMessage(entry, 'execution_error');
+  return { status: 'error', message: error === undefined ? 'The workflow failed in ComfyUI.' : formatExecutionError(error['node_type'], error['exception_message']) };
+};
+
+/**
+ * The single connection the API keeps to ComfyUI, shared by every user. Prompts are queued under its client ID, so ComfyUI sends
+ * their events here no matter which browser connection asked for them.
+ */
+export class ComfyUiClientSession extends EventEmitter<ComfyUiClientSessionEvents> {
+  private _client: ComfyApi;
+  private readonly _clientId: string;
+  private _isDestroyed = false;
+  private _monitorData: Nullable<CrysMonitorData> = null;
+  private _retryTimer: Nullable<NodeJS.Timeout> = null;
+
+  constructor(clientId: string) {
+    super();
+    this._clientId = clientId;
+    this._client = this.createClient();
   }
 
   public get clientId(): string {
-    return this._client.id;
+    return this._clientId;
+  }
+
+  /**
+   * Removes a pending prompt from the queue, or interrupts it if it is running.
+   * Returns false when it is in neither, such as when it already finished.
+   */
+  public async cancelPrompt(promptId: string): Promise<boolean> {
+    const queue = await this.getQueue();
+    const job = queue.find((item) => item.promptId === promptId);
+    if (job === undefined) {
+      return false;
+    }
+
+    if (job.processing) {
+      // Newer ComfyUI versions only interrupt the given prompt, in case the next one started in the meantime. Older ones ignore it
+      // and interrupt whatever is running, which is still this prompt unless it finished since the queue was read.
+      // eslint-disable-next-line camelcase
+      await this.post('/interrupt', { prompt_id: promptId });
+    } else {
+      await this.post('/queue', { delete: [promptId] });
+    }
+
+    return true;
   }
 
   public destroy(): void {
-    for (const result of this._promptResults.values()) {
-      result.resolve({ status: 'error', message: 'The ComfyUI session was closed.' });
+    this._isDestroyed = true;
+    if (this._retryTimer !== null) {
+      clearTimeout(this._retryTimer);
+      this._retryTimer = null;
     }
-    this._promptResults.clear();
 
     this._client.removeAllListeners();
     this._client.destroy();
+  }
+
+  /**
+   * Downloads the files of the given kind of the given output node of a finished prompt.
+   */
+  public async downloadOutputs(promptId: string, outputNodeId: string, outputKind: WorkflowOutputKind): Promise<PromptOutputs> {
+    // History is used instead of the executed event since cached nodes do not emit it.
+    const history = await this._client.getHistory(promptId);
+    if (history === undefined) {
+      throw new Error('ComfyUI has no record of the workflow.');
+    }
+
+    // The SDK only types the images key, but every output kind is listed with the same shape.
+    const output = history.outputs[outputNodeId] as Partial<Record<WorkflowOutputKind, ImageInfo[]>> | undefined;
+    const files = await Promise.all((output?.[outputKind] ?? []).map(async (file) => ({ filename: file.filename, data: await this.downloadFile(file) })));
+
+    return { files, startedAt: getHistoryTimestamp(history, 'execution_start'), finishedAt: getHistoryTimestamp(history, 'execution_success') };
   }
 
   /**
@@ -139,6 +250,28 @@ export class ComfyUiClientSession {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Looks the prompts up in the queue, and the ones that are not there in the history. Rejects if ComfyUI cannot be reached,
+   * so a prompt is only ever reported as unknown when ComfyUI itself says so.
+   */
+  public async getPromptStates(promptIds: readonly string[]): Promise<Map<string, PromptState>> {
+    const queue = await this.getQueue();
+    const queued = new Map(queue.map((job) => [job.promptId, job]));
+
+    // Read after the queue, so a prompt that finishes in between is found in the history instead of being missed by both.
+    const entries = await Promise.all(promptIds.map(async (promptId): Promise<[string, PromptState]> => {
+      const job = queued.get(promptId);
+      if (job !== undefined) {
+        return [promptId, { status: job.processing ? 'running' : 'pending' }];
+      }
+
+      const history = await this._client.getHistory(promptId);
+      return [promptId, history === undefined ? { status: 'unknown' } : getHistoryOutcome(history)];
+    }));
+
+    return new Map(entries);
   }
 
   public async getQueue(): Promise<QueueJob[]> {
@@ -165,60 +298,6 @@ export class ComfyUiClientSession {
     return { ...usage, vram: await this.getSystemStatsVramUsage() };
   }
 
-  /**
-   * Listens for the progress of a prompt queued by this session, out of the given number of nodes in it.
-   * Returns a function that stops listening.
-   */
-  public onPromptProgress(promptId: string, total: number, listener: (progress: PromptProgress) => void): () => void {
-    const completed = new Set<string>();
-    let current: Nullable<string> = null;
-    let step: Nullable<NodeProgress> = null;
-
-    const notify = (): void => {
-      listener({ completed: Math.min(completed.size, total), step, total });
-    };
-
-    const unsubscribers = [
-      this._client.on('execution_cached', ({ detail }) => {
-        if (detail.prompt_id !== promptId) {
-          return;
-        }
-
-        for (const node of detail.nodes) {
-          completed.add(node);
-        }
-        notify();
-      }),
-      // ComfyUI runs one node at a time, so a node starting means the previous one finished. A null node means the prompt is done.
-      this._client.on('executing', ({ detail }) => {
-        if (detail.prompt_id !== promptId) {
-          return;
-        }
-
-        if (current !== null) {
-          completed.add(current);
-        }
-        current = detail.node;
-        step = null;
-        notify();
-      }),
-      this._client.on('progress', ({ detail }) => {
-        if (detail.prompt_id !== promptId) {
-          return;
-        }
-
-        step = { value: detail.value, max: detail.max };
-        notify();
-      })
-    ];
-
-    return (): void => {
-      for (const unsubscribe of unsubscribers) {
-        unsubscribe();
-      }
-    };
-  }
-
   public async queuePrompt(prompt: NodeData): Promise<string> {
     const { prompt_id: promptId } = await this._client.appendPrompt(prompt);
     return promptId;
@@ -229,24 +308,10 @@ export class ComfyUiClientSession {
     return this;
   }
 
-  /**
-   * Waits for a prompt queued by this session to finish executing and downloads the files of the given kind of the given output node.
-   * ComfyUI only sends execution events to the client that queued the prompt, so this only works for prompts queued with queuePrompt().
-   */
-  public async waitForOutputFiles(promptId: string, outputNodeId: string, outputKind: WorkflowOutputKind): Promise<OutputFile[]> {
-    const result = await this.getPromptResult(promptId).promise;
-    this._promptResults.delete(promptId);
-    if (result.status === 'error') {
-      throw new Error(result.message);
-    }
-
-    // History is used instead of the executed event since cached nodes do not emit it.
-    const history = await this._client.getHistory(promptId);
-    // The SDK only types the images key, but every output kind is listed with the same shape.
-    const output = history?.outputs[outputNodeId] as Partial<Record<WorkflowOutputKind, ImageInfo[]>> | undefined;
-    const files = output?.[outputKind] ?? [];
-
-    return await Promise.all(files.map(async (file) => ({ filename: file.filename, data: await this.downloadFile(file) })));
+  private createClient(): ComfyApi {
+    const client = createComfyUiClient(this._clientId);
+    this.registerEventHandlers(client);
+    return client;
   }
 
   private async downloadFile(file: ImageInfo): Promise<Uint8Array> {
@@ -257,16 +322,6 @@ export class ComfyUiClientSession {
     }
 
     return new Uint8Array(await response.arrayBuffer());
-  }
-
-  private getPromptResult(promptId: string): PromiseWithResolvers<PromptResult> {
-    let result = this._promptResults.get(promptId);
-    if (result === undefined) {
-      result = Promise.withResolvers<PromptResult>();
-      this._promptResults.set(promptId, result);
-    }
-
-    return result;
   }
 
   private async getSystemStatsVramUsage(): Promise<Nullable<number>> {
@@ -281,32 +336,96 @@ export class ComfyUiClientSession {
     }
   }
 
-  private registerEventHandlers(): void {
+  private async post(route: string, body: object): Promise<void> {
+    const response = await this._client.fetchApi(route, { method: 'POST', body: JSON.stringify(body) });
+    if (!response.ok) {
+      throw new Error(`ComfyUI rejected the request to ${route} (HTTP ${response.status.toString()}).`);
+    }
+  }
+
+  private registerEventHandlers(client: ComfyApi): void {
     // The SDK's monitor extension only listens for the original ComfyUI-Crystools event.
-    this._client.on('all', ({ detail }) => {
+    client.on('all', ({ detail }) => {
       if (detail.type === CRYSMONITOR_EVENT && isCrysMonitorData(detail.data)) {
         this._monitorData = detail.data;
       }
     });
 
-    this._client.on('execution_success', ({ detail }) => {
-      this.getPromptResult(detail.prompt_id).resolve({ status: 'success' });
+    client.on('connected', () => {
+      this.emit('connected');
     });
 
-    this._client.on('execution_error', ({ detail }) => {
-      this.getPromptResult(detail.prompt_id).resolve({ status: 'error', message: `${detail.node_type} failed: ${detail.exception_message}` });
+    client.on('reconnected', () => {
+      this.emit('connected');
     });
 
-    this._client.on('execution_interrupted', ({ detail }) => {
-      this.getPromptResult(detail.prompt_id).resolve({ status: 'error', message: 'The workflow was interrupted.' });
-    });
-
-    this._client.on('disconnected', () => {
+    client.on('disconnected', () => {
       this._monitorData = null;
+    });
+
+    // The SDK gives up after a number of attempts, both when connecting for the first time and when reconnecting.
+    client.on('connection_error', ({ detail }) => {
+      logger.warn(`Could not connect to ComfyUI, retrying in ${(CLIENT_RETRY_DELAY_MS / 1000).toString()} seconds.`, detail);
+      this.scheduleClientReplacement(client);
+    });
+
+    client.addEventListener(RECONNECTION_FAILED_EVENT, () => {
+      logger.warn(`Lost the connection to ComfyUI, retrying in ${(CLIENT_RETRY_DELAY_MS / 1000).toString()} seconds.`);
+      this.scheduleClientReplacement(client);
+    });
+
+    client.on('execution_start', ({ detail }) => {
+      this.emit('prompt_started', detail.prompt_id);
+    });
+
+    client.on('execution_cached', ({ detail }) => {
+      this.emit('prompt_cached', detail.prompt_id, detail.nodes);
+    });
+
+    client.on('executing', ({ detail }) => {
+      this.emit('prompt_executing', detail.prompt_id, detail.node);
+    });
+
+    client.on('progress', ({ detail }) => {
+      this.emit('prompt_step', detail.prompt_id, { value: detail.value, max: detail.max });
+    });
+
+    client.on('execution_success', ({ detail }) => {
+      this.emit('prompt_finished', detail.prompt_id, { status: 'success' });
+    });
+
+    client.on('execution_error', ({ detail }) => {
+      this.emit('prompt_finished', detail.prompt_id, { status: 'error', message: formatExecutionError(detail.node_type, detail.exception_message) });
+    });
+
+    client.on('execution_interrupted', ({ detail }) => {
+      this.emit('prompt_finished', detail.prompt_id, { status: 'interrupted' });
     });
   }
 
+  /**
+   * Replaces a client the SDK gave up on with a new one under the same client ID, after a delay.
+   */
+  private scheduleClientReplacement(client: ComfyApi): void {
+    if (this._isDestroyed || client !== this._client || this._retryTimer !== null) {
+      return;
+    }
+
+    this._retryTimer = setTimeout(() => {
+      this._retryTimer = null;
+      if (this._isDestroyed) {
+        return;
+      }
+
+      this._client.removeAllListeners();
+      this._client.destroy();
+      this._monitorData = null;
+      this._client = this.createClient();
+      this._client.init();
+    }, CLIENT_RETRY_DELAY_MS);
+  }
+
   public static create(): ComfyUiClientSession {
-    return new ComfyUiClientSession(createComfyUiClient());
+    return new ComfyUiClientSession(ComfyApi.generateId());
   }
 }

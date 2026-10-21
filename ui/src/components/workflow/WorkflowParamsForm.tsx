@@ -8,6 +8,7 @@ import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import { WorkflowInstructions } from '@components/workflow/WorkflowInstructions';
 import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
+import type { WorkflowRunHistoryFile } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
@@ -32,14 +33,14 @@ const SIDE_BY_SIDE_QUERY = '(min-width: 64rem)';
 const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
 
 interface ResultPlaceholderContentProps {
-  isSubmitting: boolean;
   isUploading: boolean;
-  promptId: Nullable<string>;
+  runner: UseRunWorkflowReturn;
 }
 
-const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, isUploading, promptId }) => {
-  if (promptId !== null) {
-    return <WorkflowRunStatus promptId={promptId} />;
+const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isUploading, runner }) => {
+  const { isRunning, isSubmitting, promptId, isCancelling, cancelError, cancel } = runner;
+  if (isRunning && promptId !== null) {
+    return <WorkflowRunStatus cancelError={cancelError} isCancelling={isCancelling} promptId={promptId} onCancel={cancel} />;
   }
 
   if (isUploading) {
@@ -86,10 +87,10 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
   const isBusy = isUploading || isSubmitting || isRunning;
   // While a run is in progress the status takes the result's place, so the latest result joins the history.
   const shownResult = isBusy ? null : current;
-  const historyFiles = (history.data?.pages ?? [])
+  const historyFiles: WorkflowRunHistoryFile[] = (history.data?.pages ?? [])
     .flatMap((page) => page.generations)
     .filter((generation) => generation.promptId !== shownResult?.promptId)
-    .flatMap((generation) => generation.outputs.map((path) => toOutputUrl(path)));
+    .flatMap((generation) => generation.outputs.map((path) => ({ generation, url: toOutputUrl(path) })));
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -102,7 +103,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
 
   // The latest result and the previous generations browse together as one gallery, newest first.
   const handleOpenSessionImage = (url: string): void => {
-    const images = [...shownResult?.files ?? [], ...historyFiles];
+    const images = [...shownResult?.files ?? [], ...historyFiles.map((file) => file.url)];
     setGallery({ images, index: Math.max(images.indexOf(url), 0) });
   };
 
@@ -233,7 +234,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         {shownResult === null
           ? (
               <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
-                <ResultPlaceholderContent isSubmitting={isSubmitting} isUploading={isUploading} promptId={isRunning ? promptId : null} />
+                <ResultPlaceholderContent isUploading={isUploading} runner={runner} />
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.

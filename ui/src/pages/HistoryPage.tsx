@@ -9,6 +9,7 @@ import { useSelection } from '@components/selection/hooks/useSelection';
 import { SelectionActions } from '@components/selection/SelectionActions';
 import { CATEGORY_TILE_CLASSES } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import { CURRENT_USER } from '@services/api/generations';
 import type { FC } from 'react';
 import { useParams } from 'react-router';
@@ -41,6 +42,7 @@ const HistoryPage: FC = () => {
   const [mediaType, setMediaType] = useMediaTypeParam();
   const [feedView, setFeedView] = useFeedViewParam();
   const scope = getScope(username, user?.username);
+  useDocumentTitle(scope.title);
   const isFeed = scope.username === undefined;
   const isOwnHistory = scope.username === CURRENT_USER;
   const selection = useSelection(`${scope.username ?? ''}/${mediaType ?? ''}`);

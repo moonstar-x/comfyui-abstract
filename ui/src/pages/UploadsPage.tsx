@@ -4,11 +4,13 @@ import { useSelection } from '@components/selection/hooks/useSelection';
 import { SelectionActions } from '@components/selection/SelectionActions';
 import { useDeleteUploads } from '@components/uploads/hooks/useUploads';
 import { UploadList } from '@components/uploads/UploadList';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import type { FC } from 'react';
 
 const EMPTY_MESSAGE = 'You have not uploaded anything yet';
 
 const UploadsPage: FC = () => {
+  useDocumentTitle('My Uploads');
   const [mediaType, setMediaType] = useMediaTypeParam();
   const selection = useSelection(mediaType ?? '');
   const uploadsDeletion = useDeleteUploads();

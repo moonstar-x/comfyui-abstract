@@ -13,17 +13,18 @@ import type { WebSocketMessageHandler } from './WebSocketMessageHandler.js';
 export class WebSocketMessenger {
   private readonly _handler: WebSocketMessageHandler;
   private readonly _socket: WebSocket;
+  private _username: null | string = null;
 
   constructor(socket: WebSocket, handler: WebSocketMessageHandler) {
     this._socket = socket;
     this._handler = handler;
-    this._handler.on('message', (message) => {
-      this.send(message);
-    });
   }
 
-  public get handler(): WebSocketMessageHandler {
-    return this._handler;
+  /**
+   * The user of the last authenticated message, whose runs are sent to this connection. Null until the client sends one.
+   */
+  public get username(): null | string {
+    return this._username;
   }
 
   public async handleRawIncomingMessage(raw: RawData, isBinary: boolean): Promise<void> {
@@ -33,8 +34,10 @@ export class WebSocketMessenger {
     }
 
     const user = await WebSocketMessenger.authenticate(message.token);
-    const result = await this._handler.handle(message, user);
-    if (result !== null) {
+    // Set before the message is handled, so the connection already gets the updates of a run it queues.
+    this._username = user.username;
+    const results = await this._handler.handle(message, user);
+    for (const result of results) {
       this.send(result);
     }
   }

@@ -9,6 +9,7 @@ import { BrowserRouter, Route, Routes } from 'react-router';
 const DashboardPage = lazy(async () => await import('@pages/DashboardPage'));
 const HistoryPage = lazy(async () => await import('@pages/HistoryPage'));
 const LoginPage = lazy(async () => await import('@pages/LoginPage'));
+const NotFoundPage = lazy(async () => await import('@pages/NotFoundPage'));
 const SettingsPage = lazy(async () => await import('@pages/SettingsPage'));
 const SignUpPage = lazy(async () => await import('@pages/SignUpPage'));
 const UploadsPage = lazy(async () => await import('@pages/UploadsPage'));
@@ -33,6 +34,8 @@ export const Router: FC = () => (
           <Route element={<HistoryPage />} path={`${RouteDefs.history}/:username`} />
           <Route element={<UploadsPage />} path={RouteDefs.uploads} />
           <Route element={<SettingsPage />} path={RouteDefs.settings} />
+          {/* Logged out users are sent to log in first, and land here afterwards if the page still doesn't exist. */}
+          <Route element={<NotFoundPage />} path="*" />
         </Route>
       </Route>
     </Routes>

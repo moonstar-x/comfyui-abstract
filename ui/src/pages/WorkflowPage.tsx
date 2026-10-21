@@ -9,6 +9,8 @@ import { WORKFLOW_MODEL_SEARCH_PARAM } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
 import { findWorkflowModel, isWorkflowType } from '@core/workflows/definitions';
 import { getWorkflowPrefill } from '@core/workflows/params';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
+import NotFoundPage from '@pages/NotFoundPage';
 import type { WorkflowType } from '@services/websocket/messages/client';
 import type { FC, ReactNode } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
@@ -26,14 +28,17 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const state: unknown = location.state;
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: definition, error, isPending } = useWorkflowDefinition(type);
-  const runner = useRunWorkflow();
 
   const match = findNavMatch(pathname);
+  const title = match?.item.title ?? type;
+  useDocumentTitle(title);
   const models = definition?.models ?? [];
   const model = definition === undefined
     ? null
     : findWorkflowModel(definition, searchParams.get(WORKFLOW_MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
-  useChatPageWorkflowContext(model === null ? null : { type, model: model.alias });
+  const modelContext = model === null ? null : { type, model: model.alias };
+  const runner = useRunWorkflow(modelContext);
+  useChatPageWorkflowContext(modelContext);
 
   const handleModelChange = (next: Nullable<string>): void => {
     runner.reset();
@@ -74,7 +79,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
           {match !== null && match.section !== null && (
             <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? type}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         </div>
 
         <WorkflowModelPicker disabled={runner.isSubmitting || runner.isRunning} models={models} value={model?.alias ?? null} onChange={handleModelChange} />
@@ -88,16 +93,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
 const WorkflowPage: FC = () => {
   const { id } = useParams();
   if (!isWorkflowType(id)) {
-    return (
-      <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Workflow not found</h1>
-        <Placeholder>
-          There is no workflow named
-          {' '}
-          {id}
-        </Placeholder>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   // Keyed by type so the selected model and form state don't leak between workflows.

@@ -11,7 +11,10 @@ export interface RunWorkflowPayload {
 }
 
 export type WSClientMessage =
+  GenericWSClientMessage<'cancel_run', { promptId: string }> |
   GenericWSClientMessage<'comfyui_free_up_memory', never> |
   GenericWSClientMessage<'get_queue', { promptId: string }> |
+  // The prompt IDs are the runs being followed, whose results are sent back if they finished while the connection was down.
+  GenericWSClientMessage<'get_runs', { promptIds: string[] }> |
   GenericWSClientMessage<'get_status', never> |
   GenericWSClientMessage<'run_workflow', RunWorkflowPayload>;

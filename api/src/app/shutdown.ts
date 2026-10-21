@@ -1,7 +1,9 @@
 import type { Server as HttpServer } from 'node:http';
 import process from 'node:process';
 import { logger } from '@moonstar-x/logger';
+import type { ComfyUiClientSession } from '../services/comfyui/ComfyUiClientSession.js';
 import { database } from '../services/database/client/postgres.js';
+import type { GenerationJobTracker } from '../services/generations/GenerationJobTracker.js';
 import type { WebSocketServer } from '../websocket/WebSocketServer.js';
 
 // Docker sends SIGKILL 10 seconds after SIGTERM by default, so the shutdown has to be done before that.
@@ -10,7 +12,9 @@ const HARD_TIMEOUT_MS = 9000;
 const SHUTDOWN_SIGNALS: NodeJS.Signals[] = ['SIGTERM', 'SIGINT'];
 
 export interface ShutdownTargets {
+  comfyUi: ComfyUiClientSession;
   httpServer: HttpServer;
+  jobTracker: GenerationJobTracker;
   webSocketServer: WebSocketServer;
 }
 
@@ -37,8 +41,9 @@ const closeHttpServer = async (server: HttpServer): Promise<void> => {
 /**
  * Stops accepting connections, gives in-flight requests and event streams the grace period to finish, and then closes
  * the database pool. Connections still open after the grace period are dropped.
+ * Generation jobs are left in ComfyUI and picked up again on the next start.
  */
-const shutDown = async ({ httpServer, webSocketServer }: ShutdownTargets): Promise<void> => {
+const shutDown = async ({ comfyUi, httpServer, jobTracker, webSocketServer }: ShutdownTargets): Promise<void> => {
   const graceTimer = setTimeout(() => {
     logger.warn('Open connections did not finish in time, dropping them.');
     webSocketServer.terminate();
@@ -52,6 +57,8 @@ const shutDown = async ({ httpServer, webSocketServer }: ShutdownTargets): Promi
     clearTimeout(graceTimer);
   }
 
+  jobTracker.stop();
+  comfyUi.destroy();
   await database.$pool.end();
 };
 

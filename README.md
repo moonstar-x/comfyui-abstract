@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner/banner-horizontal-on-dark.svg" />
+    <img src="assets/banner/banner-horizontal-color.svg" alt="ComfyUI Abstract" width="420" />
+  </picture>
+</p>
+
 # ComfyUI Abstract
 
 A self-hosted web app that puts a simple, multi-user interface on top of a [ComfyUI](https://github.com/comfyanonymous/ComfyUI) server. Instead of handling node graphs, users pick a task such as "generate an image" or "make a cover of this song", choose a model, fill in a short form, and get the result. They can also chat with a local LLM through [LM Studio](https://lmstudio.ai) for help writing prompts.
@@ -309,7 +316,9 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 | `POST` | `/messages` | Send a chat message. The reply is streamed as server-sent events (`conversation`, `reasoning`, `delta`, `done`, `error`). |
 | `GET` | `/dashboard` | Usage statistics. |
 
-The WebSocket at `/ws` accepts JSON messages that each carry the user's `token`: `run_workflow`, `get_queue`, `get_status` and `comfyui_free_up_memory`. The server pushes progress, results and ComfyUI status updates back to the client.
+The WebSocket at `/ws` accepts JSON messages that each carry the user's `token`: `run_workflow`, `cancel_run`, `get_runs`, `get_queue`, `get_status` and `comfyui_free_up_memory`. The server pushes progress, results and ComfyUI status updates back to the client.
+
+Runs don't depend on the connection that started them. The API keeps a single connection to ComfyUI and stores every queued run until its outputs are saved, so a run survives a dropped connection, a page reload or an API restart. Its progress and result go to every open connection of the user, and `get_runs` returns the user's runs still in flight after a reconnect.
 
 ## License
 

@@ -2,6 +2,7 @@ import { useAuth } from '@components/auth/AuthContext';
 import { AuthFormField } from '@components/auth/AuthFormField';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { RouteDefs } from '@core/router/routes';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import { useMutation } from '@tanstack/react-query';
 import { LogIn } from 'lucide-react';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import type { FC, SubmitEvent } from 'react';
 import { Link, useLocation } from 'react-router';
 
 const LoginPage: FC = () => {
+  useDocumentTitle('Log in');
   const { login } = useAuth();
   const location = useLocation();
   const state: unknown = location.state;

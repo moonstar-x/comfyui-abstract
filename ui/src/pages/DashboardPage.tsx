@@ -6,6 +6,7 @@ import { MostActiveUsers } from '@components/dashboard/MostActiveUsers';
 import { TopModels } from '@components/dashboard/TopModels';
 import { WorkflowBreakdown } from '@components/dashboard/WorkflowBreakdown';
 import { Skeleton } from '@components/ui/third-party/shadcn/skeleton';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import { CalendarDays, CalendarRange, Clock, Sparkles, Users } from 'lucide-react';
 import type { FC, ReactNode } from 'react';
 
@@ -43,6 +44,7 @@ const LoadingDashboard: FC = () => (
 );
 
 const DashboardPage: FC = () => {
+  useDocumentTitle('Dashboard');
   const { data, error, isPending } = useDashboard();
 
   if (isPending) {

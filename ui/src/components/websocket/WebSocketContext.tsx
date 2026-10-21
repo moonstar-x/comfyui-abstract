@@ -14,7 +14,6 @@ const MAX_RECONNECT_INTERVAL_MS = 10_000;
 const getReconnectInterval = (attempt: number): number => Math.min(1000 * (2 ** attempt), MAX_RECONNECT_INTERVAL_MS);
 
 interface ContextValue {
-  clientId: Nullable<string>;
   isConnected: boolean;
   messenger: WebSocketMessenger;
   readyState: ReadyState;
@@ -28,16 +27,12 @@ interface Props {
 
 export const WebSocketProvider: FC<Props> = ({ children }) => {
   const [messenger] = useState<WebSocketMessenger>(() => new WebSocketMessenger());
-  const [clientId, setClientId] = useState<Nullable<string>>(null);
   const { readyState, sendMessage } = useWebSocket(WS_URL, {
     shouldReconnect: () => true,
     reconnectAttempts: RECONNECT_ATTEMPTS,
     reconnectInterval: getReconnectInterval,
     onMessage: (event) => {
       messenger.handleRawIncomingMessage(event.data);
-    },
-    onClose: () => {
-      setClientId(null);
     }
   });
 
@@ -48,10 +43,6 @@ export const WebSocketProvider: FC<Props> = ({ children }) => {
     };
   }, [messenger, sendMessage]);
 
-  useEffect(() => messenger.on('session', (message) => {
-    setClientId(message.payload.clientId);
-  }), [messenger]);
-
   // Same as the API client, a rejected token sends the user back to the login page.
   useEffect(() => messenger.on('error', ({ payload }) => {
     if (payload.code !== undefined && SESSION_ERROR_CODES.has(payload.code)) {
@@ -60,11 +51,10 @@ export const WebSocketProvider: FC<Props> = ({ children }) => {
   }), [messenger]);
 
   const context = useMemo<ContextValue>(() => ({
-    clientId,
     isConnected: readyState === ReadyState.OPEN,
     messenger,
     readyState
-  }), [clientId, messenger, readyState]);
+  }), [messenger, readyState]);
 
   return (
     <WebSocketContext value={context}>

@@ -1,7 +1,10 @@
 import { ComfyApi } from '@saintno/comfyui-sdk';
 import { COMFYUI_URL } from '../../config/environment.js';
 
-export const createComfyUiClient = (): ComfyApi => new ComfyApi(COMFYUI_URL);
+/**
+ * ComfyUI sends the events of a prompt to the client that queued it, so a client that replaces another must keep its ID.
+ */
+export const createComfyUiClient = (clientId?: string): ComfyApi => new ComfyApi(COMFYUI_URL, clientId);
 
 /**
  * Creates a client and waits for its websocket to connect, which is required to track the execution of the prompts it queues.

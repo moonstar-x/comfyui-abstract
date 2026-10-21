@@ -1,6 +1,7 @@
 import { AudioVisualizer } from '@components/audio/AudioVisualizer';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Slider } from '@components/ui/third-party/shadcn/slider';
+import { getAudioContext } from '@core/utils/audio';
 import { cn } from 'cn';
 import { Pause, Play, Volume1, Volume2, VolumeX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -11,17 +12,6 @@ interface AudioGraph {
   gain: GainNode;
   source: MediaElementAudioSourceNode;
 }
-
-// Shared by every player, browsers cap how many audio contexts a page can have open.
-const shared: { context: AudioContext | null } = { context: null };
-
-const getAudioContext = (): AudioContext | null => {
-  if (typeof AudioContext !== 'undefined' && !shared.context) {
-    shared.context = new AudioContext();
-  }
-
-  return shared.context;
-};
 
 // The slider reports arrays for ranges, these players only ever have a single thumb.
 const toSingleValue = (value: number | readonly number[]): number => typeof value === 'number' ? value : value[0] ?? 0;
@@ -158,7 +148,7 @@ export const AudioPlayer: FC<AudioPlayerProps> = ({ className, label, preload = 
 
     ensureGraph();
     try {
-      await shared.context?.resume();
+      await getAudioContext()?.resume();
       await audio.play();
     } catch {
       // A failed play leaves the element paused, and the play and pause events keep the button in step with that.

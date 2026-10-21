@@ -1,9 +1,11 @@
 import { useAuth } from '@components/auth/AuthContext';
 import { PasswordSettings } from '@components/settings/PasswordSettings';
 import { ProfilePictureSettings } from '@components/settings/ProfilePictureSettings';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import type { FC } from 'react';
 
 const SettingsPage: FC = () => {
+  useDocumentTitle('Settings');
   const { user } = useAuth();
   // RequireAuth only renders the page with a user, this just narrows the type.
   if (user === null) {
