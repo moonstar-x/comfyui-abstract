@@ -9,6 +9,8 @@ import { useState } from 'react';
 import type { FC, SubmitEvent } from 'react';
 import { Link, useLocation } from 'react-router';
 
+type LoginErrors = Partial<Record<'password' | 'username', string>>;
+
 const LoginPage: FC = () => {
   useDocumentTitle('Log in');
   const { login } = useAuth();
@@ -16,15 +18,30 @@ const LoginPage: FC = () => {
   const state: unknown = location.state;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<LoginErrors>({});
   // Navigating away on success is handled by RequireGuest once the session is set.
   const { mutate, error, isPending, reset } = useMutation({ mutationFn: login });
 
-  const canSubmit = username.trim() !== '' && password !== '' && !isPending;
-
+  // The submit button stays enabled while idle: a disabled default button blocks Enter-to-submit,
+  // and autofilled values may not reach state until the user interacts with the page.
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
     event.preventDefault();
-    if (canSubmit) {
-      mutate({ username: username.trim(), password });
+    if (isPending) {
+      return;
+    }
+
+    const trimmedUsername = username.trim();
+    const nextErrors: LoginErrors = {};
+    if (trimmedUsername === '') {
+      nextErrors.username = 'Enter your username.';
+    }
+    if (password === '') {
+      nextErrors.password = 'Enter your password.';
+    }
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length === 0) {
+      mutate({ username: trimmedUsername, password });
     }
   };
 
@@ -42,28 +59,30 @@ const LoginPage: FC = () => {
       <AuthFormField
         autoComplete="username"
         disabled={isPending}
-        error={undefined}
+        error={errors.username}
         label="Username"
         value={username}
         onChange={(value) => {
           setUsername(value);
+          setErrors(({ username: _removed, ...rest }) => rest);
           reset();
         }}
       />
       <AuthFormField
         autoComplete="current-password"
         disabled={isPending}
-        error={undefined}
+        error={errors.password}
         label="Password"
         type="password"
         value={password}
         onChange={(value) => {
           setPassword(value);
+          setErrors(({ password: _removed, ...rest }) => rest);
           reset();
         }}
       />
 
-      <Button disabled={!canSubmit} size="lg" type="submit">
+      <Button disabled={isPending} size="lg" type="submit">
         <LogIn data-icon="inline-start" />
         {isPending ? 'Logging in…' : 'Log in'}
       </Button>
