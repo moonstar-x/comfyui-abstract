@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/banner/banner-horizontal-on-dark.svg" />
+    <img src="assets/banner/banner-horizontal-color.svg" alt="ComfyUI Abstract" width="420" />
+  </picture>
+</p>
+
 # ComfyUI Abstract
 
 A self-hosted web app that puts a simple, multi-user interface on top of a [ComfyUI](https://github.com/comfyanonymous/ComfyUI) server. Instead of handling node graphs, users pick a task such as "generate an image" or "make a cover of this song", choose a model, fill in a short form, and get the result. They can also chat with a local LLM through [LM Studio](https://lmstudio.ai) for help writing prompts.

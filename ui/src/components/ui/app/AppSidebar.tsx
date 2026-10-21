@@ -1,5 +1,6 @@
 import { useAuth } from '@components/auth/AuthContext';
 import { UserMenu } from '@components/auth/UserMenu';
+import { AppLogo } from '@components/ui/app/AppLogo';
 import { ASSETS_SECTION, CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, toNavPathname, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
 import type { NavItem, NavSection } from '@components/ui/app/navigation';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@components/ui/third-party/shadcn/collapsible';
@@ -19,7 +20,7 @@ import {
 } from '@components/ui/third-party/shadcn/sidebar';
 import { RouteDefs } from '@core/router/routes';
 import { cn } from 'cn';
-import { ChevronRight, Workflow } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import type { FC } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
@@ -142,8 +143,8 @@ export const AppSidebar: FC = () => {
                 setOpenMobile(false);
               }}
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Workflow />
+              <span className="flex size-8 shrink-0 rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <AppLogo className="size-full!" />
               </span>
               <span className="grid flex-1 text-left leading-tight">
                 <span className="truncate font-semibold">ComfyUI Abstract</span>
