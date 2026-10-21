@@ -178,6 +178,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `4000` | HTTP and WebSocket port. |
+| `TRUST_PROXY` | `false` | Set when the API runs behind a reverse proxy so login limits see each client's IP instead of the proxy's. Use the number of proxies in front of the API, such as `1`, or a comma-separated list of their addresses. Avoid `true` unless every request goes through a proxy you control, since clients could then fake their IP. |
 | `COMFYUI_URL` | *required* | Base URL of the ComfyUI server. |
 | `COMFYUI_UPLOAD_SUBFOLDER` | `comfyui-abstract` | Subfolder of the ComfyUI input directory where user uploads are placed. It may contain only letters, digits, `_`, `-` and `/`. |
 | `LMSTUDIO_URL` | *required* | Base URL of the LM Studio server. A path prefix, such as one added by a reverse proxy, is kept. |
@@ -296,7 +297,7 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 | Method | Route | Description |
 |--------|-------|-------------|
 | `GET` | `/health` | Health check. |
-| `POST` | `/auth/login` | Log in and receive a JWT. |
+| `POST` | `/auth/login` | Log in and receive a JWT. Limited to 20 attempts per IP and 10 per username every 15 minutes; over the limit it returns `429` with a `Retry-After` header. |
 | `POST` | `/users` | Sign up. Only works when `ENABLE_SIGNUP=true`. |
 | `PATCH` | `/users/me` | Change your password or profile picture URL. |
 | `PUT` | `/users/me/picture` | Upload a profile picture. |

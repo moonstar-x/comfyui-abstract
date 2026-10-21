@@ -65,6 +65,24 @@ const isFlagEnabled = (key: string, isEnabledByDefault: boolean): boolean => {
 };
 
 /**
+ * Accepts what Express takes for its "trust proxy" setting: true or false, a number of proxy hops, or a comma-separated
+ * list of trusted addresses and subnets.
+ */
+const getTrustProxy = (key: string): boolean | number | string => {
+  const value = getString(key, 'false');
+  const normalized = value.toLowerCase();
+  if (normalized === 'true' || normalized === 'false') {
+    return normalized === 'true';
+  }
+
+  if (/^\d+$/u.test(value)) {
+    return Number(value);
+  }
+
+  return value;
+};
+
+/**
  * Accepts a path relative to another directory made of letters, digits, underscores and dashes, such as "uploads/app",
  * so it can't escape that directory and is safe to use in a regex.
  */
@@ -78,6 +96,10 @@ const getRelativePath = (key: string, defaultValue: string): string => {
 };
 
 export const PORT: number = getInteger('PORT', 4000);
+/**
+ * Which proxies in front of the server are trusted to report the client IP, which the login limits are keyed on.
+ */
+export const TRUST_PROXY: boolean | number | string = getTrustProxy('TRUST_PROXY');
 
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
 export const COMFYUI_UPLOAD_SUBFOLDER: string = getRelativePath('COMFYUI_UPLOAD_SUBFOLDER', 'comfyui-abstract');
