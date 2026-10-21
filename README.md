@@ -126,7 +126,7 @@ POSTGRES_PASSWORD=password
 POSTGRES_DATABASE=comfyui
 
 ENABLE_SIGNUP=true
-JWT_SECRET=any-long-random-string
+JWT_SECRET=any-random-string-of-at-least-32-characters
 ```
 
 Then edit `config.yml` so it lists models that exist on your ComfyUI server, and start the watcher:
@@ -145,7 +145,7 @@ npm ci
 cp .env.sample .env
 ```
 
-In development the UI runs on its own origin, so point it at the API:
+In development the UI runs on its own origin, so add `CORS_ORIGINS=http://localhost:5173` to `api/.env` and point the UI at the API:
 
 ```dotenv
 VITE_API_URL=http://localhost:4000
@@ -178,6 +178,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `4000` | HTTP and WebSocket port. |
+| `TRUST_PROXY` | `false` | Set when the API runs behind a reverse proxy so login limits see each client's IP instead of the proxy's. Use the number of proxies in front of the API, such as `1`, or a comma-separated list of their addresses. Avoid `true` unless every request goes through a proxy you control, since clients could then fake their IP. |
 | `COMFYUI_URL` | *required* | Base URL of the ComfyUI server. |
 | `COMFYUI_UPLOAD_SUBFOLDER` | `comfyui-abstract` | Subfolder of the ComfyUI input directory where user uploads are placed. It may contain only letters, digits, `_`, `-` and `/`. |
 | `LMSTUDIO_URL` | *required* | Base URL of the LM Studio server. A path prefix, such as one added by a reverse proxy, is kept. |
@@ -188,7 +189,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | `POSTGRES_PASSWORD` | *required* | |
 | `POSTGRES_DATABASE` | *required* | |
 | `POSTGRES_MAX_CONNECTIONS` | `25` | Size of the connection pool. |
-| `JWT_SECRET` | *required* | Secret used to sign session tokens. |
+| `JWT_SECRET` | *required* | Secret used to sign session tokens. Must be at least 32 characters, for example the output of `openssl rand -base64 32`. |
 | `JWT_EXPIRATION` | `7d` | Session lifetime, for example `12h` or `30d`. |
 | `ENABLE_SIGNUP` | `false` | Allows new accounts to be created from the sign-up page. |
 | `MAX_IMAGE_UPLOAD_MB` | `20` | Maximum size of each uploaded image. |
@@ -197,6 +198,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | `CONFIG_FILE` | `config.yml` | Path to the app config. |
 | `MODEL_INSTRUCTIONS_DIRECTORY` | `model_instructions` | Directory of model instruction files. It is optional. |
 | `APP_BUILD_DIR` | *empty* | Directory of the built UI. When set, the API serves the UI too. The Docker image sets it to `/app/ui`. |
+| `CORS_ORIGINS` | *empty* | Comma-separated origins allowed to call the API from the browser, such as `http://localhost:5173` for the Vite dev server. Leave empty when the API serves the UI. |
 
 Relative paths are resolved against the API's working directory.
 
@@ -296,9 +298,10 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 | Method | Route | Description |
 |--------|-------|-------------|
 | `GET` | `/health` | Health check. |
-| `POST` | `/auth/login` | Log in and receive a JWT. |
+| `POST` | `/auth/login` | Log in and receive a JWT. Limited to 20 attempts per IP and 10 per username every 15 minutes; over the limit it returns `429` with a `Retry-After` header. |
 | `POST` | `/users` | Sign up. Only works when `ENABLE_SIGNUP=true`. |
-| `PATCH` | `/users/me` | Change your password or profile picture URL. |
+| `PATCH` | `/users/me` | Remove your profile picture. |
+| `PUT` | `/users/me/password` | Change your password. Logs out every other session and returns a new token. |
 | `PUT` | `/users/me/picture` | Upload a profile picture. |
 | `GET` | `/users/me/uploads` | List your uploads. |
 | `GET` | `/users/me/generations/count` | Count your generations. |

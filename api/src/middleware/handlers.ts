@@ -31,7 +31,7 @@ export const handleExpressError = (error: Error, _req: Request, res: Response, n
   }
 
   const response = new ResponseBuilder().withError(apiResponseError);
-  res.status(response.statusCode).send(response.build());
+  res.status(response.statusCode).set(apiResponseError.headers).send(response.build());
 
   next();
 };

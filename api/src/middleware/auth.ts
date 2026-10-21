@@ -1,17 +1,12 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ErrorCodes } from '../app/http/errors/ErrorCodes.js';
 import { UnauthorizedRequestError } from '../app/http/errors/UnauthorizedRequestError.js';
-import { verifyToken } from '../services/auth/token.js';
-import { findUserByUsername } from '../services/database/repositories/users.js';
+import { authenticateToken, InvalidSessionError } from '../services/auth/session.js';
+import type { AuthenticatedUser } from '../services/auth/session.js';
 
 const BEARER_PREFIX = 'Bearer ';
 
-/**
- * Identifies the user who made the request. Load the full user from the database when more is needed.
- */
-export interface AuthenticatedUser {
-  username: string;
-}
+export type { AuthenticatedUser } from '../services/auth/session.js';
 
 export interface AuthenticatedLocals {
   user: AuthenticatedUser;
@@ -33,19 +28,15 @@ const getBearerToken = (req: Request): null | string => {
 };
 
 const authenticate = async (token: string): Promise<AuthenticatedUser> => {
-  let username: string;
   try {
-    ({ username } = await verifyToken(token));
-  } catch {
-    throw new UnauthorizedRequestError('The provided token is invalid or has expired.', ErrorCodes.SESSION_INVALID);
-  }
+    return await authenticateToken(token);
+  } catch (error) {
+    if (error instanceof InvalidSessionError) {
+      throw new UnauthorizedRequestError(error.message, ErrorCodes.SESSION_INVALID);
+    }
 
-  const user = await findUserByUsername(username);
-  if (!user) {
-    throw new UnauthorizedRequestError('The user for this token no longer exists.', ErrorCodes.SESSION_INVALID);
+    throw error;
   }
-
-  return { username: user.username };
 };
 
 /**

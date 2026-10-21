@@ -25,5 +25,9 @@ export default [
   {
     name: 'ignore-third-party',
     ignores: ['src/components/ui/third-party/**']
+  },
+  {
+    name: 'ignore-static-assets',
+    ignores: ['public/**']
   }
 ];

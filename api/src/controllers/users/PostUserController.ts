@@ -11,14 +11,13 @@ import { parseBody } from '../../app/http/validation.js';
 import { IS_SIGNUP_ENABLED } from '../../config/environment.js';
 import { hashPassword } from '../../services/auth/password.js';
 import { isUsernameReserved } from '../../services/auth/reserved.js';
-import { PasswordSchema, PictureUrlSchema, UsernameSchema } from '../../services/auth/schemas.js';
+import { PasswordSchema, UsernameSchema } from '../../services/auth/schemas.js';
 import { POSTGRES_ERROR_CODES } from '../../services/database/client/codes.js';
 import { createUser, toPublicUser } from '../../services/database/repositories/users.js';
 
 const CreateUserBodySchema = z.object({
   username: UsernameSchema,
-  password: PasswordSchema,
-  pictureUrl: PictureUrlSchema.optional()
+  password: PasswordSchema
 });
 
 const isAlreadyExistsError = (error: unknown): boolean => typeof error === 'object' && error !== null &&
@@ -32,7 +31,7 @@ export default class PostUserController extends PostController {
       throw new ForbiddenError('Signing up is disabled on this server.', ErrorCodes.SIGNUP_DISABLED);
     }
 
-    const { username, password, pictureUrl } = parseBody(CreateUserBodySchema, req.body);
+    const { username, password } = parseBody(CreateUserBodySchema, req.body);
     if (isUsernameReserved(username)) {
       throw new BadRequestError(`The username ${username} is reserved.`, ErrorCodes.USERNAME_RESERVED);
     }
@@ -41,7 +40,7 @@ export default class PostUserController extends PostController {
       const user = await createUser({
         username,
         passwordHash: await hashPassword(password),
-        pictureUrl: pictureUrl ?? null
+        pictureUrl: null
       });
 
       return new ResponseBuilder().withStatus(StatusCodes.CREATED).withData(toPublicUser(user));

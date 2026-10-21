@@ -11,6 +11,7 @@ export const ApiErrorCodes = {
   SESSION_INVALID: 'SESSION_INVALID',
   SESSION_NOT_PROVIDED: 'SESSION_NOT_PROVIDED',
   SIGNUP_DISABLED: 'SIGNUP_DISABLED',
+  TOO_MANY_LOGIN_ATTEMPTS: 'TOO_MANY_LOGIN_ATTEMPTS',
   UNKNOWN_ERROR: 'UNKNOWN_ERROR',
   UNSUPPORTED_MEDIA_TYPE: 'UNSUPPORTED_MEDIA_TYPE',
   USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
@@ -71,6 +72,8 @@ export interface ApiRequestOptions {
   signal?: AbortSignal;
 }
 
+const getAuthorizationHeader = (token: string): string => `Bearer ${token}`;
+
 const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET', signal }: ApiRequestOptions): RequestInit => {
   const headers = new Headers();
   const init: RequestInit = { method, headers };
@@ -88,7 +91,7 @@ const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET',
 
   const token = isAuthenticated ? getSession()?.token : undefined;
   if (token !== undefined) {
-    headers.set('Authorization', `Bearer ${token}`);
+    headers.set('Authorization', getAuthorizationHeader(token));
   }
 
   return init;
@@ -119,10 +122,14 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 
 /**
  * Authenticated requests clear the stored session when the API rejects the token, which sends the user back to the login page.
+ * Only a session still holding the rejected token is cleared, so a request sent before a password change replaced the token
+ * does not log out the new session.
  */
-const throwApiError = (response: Response, body: unknown, options: ApiRequestOptions): never => {
+const throwApiError = (response: Response, body: unknown, init: RequestInit): never => {
   const { code, message } = getErrorPayload(body);
-  if (code !== null && options.isAuthenticated === true && SESSION_ERROR_CODES.has(code)) {
+  const authorization = new Headers(init.headers).get('Authorization');
+  const token = getSession()?.token;
+  if (code !== null && token !== undefined && SESSION_ERROR_CODES.has(code) && authorization === getAuthorizationHeader(token)) {
     setSession(null);
   }
 
@@ -136,7 +143,8 @@ const throwApiError = (response: Response, body: unknown, options: ApiRequestOpt
  * Sends a request to the API and returns the data and meta fields of the response body.
  */
 export const apiRequestWithMeta = async (path: string, options: ApiRequestOptions = {}): Promise<ApiResponse> => {
-  const response = await send(path, buildRequestInit(options));
+  const init = buildRequestInit(options);
+  const response = await send(path, init);
   const body = await readJson(response);
   if (response.ok) {
     return {
@@ -145,31 +153,33 @@ export const apiRequestWithMeta = async (path: string, options: ApiRequestOption
     };
   }
 
-  return throwApiError(response, body, options);
+  return throwApiError(response, body, init);
 };
 
 /**
  * Sends a request to an API endpoint that responds with a raw file instead of JSON, and returns the file.
  */
 export const apiRequestFile = async (path: string, options: ApiRequestOptions = {}): Promise<Blob> => {
-  const response = await send(path, buildRequestInit(options));
+  const init = buildRequestInit(options);
+  const response = await send(path, init);
   if (response.ok) {
     return await response.blob();
   }
 
-  return throwApiError(response, await readJson(response), options);
+  return throwApiError(response, await readJson(response), init);
 };
 
 /**
  * Sends a request to an API endpoint that streams its response, such as server-sent events, and returns the body as it arrives.
  */
 export const apiRequestStream = async (path: string, options: ApiRequestOptions = {}): Promise<ReadableStream<Uint8Array>> => {
-  const response = await send(path, buildRequestInit(options));
+  const init = buildRequestInit(options);
+  const response = await send(path, init);
   if (response.ok && response.body !== null) {
     return response.body;
   }
 
-  return throwApiError(response, await readJson(response), options);
+  return throwApiError(response, await readJson(response), init);
 };
 
 /**

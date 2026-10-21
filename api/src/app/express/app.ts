@@ -3,7 +3,8 @@ import { fileURLToPath } from 'node:url';
 import cors from 'cors';
 import type { Express, Request, Response } from 'express';
 import express from 'express';
-import { APP_BUILD_DIR, PUBLIC_DIRECTORY } from '../../config/environment.js';
+import helmet from 'helmet';
+import { APP_BUILD_DIR, CORS_ORIGINS, PUBLIC_DIRECTORY, TRUST_PROXY } from '../../config/environment.js';
 import { handleExpressError, handleRouteNotFound } from '../../middleware/handlers.js';
 import { logRequests } from '../../middleware/logging.js';
 import { ensurePublicDirectory, PUBLIC_ROUTE } from '../../services/outputs/storage.js';
@@ -28,11 +29,28 @@ const serveApp = (app: Express, directory: string): void => {
 
 export const createApp = async (): Promise<Express> => {
   const app = express();
-  app.use(cors());
+  app.set('trust proxy', TRUST_PROXY);
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        // Uploads are previewed from object URLs.
+        'img-src': ["'self'", 'data:', 'blob:'],
+        'media-src': ["'self'", 'blob:'],
+        // Self-hosted instances are often reached over plain HTTP, where upgrading every request to HTTPS breaks the UI.
+        'upgrade-insecure-requests': null
+      }
+    },
+    // Outputs and profile pictures must stay embeddable by the allowed origins.
+    crossOriginResourcePolicy: { policy: CORS_ORIGINS.length > 0 ? 'cross-origin' : 'same-origin' }
+  }));
+
+  // The UI served from here is same-origin, so CORS is only enabled for the origins configured to call the API from elsewhere.
+  if (CORS_ORIGINS.length > 0) {
+    app.use(cors({ origin: CORS_ORIGINS }));
+  }
+
   app.use(logRequests);
   app.use(express.json());
-
-  app.options('*all', cors());
 
   // Unknown routes under these prefixes keep the JSON 404 instead of falling through to the UI.
   const registry = await new AutoControllerRegistry(CONTROLLERS_DIRECTORY).load();

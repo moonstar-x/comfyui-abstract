@@ -1,4 +1,4 @@
-import type { TokenPayload } from '../services/auth/token.js';
+import type { AuthenticatedUser } from '../services/auth/session.js';
 import type { ComfyUiClientSession, QueueJob } from '../services/comfyui/ComfyUiClientSession.js';
 import { EMPTY_SYSTEM_USAGE } from '../services/comfyui/ComfyUiClientSession.js';
 import type { GenerationJobTracker } from '../services/generations/GenerationJobTracker.js';
@@ -24,7 +24,7 @@ export class WebSocketMessageHandler {
     this._jobTracker = options.jobTracker;
   }
 
-  public async handle(message: WSClientMessage, user: TokenPayload): Promise<WSServerMessage[]> {
+  public async handle(message: WSClientMessage, user: AuthenticatedUser): Promise<WSServerMessage[]> {
     switch (message.type) {
       case 'cancel_run':
         return await this.handleCancelRun(message.payload.promptId, user);
@@ -44,7 +44,7 @@ export class WebSocketMessageHandler {
   /**
    * The cancellation itself is announced by the job tracker once ComfyUI drops the run.
    */
-  private async handleCancelRun(promptId: string, { username }: TokenPayload): Promise<WSServerMessage[]> {
+  private async handleCancelRun(promptId: string, { username }: AuthenticatedUser): Promise<WSServerMessage[]> {
     let isCancelled: boolean;
     try {
       isCancelled = await this._jobTracker.cancel(promptId, username);
@@ -86,7 +86,7 @@ export class WebSocketMessageHandler {
   /**
    * The active runs come first, so the results of the finished ones settle runs the client already knows about.
    */
-  private handleGetRuns(promptIds: string[], { username }: TokenPayload): WSServerMessage[] {
+  private handleGetRuns(promptIds: string[], { username }: AuthenticatedUser): WSServerMessage[] {
     return [
       { type: 'runs', payload: { runs: this._jobTracker.getActiveRuns(username) } },
       ...this._jobTracker.getFinishedRunMessages(promptIds, username)
@@ -100,7 +100,7 @@ export class WebSocketMessageHandler {
     return { type: 'status', payload: { online: isOnlineState, usage } };
   }
 
-  private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload, { username }: TokenPayload): Promise<WSServerMessage> {
+  private async handleRunWorkflow({ params, ...request }: RunWorkflowPayload, { username }: AuthenticatedUser): Promise<WSServerMessage> {
     const { workflow, workflowId, params: workflowParams } = makeWorkflow(request, params);
     const { prompt, params: resolvedParams } = workflow.makePrompt(workflowParams);
 

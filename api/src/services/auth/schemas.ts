@@ -6,5 +6,3 @@ export const UsernameSchema: z.ZodString = z.string()
   .regex(/^[\w\-.]+$/u, 'Username may only contain letters, numbers, dots, dashes and underscores.');
 
 export const PasswordSchema: z.ZodString = z.string().min(8).max(256);
-
-export const PictureUrlSchema: z.ZodNullable<z.ZodURL> = z.url().nullable();
