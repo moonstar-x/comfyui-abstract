@@ -1,4 +1,5 @@
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
+import { unlockAudio } from '@core/utils/audio';
 import type { Nullable } from '@core/utils/types';
 import type { RunWorkflowPayload } from '@services/websocket/messages/client';
 import { useCallback, useEffect, useState } from 'react';
@@ -72,6 +73,8 @@ export const useRunWorkflow = (): UseRunWorkflowReturn => {
       return;
     }
 
+    // Runs start from a click, which is the gesture the completion sound needs to play once the user has gone elsewhere.
+    void unlockAudio();
     setState({ status: 'pending' });
     messenger.send({ type: 'run_workflow', payload });
   }, [isConnected, messenger]);

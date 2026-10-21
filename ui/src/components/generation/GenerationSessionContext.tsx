@@ -1,5 +1,7 @@
 import { invalidateGenerationHistory } from '@components/history/hooks/useGenerations';
 import { useAppWebSocket } from '@components/websocket/WebSocketContext';
+import { playBeep } from '@core/utils/audio';
+import { flashDocumentTitle, isPageInBackground } from '@core/utils/title';
 import type { Nullable } from '@core/utils/types';
 import { getOutputKind, toOutputUrl } from '@core/workflows/outputs';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
@@ -36,6 +38,27 @@ export interface UseGenerationSessionReturn {
   remove: (promptId: string) => void;
 }
 
+interface AwayNotification {
+  beepFrequencyHz: number;
+  title: string;
+}
+
+// A lower tone for failures, so the outcome can be told apart without looking.
+const COMPLETE_NOTIFICATION: AwayNotification = { beepFrequencyHz: 880, title: 'Generation Complete!' };
+const FAILED_NOTIFICATION: AwayNotification = { beepFrequencyHz: 440, title: 'Generation Failed!' };
+
+/**
+ * Lets the user know a run ended when they went to do something else while waiting for it.
+ */
+const notifyIfAway = ({ beepFrequencyHz, title }: AwayNotification): void => {
+  if (!isPageInBackground()) {
+    return;
+  }
+
+  flashDocumentTitle(title);
+  void playBeep(beepFrequencyHz);
+};
+
 const GenerationSessionContext: Context<Nullable<ContextValue>> = createContext<Nullable<ContextValue>>(null);
 
 interface Props {
@@ -65,7 +88,13 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     setGenerations((previous) => previous.some((item) => item.promptId === generation.promptId) ? previous : [generation, ...previous]);
     // The API stores the generation before sending the completion, so the history already has it.
     void invalidateGenerationHistory(queryClient);
+    notifyIfAway(COMPLETE_NOTIFICATION);
   }), [messenger, queryClient]);
+
+  // Like completions, these only arrive for runs started by this connection. The error itself is shown by useRunWorkflow.
+  useEffect(() => messenger.on('workflow_error', () => {
+    notifyIfAway(FAILED_NOTIFICATION);
+  }), [messenger]);
 
   const clear = useCallback(() => {
     setGenerations([]);
