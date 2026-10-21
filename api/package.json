@@ -1,0 +1,56 @@
+{
+  "name": "@comfyui-abstract/api",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --include ./config.yml --include './model_instructions/**/*.yml' ./src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node ./dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "dependencies": {
+    "@moonstar-x/logger": "^2.0.0",
+    "@saintno/comfyui-sdk": "^0.3.1",
+    "argon2": "^0.45.1",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.5",
+    "express": "^5.2.1",
+    "glob": "^13.0.6",
+    "http-status-codes": "^2.3.0",
+    "jose": "^6.2.12",
+    "on-finished": "^2.4.1",
+    "pg-promise": "^12.7.1",
+    "ws": "^8.22.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@moonstar-x/eslint-config": "^2.0.0",
+    "@moonstar-x/tsconfig": "^1.0.1",
+    "@types/body-parser": "^1.19.6",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/on-finished": "^2.3.5",
+    "@types/ws": "^8.18.2",
+    "cross-env": "^10.1.0",
+    "eslint": "^10.12.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
+  },
+  "allowScripts": {
+    "unrs-resolver@1.12.2": true,
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "overrides": {
+    "@saintno/comfyui-sdk": {
+      "typescript": "$typescript"
+    }
+  }
+}

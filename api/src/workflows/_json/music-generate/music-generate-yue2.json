@@ -1,0 +1,168 @@
+{
+  "18": {
+    "inputs": {
+      "audio": [
+        "7:17",
+        0
+      ]
+    },
+    "class_type": "PreviewAudio",
+    "_meta": {
+      "title": "Preview Audio"
+    }
+  },
+  "7:9": {
+    "inputs": {
+      "ckpt_name": "yue2\\yue2_3b_int8_convrot.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "7:10": {
+    "inputs": {
+      "switch": true,
+      "on_false": [
+        "7:12",
+        0
+      ],
+      "on_true": [
+        "7:11",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "Generate ABC (If/Else)"
+    }
+  },
+  "7:11": {
+    "inputs": {
+      "style": "",
+      "lyrics": "",
+      "seed": 429124050625962,
+      "mode": "full",
+      "max_abc_tokens": 8192,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 30,
+      "repetition_penalty": 1.005,
+      "penalty_window": 100,
+      "clip": [
+        "7:9",
+        1
+      ]
+    },
+    "class_type": "YuE2GenerateABC",
+    "_meta": {
+      "title": "YuE2 Generate ABC"
+    }
+  },
+  "7:12": {
+    "inputs": {
+      "value": ""
+    },
+    "class_type": "PrimitiveString",
+    "_meta": {
+      "title": "Empty ABC"
+    }
+  },
+  "7:13": {
+    "inputs": {
+      "style": "",
+      "lyrics": "",
+      "abc": [
+        "7:10",
+        0
+      ],
+      "seed": 429124050625962,
+      "mode": "full",
+      "max_duration": 360,
+      "temperature": 1,
+      "top_p": 0.95,
+      "top_k": 100,
+      "repetition_penalty": 1.2,
+      "cfg_scale": 1,
+      "clip": [
+        "7:9",
+        1
+      ]
+    },
+    "class_type": "YuE2GenerateMusic",
+    "_meta": {
+      "title": "YuE2 Generate Music"
+    }
+  },
+  "7:14": {
+    "inputs": {
+      "conditioning": [
+        "7:13",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Conditioning Zero Out"
+    }
+  },
+  "7:15": {
+    "inputs": {
+      "seed": 429124050625962,
+      "steps": 32,
+      "cfg": 1,
+      "sampler_name": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "7:9",
+        0
+      ],
+      "positive": [
+        "7:13",
+        0
+      ],
+      "negative": [
+        "7:14",
+        0
+      ],
+      "latent_image": [
+        "7:16",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "7:16": {
+    "inputs": {
+      "seconds": [
+        "7:13",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyYuE2LatentAudio",
+    "_meta": {
+      "title": "Empty YuE2 Latent Audio"
+    }
+  },
+  "7:17": {
+    "inputs": {
+      "samples": [
+        "7:15",
+        0
+      ],
+      "vae": [
+        "7:9",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE Decode Audio"
+    }
+  }
+}

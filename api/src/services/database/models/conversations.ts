@@ -1,0 +1,48 @@
+/**
+ * Must match the roles allowed by the messages table.
+ */
+export const MESSAGE_ROLES = {
+  USER: 'user',
+  ASSISTANT: 'assistant'
+} as const;
+export type MessageRole = typeof MESSAGE_ROLES[keyof typeof MESSAGE_ROLES];
+
+export interface ConversationRow {
+  created_at: Date;
+  id: string;
+  /**
+   * When the conversation was pinned to the top of the list of its user, or null when it is not pinned.
+   */
+  pinned_at: Date | null;
+  title: string;
+  updated_at: Date;
+  username: string;
+  /**
+   * Alias of the model of the workflow the conversation was started from, or null when it was not started from a workflow page.
+   */
+  workflow_model: null | string;
+  /**
+   * Type of the workflow the conversation was started from, or null when it was not started from a workflow page.
+   */
+  workflow_type: null | string;
+}
+
+export interface MessageRow {
+  content: string;
+  conversation_id: string;
+  created_at: Date;
+  id: string;
+  /**
+   * Only set for assistant messages.
+   */
+  model: null | string;
+  /**
+   * Only set for assistant messages written by a reasoning model.
+   */
+  reasoning: null | string;
+  role: MessageRole;
+  /**
+   * Tokens the message takes up when sent back to the model, or null when LM Studio did not report it.
+   */
+  token_count: null | number;
+}

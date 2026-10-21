@@ -1,0 +1,188 @@
+{
+  "5": {
+    "inputs": {
+      "image": "914cd702-b8e8-438a-965f-d9935a541f0a-1.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "images": [
+        "7:18",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "7:9": {
+    "inputs": {
+      "unet_name": "seedvr2\\seedvr2_7b_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "7:10": {
+    "inputs": {
+      "vae_name": "seedvr2\\seedvr2_ema_vae_fp16.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "7:11": {
+    "inputs": {
+      "image": [
+        "5",
+        0
+      ],
+      "alpha": [
+        "5",
+        1
+      ]
+    },
+    "class_type": "JoinImageWithAlpha",
+    "_meta": {
+      "title": "Join Image with Alpha"
+    }
+  },
+  "7:12": {
+    "inputs": {
+      "resize_type": "scale by multiplier",
+      "resize_type.multiplier": 4,
+      "scale_method": "lanczos",
+      "input": [
+        "7:11",
+        0
+      ]
+    },
+    "class_type": "ResizeImageMaskNode",
+    "_meta": {
+      "title": "Resize Image/Mask"
+    }
+  },
+  "7:13": {
+    "inputs": {
+      "resized_images": [
+        "7:12",
+        0
+      ]
+    },
+    "class_type": "SeedVR2Preprocess",
+    "_meta": {
+      "title": "Pre-Process SeedVR2 Input"
+    }
+  },
+  "7:14": {
+    "inputs": {
+      "tile_size": 512,
+      "overlap": 128,
+      "temporal_size": 4096,
+      "temporal_overlap": 8,
+      "pixels": [
+        "7:13",
+        0
+      ],
+      "vae": [
+        "7:10",
+        0
+      ]
+    },
+    "class_type": "VAEEncodeTiled",
+    "_meta": {
+      "title": "VAE Encode (Tiled)"
+    }
+  },
+  "7:15": {
+    "inputs": {
+      "model": [
+        "7:9",
+        0
+      ],
+      "vae_conditioning": [
+        "7:14",
+        0
+      ]
+    },
+    "class_type": "SeedVR2Conditioning",
+    "_meta": {
+      "title": "Apply SeedVR2 Conditioning"
+    }
+  },
+  "7:16": {
+    "inputs": {
+      "seed": 213123123123123,
+      "steps": 1,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "7:9",
+        0
+      ],
+      "positive": [
+        "7:15",
+        0
+      ],
+      "negative": [
+        "7:15",
+        1
+      ],
+      "latent_image": [
+        "7:14",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "7:17": {
+    "inputs": {
+      "tile_size": 512,
+      "overlap": 128,
+      "temporal_size": 4096,
+      "temporal_overlap": 8,
+      "samples": [
+        "7:16",
+        0
+      ],
+      "vae": [
+        "7:10",
+        0
+      ]
+    },
+    "class_type": "VAEDecodeTiled",
+    "_meta": {
+      "title": "VAE Decode (Tiled)"
+    }
+  },
+  "7:18": {
+    "inputs": {
+      "color_correction_method": "none",
+      "images": [
+        "7:17",
+        0
+      ],
+      "original_resized_images": [
+        "7:12",
+        0
+      ]
+    },
+    "class_type": "SeedVR2PostProcessing",
+    "_meta": {
+      "title": "Post-Process SeedVR2 Output"
+    }
+  }
+}

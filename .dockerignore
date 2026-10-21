@@ -1,0 +1,23 @@
+# VCS and IDE
+.git
+.idea
+
+# Local
+local
+
+# Node Modules
+**/node_modules
+
+# Builds
+**/dist
+
+# Environment Secrets
+**/.env*
+!**/.env.sample
+
+# Config, mounted at runtime
+api/config.yml
+api/model_instructions
+
+# Public Content
+api/public

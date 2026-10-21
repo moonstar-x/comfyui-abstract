@@ -1,0 +1,33 @@
+name: On Release
+
+on:
+  release:
+    types:
+      - released
+
+run-name: Release ${{ github.event.release.tag_name }} by @${{ github.actor }}
+
+jobs:
+  api-test:
+    name: Run Tests (api)
+    uses: ./.github/workflows/callable-api-test.yml
+
+  ui-test:
+    name: Run Tests (ui)
+    uses: ./.github/workflows/callable-ui-test.yml
+
+  publish:
+    name: Publish Image
+    uses: ./.github/workflows/callable-global-publish.yml
+    needs:
+      - api-test
+      - ui-test
+    permissions:
+      contents: read
+      packages: write
+    with:
+      dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
+      machine_account_user: ${{ vars.MACHINE_ACCOUNT_USER }}
+    secrets:
+      dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
+      machine_account_token: ${{ secrets.MACHINE_ACCOUNT_TOKEN }}

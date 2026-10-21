@@ -1,0 +1,11 @@
+{
+  "3": {
+    "inputs": {
+      "filename": ""
+    },
+    "class_type": "SimpleUtilsDeleteInputFile",
+    "_meta": {
+      "title": "Filesystem > DeleteInputFile"
+    }
+  }
+}

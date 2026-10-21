@@ -1,0 +1,155 @@
+{
+  "17": {
+    "inputs": {
+      "audio": "1-01 - 매스커레이드 (Masquerade).flac"
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "Load Audio"
+    }
+  },
+  "18": {
+    "inputs": {
+      "audio": [
+        "7:16",
+        0
+      ]
+    },
+    "class_type": "PreviewAudio",
+    "_meta": {
+      "title": "Preview Audio"
+    }
+  },
+  "7:9": {
+    "inputs": {
+      "ckpt_name": "yue2\\yue2_3b_int8_convrot.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "7:10": {
+    "inputs": {
+      "audio_encoder_name": "sheetsage\\sheetsage2_bf16.safetensors"
+    },
+    "class_type": "AudioEncoderLoader",
+    "_meta": {
+      "title": "Load Audio Encoder"
+    }
+  },
+  "7:11": {
+    "inputs": {
+      "mode": "melody",
+      "audio_encoder": [
+        "7:10",
+        0
+      ],
+      "audio": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "SheetSage2AudioToABC",
+    "_meta": {
+      "title": "SheetSage2 Audio to ABC"
+    }
+  },
+  "7:12": {
+    "inputs": {
+      "style": "Classical, violin, soprano singer, symphonic",
+      "lyrics": "\n[Chorus]\nThis ain't a masquerade, baby (Oh)\nDon't trust you talking to me lately (Oh)\nI'd like to take it off your face\nListen what I say, this ain't a masquerade, baby (Woah, oh, oh)\n\n[Verse 1]\n애써 꾸며낸 말들 (말들) 척 간보는 말들 (말들)\n피할수록 더 깊어진다는 걸 알고 있지 (Eh)\n넌 선 뒤에서 (에서) 기다려 나의 sign (Sing)\n숨이 가빠 널 가질 꿈에 (Wow, wow, wow, wow)\n\n[Pre-Chorus]\nYou think that I like it\nThe way you got me\nBold face, bold lies, yeah\nAnd I don't mind it\nYou're in my head, losing my grip\nI think I like\n\n[Chorus]\nThis ain't a masquerade, baby (Oh)\nDon't trust you talking to me lately (Oh)\nI'd like to take it off your face (Oh, eh, oh, eh, oh)\nThis ain't a masquerade, baby (Woah, oh, oh)\nYou might also like\nRolling Quartz - 매스커레이드 (Masquerade) (Romanized)\nGenius Romanizations\n심장의 노래 (Sing your heart out)\nRolling Quartz\nRolling Quartz - 블레이즈 (Blaze) (English Translation)\nGenius English Translations\n[Verse 2]\nYou ain't the only one with hesitation\nYou ain't the only one to keep me waiting\nWe don't need no extra entertainment\n'Cause I know what you camе here for\n\n[Pre-Chorus]\nYou think that I like it\nThе way you got me\nBold face, bold lies, yeah\nAnd I don't mind it\nYou're in my head, losing my grip\nI think I like\n\n[Chorus]\nThis ain't a masquerade, baby (Oh)\nDon't trust you talking to me lately (Oh)\nI'd like to take it off your face (Oh, eh, oh, eh, oh)\nThis ain't a masquerade, baby (Woah, oh, oh)\n\n[Instrumental Bridge]\n\n[Chorus]\nDon't trust you talking to me lately\nI'd like to take it off your face\nListen what I say\nThis ain't a masquerade, baby",
+      "abc": [
+        "7:11",
+        0
+      ],
+      "seed": 297588587058693,
+      "mode": "melody",
+      "max_duration": 360,
+      "temperature": 1,
+      "top_p": 0.95,
+      "top_k": 100,
+      "repetition_penalty": 1.2,
+      "cfg_scale": 1,
+      "clip": [
+        "7:9",
+        1
+      ]
+    },
+    "class_type": "YuE2GenerateMusic",
+    "_meta": {
+      "title": "YuE2 Generate Music"
+    }
+  },
+  "7:13": {
+    "inputs": {
+      "conditioning": [
+        "7:12",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Conditioning Zero Out"
+    }
+  },
+  "7:14": {
+    "inputs": {
+      "seconds": [
+        "7:12",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyYuE2LatentAudio",
+    "_meta": {
+      "title": "Empty YuE2 Latent Audio"
+    }
+  },
+  "7:15": {
+    "inputs": {
+      "seed": 297588587058693,
+      "steps": 32,
+      "cfg": 1,
+      "sampler_name": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "denoise": 1,
+      "model": [
+        "7:9",
+        0
+      ],
+      "positive": [
+        "7:12",
+        0
+      ],
+      "negative": [
+        "7:13",
+        0
+      ],
+      "latent_image": [
+        "7:14",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "7:16": {
+    "inputs": {
+      "samples": [
+        "7:15",
+        0
+      ],
+      "vae": [
+        "7:9",
+        2
+      ]
+    },
+    "class_type": "VAEDecodeAudio",
+    "_meta": {
+      "title": "VAE Decode Audio"
+    }
+  }
+}

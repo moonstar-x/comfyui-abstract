@@ -1,0 +1,255 @@
+import { useGenerationSession } from '@components/generation/GenerationSessionContext';
+import { useGenerations } from '@components/history/hooks/useGenerations';
+import { Button } from '@components/ui/third-party/shadcn/button';
+import type { UseRunWorkflowReturn } from '@components/websocket/hooks/useRunWorkflow';
+import { useAppWebSocket } from '@components/websocket/WebSocketContext';
+import { WorkflowFieldInput } from '@components/workflow/WorkflowFieldInput';
+import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
+import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
+import { WorkflowInstructions } from '@components/workflow/WorkflowInstructions';
+import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
+import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
+import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
+import type { Nullable } from '@core/utils/types';
+import type { WorkflowField, WorkflowModelDefinition } from '@core/workflows/definitions';
+import { getWorkflowOutputKind, toOutputUrl } from '@core/workflows/outputs';
+import { getWorkflowInstructions, makeInitialFormValues, parseWorkflowParams } from '@core/workflows/params';
+import type { WorkflowFormErrors, WorkflowFormValue, WorkflowFormValues, WorkflowPrefill } from '@core/workflows/params';
+import { uploadWorkflowFiles } from '@core/workflows/uploads';
+import { CURRENT_USER } from '@services/api/generations';
+import type { RunWorkflowPayload, WorkflowType } from '@services/websocket/messages/client';
+import { Play, RotateCcw } from 'lucide-react';
+import { useRef, useState } from 'react';
+import type { FC, KeyboardEvent, ReactNode, SubmitEvent } from 'react';
+
+// Multiline and list fields span the whole row, see WorkflowFieldInput.
+const FIELDS_LAYOUT_CLASSES = 'grid gap-4 @sm:grid-cols-2 @3xl:grid-cols-4';
+
+// Matches the lg breakpoint where the result moves beside the form instead of below it.
+const SIDE_BY_SIDE_QUERY = '(min-width: 64rem)';
+
+// Matches the modifier handleKeyDown accepts on each platform.
+const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
+
+interface ResultPlaceholderContentProps {
+  isSubmitting: boolean;
+  isUploading: boolean;
+  promptId: Nullable<string>;
+}
+
+const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, isUploading, promptId }) => {
+  if (promptId !== null) {
+    return <WorkflowRunStatus promptId={promptId} />;
+  }
+
+  if (isUploading) {
+    return 'Uploading files…';
+  }
+
+  return isSubmitting ? 'Queueing…' : 'Run the workflow to see the result here';
+};
+
+const getSubmitLabel = (isUploading: boolean, isSubmitting: boolean, isRunning: boolean): string => {
+  if (isUploading) {
+    return 'Uploading…';
+  }
+
+  if (isSubmitting) {
+    return 'Queueing…';
+  }
+
+  return isRunning ? 'Generating…' : 'Run Workflow';
+};
+
+export interface WorkflowParamsFormProps {
+  model: WorkflowModelDefinition;
+  /**
+   * Starts the form from the params of an earlier generation. Resetting still goes back to the config defaults.
+   */
+  prefill?: Nullable<WorkflowPrefill>;
+  runner: UseRunWorkflowReturn;
+  type: WorkflowType;
+}
+
+export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, prefill = null, runner }) => {
+  const { isConnected } = useAppWebSocket();
+  const resultRef = useRef<HTMLElement>(null);
+  const { run, reset, isSubmitting, isRunning, promptId, error } = runner;
+  const outputKind = getWorkflowOutputKind(type);
+  const { current } = useGenerationSession(outputKind);
+  const history = useGenerations({ username: CURRENT_USER, workflowType: type, model: model.alias });
+  const [values, setValues] = useState<WorkflowFormValues>(() => makeInitialFormValues(model.fields, prefill));
+  const [errors, setErrors] = useState<WorkflowFormErrors>({});
+  const [gallery, setGallery] = useState<Nullable<ImageGallery>>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  // The form stays locked from submission until the run settles, not just until it is queued.
+  const isBusy = isUploading || isSubmitting || isRunning;
+  // While a run is in progress the status takes the result's place, so the latest result joins the history.
+  const shownResult = isBusy ? null : current;
+  const historyFiles = (history.data?.pages ?? [])
+    .flatMap((page) => page.generations)
+    .filter((generation) => generation.promptId !== shownResult?.promptId)
+    .flatMap((generation) => generation.outputs.map((path) => toOutputUrl(path)));
+
+  const handleChange = (key: string, value: WorkflowFormValue): void => {
+    setValues((previous) => ({ ...previous, [key]: value }));
+    setErrors(({ [key]: _removed, ...rest }) => rest);
+  };
+
+  const handleOpenImages = (images: readonly string[], index: number): void => {
+    setGallery({ images, index });
+  };
+
+  // The latest result and the previous generations browse together as one gallery, newest first.
+  const handleOpenSessionImage = (url: string): void => {
+    const images = [...shownResult?.files ?? [], ...historyFiles];
+    setGallery({ images, index: Math.max(images.indexOf(url), 0) });
+  };
+
+  const handleReset = (): void => {
+    setValues(makeInitialFormValues(model.fields));
+    setErrors({});
+    reset();
+  };
+
+  // Files go through the HTTP API first, so the run message only carries their references.
+  const submit = async (): Promise<void> => {
+    const parsed = parseWorkflowParams(model.fields, values);
+    setErrors(parsed.errors);
+    if (Object.keys(parsed.errors).length > 0) {
+      return;
+    }
+
+    // While the layout is stacked the result sits below the form, so bring it into view to follow the run.
+    if (!matchMedia(SIDE_BY_SIDE_QUERY).matches) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    setIsUploading(true);
+    let uploaded;
+    try {
+      uploaded = await uploadWorkflowFiles(model.fields, parsed.params);
+    } finally {
+      setIsUploading(false);
+    }
+
+    setErrors(uploaded.errors);
+    if (Object.keys(uploaded.errors).length > 0) {
+      return;
+    }
+
+    const payload: RunWorkflowPayload = { type, model: model.alias, params: uploaded.params };
+    run(payload);
+  };
+
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>): void => {
+    event.preventDefault();
+    void submit();
+  };
+
+  // Cmd/Ctrl + Enter submits from any field, including multiline ones where Enter inserts a newline.
+  const handleKeyDown = (event: KeyboardEvent<HTMLFormElement>): void => {
+    if (event.key !== 'Enter' || !(event.metaKey || event.ctrlKey) || event.nativeEvent.isComposing) {
+      return;
+    }
+
+    event.preventDefault();
+    // requestSubmit ignores the submit button's disabled state, so mirror it here.
+    if (isConnected && !isBusy) {
+      event.currentTarget.requestSubmit();
+    }
+  };
+
+  const renderFields = (fields: WorkflowField[]): ReactNode => (
+    <div className={FIELDS_LAYOUT_CLASSES}>
+      {fields.map((field) => (
+        <WorkflowFieldInput
+          disabled={isBusy}
+          error={errors[field.key]}
+          field={field}
+          key={field.key}
+          value={values[field.key] ?? ''}
+          onChange={handleChange}
+          onOpenImages={handleOpenImages}
+        />
+      ))}
+    </div>
+  );
+
+  const visibleFields = model.fields.filter((field) => !field.isAdvanced);
+  const advancedFields = model.fields.filter((field) => field.isAdvanced);
+
+  return (
+    <div className="grid flex-1 grid-cols-1 content-start gap-6 page-lg:grid-cols-2">
+      {/* The key handler only catches shortcuts bubbling up from the fields, the form itself is not interactive. */}
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+      <form noValidate className="@container flex min-w-0 flex-col gap-6" onKeyDown={handleKeyDown} onSubmit={handleSubmit}>
+        <WorkflowInstructions instructions={getWorkflowInstructions(model, values)} />
+
+        {visibleFields.length > 0 && renderFields(visibleFields)}
+
+        {advancedFields.length > 0 && (
+          <details className="group rounded-lg border px-3 py-2">
+            <summary className="cursor-pointer text-sm font-semibold select-none">Advanced</summary>
+            <div className="pt-3 pb-1">
+              {renderFields(advancedFields)}
+            </div>
+          </details>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button className="w-full page-md:w-auto" disabled={!isConnected || isBusy} size="lg" type="submit">
+            <Play data-icon="inline-start" />
+            {getSubmitLabel(isUploading, isSubmitting, isRunning)}
+            {!isBusy && (
+              <kbd className="ml-1 hidden rounded bg-primary-foreground/15 px-1.5 py-0.5 font-sans text-xs pointer-fine:inline-block">
+                {SUBMIT_SHORTCUT_LABEL}
+              </kbd>
+            )}
+          </Button>
+          <Button
+            className="w-full page-md:w-auto"
+            disabled={isBusy}
+            size="lg"
+            type="button"
+            variant="ghost"
+            onClick={handleReset}
+          >
+            <RotateCcw data-icon="inline-start" />
+            Reset
+          </Button>
+          {!isConnected && <span className="text-sm text-muted-foreground">Waiting for the server connection…</span>}
+        </div>
+      </form>
+
+      <section
+        aria-label="Result"
+        className="flex min-w-0 scroll-mt-18 flex-col gap-3 page-lg:sticky page-lg:top-20 page-lg:self-start"
+        ref={resultRef}
+      >
+        {error !== null && (
+          <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{error}</p>
+        )}
+        {shownResult === null
+          ? (
+              <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
+                <ResultPlaceholderContent isSubmitting={isSubmitting} isUploading={isUploading} promptId={isRunning ? promptId : null} />
+              </div>
+            )
+          // Only the run started from this page animates in, results already there when it opens appear as they are.
+          : <WorkflowRunResult animate={shownResult.promptId === promptId} generation={shownResult} kind={outputKind} onOpen={handleOpenSessionImage} />}
+        <WorkflowRunHistory
+          error={history.error}
+          files={historyFiles}
+          hasMore={history.hasNextPage}
+          isLoadingMore={history.isFetchingNextPage}
+          kind={outputKind}
+          onLoadMore={() => { void history.fetchNextPage(); }}
+          onOpen={handleOpenSessionImage}
+        />
+      </section>
+
+      <WorkflowImageViewer gallery={gallery} onClose={() => { setGallery(null); }} />
+    </div>
+  );
+};

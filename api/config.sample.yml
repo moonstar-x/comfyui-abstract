@@ -1,0 +1,107 @@
+lmstudio:
+  model: 'qwen/qwen3-8b'
+  contextLength: 8192
+
+workflows:
+  - alias: qwen-image-2.1
+    workflow: image-generate-qwen-image-2.1
+    type: image-generate
+    serverParams:
+      model: 'qwen-image-2.1\qwen_image_2.1_int8_convrot.safetensors'
+      clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
+      vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
+
+  - alias: krea2-turbo
+    workflow: image-generate-krea2
+    type: image-generate
+    serverParams:
+      model: 'krea2\krea2_turbo_int8_convrot.safetensors'
+      clip: 'krea2\qwen3vl_4b_fp8_scaled.safetensors'
+      vae: 'qwen-image\qwen_image_vae.safetensors'
+    options:
+      allowedLoras:
+        - 'krea2\krea2_darkbrush.safetensors'
+
+  - alias: qwen-image-2.1
+    workflow: image-edit-qwen-image-2.1
+    type: image-edit
+    serverParams:
+      model: 'qwen-image-2.1\qwen_image_2.1_int8_convrot.safetensors'
+      clip: 'qwen-image-2.1\qwen3vl_8b_int8_convrot.safetensors'
+      vae: 'qwen-image-2.1\qwen_image_2.1_vae_bf16.safetensors'
+
+  - alias: z-image-turbo
+    workflow: image-upscale-z-image
+    type: image-upscale
+    serverParams:
+      model: 'z-image\z_image_turbo_bf16.safetensors'
+      clip: 'z-image\qwen_3_4b.safetensors'
+      vae: 'z-image\ae.safetensors'
+      upscaleModel: 'RealESRGAN_x4plus.safetensors'
+
+  - alias: seedvr2-7b
+    workflow: image-upscale-seedvr2
+    type: image-upscale
+    serverParams:
+      model: 'seedvr2\seedvr2_7b_int8_convrot.safetensors'
+      vae: 'seedvr2\seedvr2_ema_vae_fp16.safetensors'
+
+  - alias: 4x-ultrasharp
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x-UltraSharp.pth'
+
+  - alias: 4x-nomos-8k-atd-jpg
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4xNomos8k_atd_jpg.safetensors'
+
+  - alias: 4x-nomos-web-photo-real-plksr
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4xNomosWebPhoto_RealPLKSR.pth'
+
+  - alias: 4x-nmkd-superscale-sp
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x_NMKD-Superscale-SP_17800_G.pth'
+
+  - alias: 4x-foolhardy-remacri
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: '4x_foolhardy_Remacri.pth'
+
+  - alias: 4x-real-esrgan-plus
+    workflow: image-upscale-esrgan
+    type: image-upscale
+    serverParams:
+      model: 'RealESRGAN_x4plus.safetensors'
+
+  - alias: minimax-music3
+    workflow: music-generate-minimax-music3
+    type: music-generate
+    serverParams:
+      model: 'minimax_music\minimax_music3_dit_fp16.safetensors'
+      clip: 'minimax_music\minimax_music3_text_encoder_pruned_int8_convrot.safetensors'
+      vae: 'minimax_music\minimax_music3_dav.safetensors'
+
+  - alias: yue2
+    workflow: music-cover-yue2
+    type: music-cover
+    params:
+      defaults:
+        maxDuration: 900
+    serverParams:
+      model: 'yue2\yue2_3b_int8_convrot.safetensors'
+      audioEncoder: 'sheetsage\sheetsage2_bf16.safetensors'
+
+  - alias: yue2
+    workflow: music-generate-yue2
+    type: music-generate
+    serverParams:
+      model: 'yue2\yue2_3b_int8_convrot.safetensors'

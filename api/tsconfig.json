@@ -1,0 +1,9 @@
+{
+  "extends": "@moonstar-x/tsconfig/node",
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
