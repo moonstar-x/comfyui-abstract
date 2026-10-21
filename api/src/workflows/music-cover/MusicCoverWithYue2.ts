@@ -3,7 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { SeedSchema } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utilities.js';
 import { makeUploadReferenceSchema, UPLOAD_KINDS } from '../../services/uploads/uploads.js';
 import prompt from '../_json/music-cover/music-cover-yue2.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';

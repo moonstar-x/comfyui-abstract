@@ -10,3 +10,9 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+// @dnd-kit still types its components with the global JSX namespace, which @types/react 19 no longer declares.
+declare namespace JSX {
+  type Element = React.JSX.Element;
+  type IntrinsicElements = React.JSX.IntrinsicElements;
+}

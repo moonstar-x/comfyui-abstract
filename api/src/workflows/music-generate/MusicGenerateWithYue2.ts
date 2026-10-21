@@ -3,7 +3,7 @@ import type { NodeData } from '@saintno/comfyui-sdk';
 import { z } from 'zod';
 import { ComfyUiWorkflow } from '../../services/comfyui/ComfyUiWorkflow.js';
 import type { WorkflowOutputKind } from '../../services/comfyui/ComfyUiWorkflow.js';
-import { SeedSchema } from '../../services/comfyui/utils.js';
+import { SeedSchema } from '../../services/comfyui/utilities.js';
 import prompt from '../_json/music-generate/music-generate-yue2.json' with { type: 'json' };
 import { WORKFLOW_TYPES } from '../types.js';
 import type { WorkflowFields, WorkflowType } from '../types.js';

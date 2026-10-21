@@ -115,13 +115,21 @@ export const DeleteGenerationButton: FC<DeleteGenerationButtonProps> = ({ id, on
     );
   }
 
+  const handleConfirm = (): void => {
+    mutate(id, {
+      onSuccess: () => {
+        onDeleted?.();
+      }
+    });
+  };
+
   return (
     <div className="flex items-center gap-1">
       {error !== null && <span className="text-xs text-destructive" role="alert">{error.message}</span>}
       <Button disabled={isPending} size="sm" type="button" variant="ghost" onClick={() => { setIsConfirming(false); }}>
         Cancel
       </Button>
-      <Button disabled={isPending} size="sm" type="button" variant="destructive" onClick={() => { mutate(id, { onSuccess: onDeleted }); }}>
+      <Button disabled={isPending} size="sm" type="button" variant="destructive" onClick={handleConfirm}>
         <Trash2 aria-hidden="true" />
         {isPending ? 'Deleting…' : 'Delete'}
       </Button>

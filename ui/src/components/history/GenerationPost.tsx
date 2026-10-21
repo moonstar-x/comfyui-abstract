@@ -223,7 +223,7 @@ export interface GenerationPostProps {
   /**
    * Shows a button to delete the generation, called once it is deleted.
    */
-  onDeleted?: () => void;
+  onDeleted?: (() => void) | undefined;
   onOpenImage: (images: string[], index: number) => void;
 }
 

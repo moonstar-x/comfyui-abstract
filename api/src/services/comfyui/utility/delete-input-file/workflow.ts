@@ -1,6 +1,6 @@
 import type { ComfyApi } from '@saintno/comfyui-sdk';
 import { PromptBuilder } from '@saintno/comfyui-sdk';
-import { executeWorkflow } from '../../utils.js';
+import { executeWorkflow } from '../../utilities.js';
 import prompt from './workflow.json' with { type: 'json' };
 
 /**
