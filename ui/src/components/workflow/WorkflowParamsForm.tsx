@@ -8,6 +8,7 @@ import { WorkflowImageViewer } from '@components/workflow/WorkflowImageViewer';
 import type { ImageGallery } from '@components/workflow/WorkflowImageViewer';
 import { WorkflowInstructions } from '@components/workflow/WorkflowInstructions';
 import { WorkflowRunHistory } from '@components/workflow/WorkflowRunHistory';
+import type { WorkflowRunHistoryFile } from '@components/workflow/WorkflowRunHistory';
 import { WorkflowRunResult } from '@components/workflow/WorkflowRunResult';
 import { WorkflowRunStatus } from '@components/workflow/WorkflowRunStatus';
 import type { Nullable } from '@core/utils/types';
@@ -86,10 +87,10 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
   const isBusy = isUploading || isSubmitting || isRunning;
   // While a run is in progress the status takes the result's place, so the latest result joins the history.
   const shownResult = isBusy ? null : current;
-  const historyFiles = (history.data?.pages ?? [])
+  const historyFiles: WorkflowRunHistoryFile[] = (history.data?.pages ?? [])
     .flatMap((page) => page.generations)
     .filter((generation) => generation.promptId !== shownResult?.promptId)
-    .flatMap((generation) => generation.outputs.map((path) => toOutputUrl(path)));
+    .flatMap((generation) => generation.outputs.map((path) => ({ generation, url: toOutputUrl(path) })));
 
   const handleChange = (key: string, value: WorkflowFormValue): void => {
     setValues((previous) => ({ ...previous, [key]: value }));
@@ -102,7 +103,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
 
   // The latest result and the previous generations browse together as one gallery, newest first.
   const handleOpenSessionImage = (url: string): void => {
-    const images = [...shownResult?.files ?? [], ...historyFiles];
+    const images = [...shownResult?.files ?? [], ...historyFiles.map((file) => file.url)];
     setGallery({ images, index: Math.max(images.indexOf(url), 0) });
   };
 
