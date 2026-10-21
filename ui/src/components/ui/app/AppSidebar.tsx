@@ -2,6 +2,7 @@ import { useAuth } from '@components/auth/AuthContext';
 import { UserMenu } from '@components/auth/UserMenu';
 import { ASSETS_SECTION, CATEGORY_TILE_CLASSES, DASHBOARD_NAV_ITEM, FEED_NAV_ITEM, isNavItemActive, toNavPathname, WORKFLOW_SECTIONS } from '@components/ui/app/navigation';
 import type { NavItem, NavSection } from '@components/ui/app/navigation';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@components/ui/third-party/shadcn/collapsible';
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +19,8 @@ import {
 } from '@components/ui/third-party/shadcn/sidebar';
 import { RouteDefs } from '@core/router/routes';
 import { cn } from 'cn';
-import { Workflow } from 'lucide-react';
+import { ChevronRight, Workflow } from 'lucide-react';
+import { useState } from 'react';
 import type { FC } from 'react';
 import { Link, NavLink, useLocation } from 'react-router';
 
@@ -60,23 +62,66 @@ const NavMenuItem: FC<NavMenuItemProps> = ({ isActive, item }) => {
   );
 };
 
+// Sections are open by default, so only the titles of the ones the user collapsed are stored.
+const COLLAPSED_SECTIONS_STORAGE_KEY = 'comfyui-abstract-sidebar-collapsed-sections';
+
+const readCollapsedSections = (): string[] => {
+  try {
+    const stored: unknown = JSON.parse(localStorage.getItem(COLLAPSED_SECTIONS_STORAGE_KEY) ?? '[]');
+    return Array.isArray(stored) ? stored.filter((title): title is string => typeof title === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+
+const storeSectionOpen = (title: string, isOpen: boolean): void => {
+  try {
+    const others = readCollapsedSections().filter((stored) => stored !== title);
+    localStorage.setItem(COLLAPSED_SECTIONS_STORAGE_KEY, JSON.stringify(isOpen ? others : [...others, title]));
+  } catch {
+    // Storage can be unavailable (private mode); the choice still applies for this session.
+  }
+};
+
 interface NavMenuSectionProps {
   pathname: string;
   section: NavSection;
 }
 
-const NavMenuSection: FC<NavMenuSectionProps> = ({ pathname, section }) => (
-  <SidebarGroup>
-    <SidebarGroupLabel>{section.title}</SidebarGroupLabel>
-    <SidebarGroupContent>
-      <SidebarMenu className="gap-0.5">
-        {section.items.map((item) => (
-          <NavMenuItem isActive={isNavItemActive(item, pathname)} item={item} key={item.path} />
-        ))}
-      </SidebarMenu>
-    </SidebarGroupContent>
-  </SidebarGroup>
-);
+const NavMenuSection: FC<NavMenuSectionProps> = ({ pathname, section }) => {
+  const [open, setOpen] = useState(() => !readCollapsedSections().includes(section.title));
+  const { state } = useSidebar();
+  // In icon mode the label is hidden, so a collapsed section would have no way to reopen.
+  const isOpen = open || state === 'collapsed';
+
+  return (
+    <Collapsible
+      open={isOpen}
+      render={<SidebarGroup />}
+      onOpenChange={(next) => {
+        setOpen(next);
+        storeSectionOpen(section.title, next);
+      }}
+    >
+      <SidebarGroupLabel
+        className="group/section-trigger cursor-pointer hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        render={<CollapsibleTrigger />}
+      >
+        {section.title}
+        <ChevronRight className="ml-auto transition-transform group-aria-expanded/section-trigger:rotate-90" />
+      </SidebarGroupLabel>
+      <CollapsibleContent>
+        <SidebarGroupContent>
+          <SidebarMenu className="gap-0.5">
+            {section.items.map((item) => (
+              <NavMenuItem isActive={isNavItemActive(item, pathname)} item={item} key={item.path} />
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
 
 export const AppSidebar: FC = () => {
   const { user } = useAuth();
