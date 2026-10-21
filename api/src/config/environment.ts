@@ -27,6 +27,14 @@ const getString = (key: string, defaultValue: string): string => {
   return typeof value === 'string' && value !== '' ? value : defaultValue;
 };
 
+/**
+ * Splits a comma-separated value, dropping empty entries, so an unset variable gives an empty list.
+ */
+const getList = (key: string): string[] => {
+  const value = process.env[key] ?? '';
+  return value.split(',').map((item) => item.trim()).filter((item) => item !== '');
+};
+
 const getOptionalPath = (key: string): Nullable<string> => {
   const value = process.env[key];
   return typeof value === 'string' && value !== '' ? path.resolve(value) : null;
@@ -109,6 +117,12 @@ export const PORT: number = getInteger('PORT', 4000);
  * Which proxies in front of the server are trusted to report the client IP, which the login limits are keyed on.
  */
 export const TRUST_PROXY: boolean | number | string = getTrustProxy('TRUST_PROXY');
+
+/**
+ * Origins allowed to call the API from the browser, such as the Vite dev server. Empty when the UI is served by the API
+ * itself, which needs no CORS.
+ */
+export const CORS_ORIGINS: string[] = getList('CORS_ORIGINS');
 
 export const COMFYUI_URL: string = getRequired('COMFYUI_URL');
 export const COMFYUI_UPLOAD_SUBFOLDER: string = getRelativePath('COMFYUI_UPLOAD_SUBFOLDER', 'comfyui-abstract');

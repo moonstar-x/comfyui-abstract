@@ -145,7 +145,7 @@ npm ci
 cp .env.sample .env
 ```
 
-In development the UI runs on its own origin, so point it at the API:
+In development the UI runs on its own origin, so add `CORS_ORIGINS=http://localhost:5173` to `api/.env` and point the UI at the API:
 
 ```dotenv
 VITE_API_URL=http://localhost:4000
@@ -198,6 +198,7 @@ The API also has `npm start`, which runs the compiled server. The UI also has `n
 | `CONFIG_FILE` | `config.yml` | Path to the app config. |
 | `MODEL_INSTRUCTIONS_DIRECTORY` | `model_instructions` | Directory of model instruction files. It is optional. |
 | `APP_BUILD_DIR` | *empty* | Directory of the built UI. When set, the API serves the UI too. The Docker image sets it to `/app/ui`. |
+| `CORS_ORIGINS` | *empty* | Comma-separated origins allowed to call the API from the browser, such as `http://localhost:5173` for the Vite dev server. Leave empty when the API serves the UI. |
 
 Relative paths are resolved against the API's working directory.
 
