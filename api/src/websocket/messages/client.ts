@@ -8,10 +8,19 @@ export type GenericWSClientMessageWithPayload<TType extends string, TPayload ext
 
 export type RunWorkflowPayload = WorkflowRequestParams & { params: Record<string, unknown> };
 
+// Bounds the runs a client can ask about at once, which is far more than anyone runs in parallel.
+const MAX_FOLLOWED_RUNS = 100;
+
 export type WSClientMessage =
   GenericWSClientMessage<'comfyui_free_up_memory', never> |
   GenericWSClientMessage<'get_queue', { promptId: string }> |
+  /**
+   * The prompt IDs are the runs the client was following, such as before it reconnected. The ones that finished in the meantime
+   * are answered with their result.
+   */
+  GenericWSClientMessage<'get_runs', { promptIds: string[] }> |
   GenericWSClientMessage<'get_status', never> |
+  GenericWSClientMessageWithPayload<'cancel_run', { promptId: string }> |
   GenericWSClientMessageWithPayload<'run_workflow', RunWorkflowPayload>;
 
 /**
@@ -20,10 +29,18 @@ export type WSClientMessage =
 export type WSAuthenticatedClientMessage = WSClientMessage & { token: string };
 
 export const ClientMessageSchema: z.ZodType<WSClientMessage> = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('cancel_run'),
+    payload: z.object({ promptId: z.string().min(1) })
+  }),
   z.object({ type: z.literal('comfyui_free_up_memory') }),
   z.object({
     type: z.literal('get_queue'),
     payload: z.object({ promptId: z.string().min(1) }).exactOptional()
+  }),
+  z.object({
+    type: z.literal('get_runs'),
+    payload: z.object({ promptIds: z.array(z.string().min(1)).max(MAX_FOLLOWED_RUNS) }).exactOptional()
   }),
   z.object({ type: z.literal('get_status') }),
   z.object({

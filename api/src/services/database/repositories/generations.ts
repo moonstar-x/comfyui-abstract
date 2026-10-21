@@ -1,8 +1,11 @@
 import type { Nullable } from '../../../utils/types.js';
 import type { WorkflowType } from '../../../workflows/types.js';
+import type { WorkflowOutputKind } from '../../comfyui/ComfyUiWorkflow.js';
 import { database } from '../client/postgres.js';
+import type { DatabaseConnection } from '../client/postgres.js';
 import type {
   GenerationDailyCountRow,
+  GenerationJobRow,
   GenerationModelCountRow,
   GenerationPeriodCountsRow,
   GenerationRow,
@@ -114,6 +117,19 @@ export interface CreateGenerationData {
   workflowType: WorkflowType;
 }
 
+export interface CreateGenerationJobData {
+  createdAt: Date;
+  model: string;
+  nodeCount: number;
+  outputKind: WorkflowOutputKind;
+  outputNodeId: string;
+  params: Record<string, unknown>;
+  promptId: string;
+  username: string;
+  workflowId: string;
+  workflowType: WorkflowType;
+}
+
 export interface FindGenerationsFilter {
   limit: number;
   mediaType?: MediaType | undefined;
@@ -198,12 +214,12 @@ export const toGenerationTimingStats = (stats: GenerationTimingStatsRow): Genera
   render: toDurationStats(stats, 'render')
 });
 
-export const createGeneration = async (data: CreateGenerationData): Promise<GenerationRow> => {
+export const createGeneration = async (data: CreateGenerationData, connection: DatabaseConnection = database): Promise<GenerationRow> => {
   const query = `INSERT INTO generations(username, prompt_id, media_type, workflow_type, workflow_id, model, params, outputs, created_at, started_at, completed_at)
     VALUES($1, $2, $3, $4, $5, $6, $7:json, $8::text[], $9, $10, $11)
     RETURNING *`;
 
-  return await database.one<GenerationRow>(query, [
+  return await connection.one<GenerationRow>(query, [
     data.username,
     data.promptId,
     data.mediaType,
@@ -375,4 +391,41 @@ export const deleteGeneration = async (id: string, username: string): Promise<Nu
 export const deleteGenerations = async (ids: string[], username: string): Promise<GenerationRow[]> => {
   const query = 'DELETE FROM generations WHERE id = ANY($1::uuid[]) AND username = $2 RETURNING *';
   return await database.manyOrNone<GenerationRow>(query, [ids, username]);
+};
+
+export const createGenerationJob = async (data: CreateGenerationJobData): Promise<GenerationJobRow> => {
+  const query = `INSERT INTO generation_jobs(prompt_id, username, workflow_type, workflow_id, model, params, output_node_id, output_kind, node_count, created_at)
+    VALUES($1, $2, $3, $4, $5, $6:json, $7, $8, $9, $10)
+    RETURNING *`;
+
+  return await database.one<GenerationJobRow>(query, [
+    data.promptId,
+    data.username,
+    data.workflowType,
+    data.workflowId,
+    data.model,
+    data.params,
+    data.outputNodeId,
+    data.outputKind,
+    data.nodeCount,
+    data.createdAt
+  ]);
+};
+
+/**
+ * Returns every job, oldest first.
+ */
+export const findGenerationJobs = async (): Promise<GenerationJobRow[]> => {
+  const query = 'SELECT * FROM generation_jobs ORDER BY created_at, prompt_id';
+  return await database.manyOrNone<GenerationJobRow>(query);
+};
+
+export const setGenerationJobStartedAt = async (promptId: string, startedAt: Date): Promise<void> => {
+  const query = 'UPDATE generation_jobs SET started_at = $2 WHERE prompt_id = $1';
+  await database.none(query, [promptId, startedAt]);
+};
+
+export const deleteGenerationJob = async (promptId: string, connection: DatabaseConnection = database): Promise<void> => {
+  const query = 'DELETE FROM generation_jobs WHERE prompt_id = $1';
+  await connection.none(query, [promptId]);
 };

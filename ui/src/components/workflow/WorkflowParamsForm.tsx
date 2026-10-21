@@ -33,14 +33,14 @@ const SIDE_BY_SIDE_QUERY = '(min-width: 64rem)';
 const SUBMIT_SHORTCUT_LABEL = /Mac|iPad|iPhone/u.test(navigator.userAgent) ? '⌘ ↵' : 'Ctrl ↵';
 
 interface ResultPlaceholderContentProps {
-  isSubmitting: boolean;
   isUploading: boolean;
-  promptId: Nullable<string>;
+  runner: UseRunWorkflowReturn;
 }
 
-const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isSubmitting, isUploading, promptId }) => {
-  if (promptId !== null) {
-    return <WorkflowRunStatus promptId={promptId} />;
+const ResultPlaceholderContent: FC<ResultPlaceholderContentProps> = ({ isUploading, runner }) => {
+  const { isRunning, isSubmitting, promptId, isCancelling, cancelError, cancel } = runner;
+  if (isRunning && promptId !== null) {
+    return <WorkflowRunStatus cancelError={cancelError} isCancelling={isCancelling} promptId={promptId} onCancel={cancel} />;
   }
 
   if (isUploading) {
@@ -234,7 +234,7 @@ export const WorkflowParamsForm: FC<WorkflowParamsFormProps> = ({ type, model, p
         {shownResult === null
           ? (
               <div className="flex min-h-90 items-center justify-center rounded-xl border border-dashed border-primary/25 bg-accent/40 p-4 text-center text-sm text-muted-foreground">
-                <ResultPlaceholderContent isSubmitting={isSubmitting} isUploading={isUploading} promptId={isRunning ? promptId : null} />
+                <ResultPlaceholderContent isUploading={isUploading} runner={runner} />
               </div>
             )
           // Only the run started from this page animates in, results already there when it opens appear as they are.

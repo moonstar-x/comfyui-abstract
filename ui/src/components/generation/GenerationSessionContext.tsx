@@ -71,7 +71,7 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
   // Newest first. Lives above the router so results survive page navigation, including runs that finish while away.
   const [generations, setGenerations] = useState<Generation[]>([]);
 
-  // The server only sends completions for runs started by this connection, so every one belongs to this session.
+  // The server sends the completions of every run of the user, whichever tab started it, and again after a reconnect if it missed one.
   useEffect(() => messenger.on('workflow_complete', ({ payload }) => {
     const files = payload.files.map((path) => toOutputUrl(path));
     const generation: Generation = {
@@ -91,7 +91,7 @@ export const GenerationSessionProvider: FC<Props> = ({ children }) => {
     notifyIfAway(COMPLETE_NOTIFICATION);
   }), [messenger, queryClient]);
 
-  // Like completions, these only arrive for runs started by this connection. The error itself is shown by useRunWorkflow.
+  // Like completions, these arrive for every run of the user. The error itself is shown by useRunWorkflow.
   useEffect(() => messenger.on('workflow_error', () => {
     notifyIfAway(FAILED_NOTIFICATION);
   }), [messenger]);

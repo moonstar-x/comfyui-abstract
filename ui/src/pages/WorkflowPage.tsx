@@ -28,7 +28,6 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const state: unknown = location.state;
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: definition, error, isPending } = useWorkflowDefinition(type);
-  const runner = useRunWorkflow();
 
   const match = findNavMatch(pathname);
   const title = match?.item.title ?? type;
@@ -37,7 +36,9 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const model = definition === undefined
     ? null
     : findWorkflowModel(definition, searchParams.get(WORKFLOW_MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
-  useChatPageWorkflowContext(model === null ? null : { type, model: model.alias });
+  const modelContext = model === null ? null : { type, model: model.alias };
+  const runner = useRunWorkflow(modelContext);
+  useChatPageWorkflowContext(modelContext);
 
   const handleModelChange = (next: Nullable<string>): void => {
     runner.reset();

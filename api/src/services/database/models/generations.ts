@@ -1,4 +1,5 @@
 import type { WorkflowType } from '../../../workflows/types.js';
+import type { WorkflowOutputKind } from '../../comfyui/ComfyUiWorkflow.js';
 
 /**
  * Must match the rows of the media_types table.
@@ -16,6 +17,23 @@ export interface GenerationRow {
   media_type: MediaType;
   model: string;
   outputs: string[];
+  params: Record<string, unknown>;
+  prompt_id: string;
+  started_at: Date | null;
+  username: string;
+  workflow_id: string;
+  workflow_type: WorkflowType;
+}
+
+/**
+ * A workflow queued in ComfyUI whose outputs have not been saved yet.
+ */
+export interface GenerationJobRow {
+  created_at: Date;
+  model: string;
+  node_count: number;
+  output_kind: WorkflowOutputKind;
+  output_node_id: string;
   params: Record<string, unknown>;
   prompt_id: string;
   started_at: Date | null;

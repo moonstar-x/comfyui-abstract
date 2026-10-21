@@ -1,28 +1,13 @@
-import { useAppWebSocket } from '@components/websocket/WebSocketContext';
+import { useActiveRuns } from '@components/generation/ActiveRunsContext';
 import type { Nullable } from '@core/utils/types';
 import type { WorkflowProgress } from '@services/websocket/messages/server';
-import { useEffect, useState } from 'react';
-
-interface TrackedProgress {
-  progress: WorkflowProgress;
-  promptId: string;
-}
 
 /**
- * Progress of the given run, null until ComfyUI starts executing it.
+ * Progress of the given run, null until ComfyUI starts executing it. Kept with the active runs, so a reloaded page shows it right away.
  */
 export const useWorkflowProgress = (promptId: string): Nullable<WorkflowProgress> => {
-  const { messenger } = useAppWebSocket();
-  const [tracked, setTracked] = useState<Nullable<TrackedProgress>>(null);
-
-  useEffect(() => messenger.on('workflow_progress', ({ payload: { promptId: messagePromptId, ...progress } }) => {
-    if (messagePromptId === promptId) {
-      setTracked({ promptId: messagePromptId, progress });
-    }
-  }), [messenger, promptId]);
-
-  // Progress left over from a previous run is ignored rather than reset in the effect.
-  return tracked?.promptId === promptId ? tracked.progress : null;
+  const runs = useActiveRuns();
+  return runs.find((run) => run.promptId === promptId)?.progress ?? null;
 };
 
 /**
