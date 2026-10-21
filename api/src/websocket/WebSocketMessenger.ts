@@ -2,8 +2,8 @@ import { Buffer } from 'node:buffer';
 import type { RawData, WebSocket } from 'ws';
 import { z } from 'zod';
 import { ErrorCodes } from '../app/http/errors/ErrorCodes.js';
-import { verifyToken } from '../services/auth/token.js';
-import type { TokenPayload } from '../services/auth/token.js';
+import { authenticateToken, InvalidSessionError } from '../services/auth/session.js';
+import type { AuthenticatedUser } from '../services/auth/session.js';
 import { AuthenticatedClientMessageSchema } from './messages/client.js';
 import type { WSAuthenticatedClientMessage } from './messages/client.js';
 import type { WSServerMessage } from './messages/server.js';
@@ -33,7 +33,15 @@ export class WebSocketMessenger {
       throw new WebSocketError('Malformed message received.');
     }
 
-    const user = await WebSocketMessenger.authenticate(message.token);
+    let user: AuthenticatedUser;
+    try {
+      user = await WebSocketMessenger.authenticate(message.token);
+    } catch (error) {
+      // Stops pushing the run updates of the previous user to a connection whose token is no longer accepted.
+      this._username = null;
+      throw error;
+    }
+
     // Set before the message is handled, so the connection already gets the updates of a run it queues.
     this._username = user.username;
     const results = await this._handler.handle(message, user);
@@ -48,16 +56,20 @@ export class WebSocketMessenger {
     }
   }
 
-  private static async authenticate(token: string): Promise<TokenPayload> {
+  private static async authenticate(token: string): Promise<AuthenticatedUser> {
     if (token === '') {
       throw new WebSocketError('No authorization token was provided.', { code: ErrorCodes.SESSION_NOT_PROVIDED });
     }
 
-    // Only the token itself is checked to avoid a database query per message, so a deleted user keeps access until the token expires.
+    // Checked against the database on every message, like an HTTP request, so a revoked token or deleted user loses access right away.
     try {
-      return await verifyToken(token);
+      return await authenticateToken(token);
     } catch (error) {
-      throw new WebSocketError('The provided token is invalid or has expired.', { code: ErrorCodes.SESSION_INVALID, cause: error });
+      if (error instanceof InvalidSessionError) {
+        throw new WebSocketError(error.message, { code: ErrorCodes.SESSION_INVALID, cause: error });
+      }
+
+      throw error;
     }
   }
 

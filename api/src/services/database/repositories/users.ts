@@ -38,8 +38,10 @@ export const createUser = async ({ username, passwordHash, pictureUrl }: CreateU
 };
 
 export const updateUser = async (username: string, { passwordHash, pictureUrl }: UpdateUserData): Promise<UserRow> => {
+  // A new password revokes every token issued with the old one.
   const query = `UPDATE users SET
     password_hash = COALESCE($2, password_hash),
+    token_version = CASE WHEN $2 IS NULL THEN token_version ELSE token_version + 1 END,
     picture_url = CASE WHEN $3 THEN $4 ELSE picture_url END
     WHERE username = $1
     RETURNING *`;

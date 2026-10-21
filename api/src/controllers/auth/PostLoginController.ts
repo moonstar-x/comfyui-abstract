@@ -29,7 +29,7 @@ export default class PostLoginController extends PostController {
     }
 
     clearLoginAttempts(username);
-    const token = await signToken({ username: user.username });
+    const token = await signToken({ username: user.username, version: user.token_version });
     return new ResponseBuilder().withStatus(StatusCodes.OK).withData({ token, user: toPublicUser(user) });
   }
 }

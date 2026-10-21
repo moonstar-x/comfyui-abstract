@@ -73,8 +73,9 @@ export const AuthProvider: FC<Props> = ({ children }) => {
     await queryClient.invalidateQueries();
   }, [queryClient]);
 
+  // The password change logs out every other session, so this one carries on with the new token.
   const changePassword = useCallback(async (change: PasswordChange) => {
-    setSessionUser(await requestPasswordChange(change));
+    setSession(await requestPasswordChange(change));
   }, []);
 
   const context = useMemo<ContextValue>(() => ({

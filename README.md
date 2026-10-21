@@ -299,7 +299,8 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 | `GET` | `/health` | Health check. |
 | `POST` | `/auth/login` | Log in and receive a JWT. Limited to 20 attempts per IP and 10 per username every 15 minutes; over the limit it returns `429` with a `Retry-After` header. |
 | `POST` | `/users` | Sign up. Only works when `ENABLE_SIGNUP=true`. |
-| `PATCH` | `/users/me` | Change your password or profile picture URL. |
+| `PATCH` | `/users/me` | Change your profile picture URL. |
+| `PUT` | `/users/me/password` | Change your password. Logs out every other session and returns a new token. |
 | `PUT` | `/users/me/picture` | Upload a profile picture. |
 | `GET` | `/users/me/uploads` | List your uploads. |
 | `GET` | `/users/me/generations/count` | Count your generations. |
