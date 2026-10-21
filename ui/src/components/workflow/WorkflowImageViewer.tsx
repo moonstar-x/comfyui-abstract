@@ -1,4 +1,5 @@
 import { Dialog } from '@base-ui/react/dialog';
+import { DownloadLink } from '@components/ui/app/DownloadLink';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/third-party/shadcn/select';
 import { useSlideshow } from '@components/workflow/hooks/useSlideshow';
@@ -273,10 +274,10 @@ export const WorkflowImageViewer: FC<WorkflowImageViewerProps> = ({ gallery, onC
                 {images.length > 1 && (
                   <span aria-live="polite" className="tabular-nums">{`${(index + 1).toString()} / ${images.length.toString()}`}</span>
                 )}
-                <a download className="inline-flex items-center gap-1.5 hover:text-white" href={url}>
+                <DownloadLink className="inline-flex items-center gap-1.5 hover:text-white" url={url}>
                   <Download aria-hidden="true" className="size-4" />
                   Download
-                </a>
+                </DownloadLink>
               </div>
             </>
           )}

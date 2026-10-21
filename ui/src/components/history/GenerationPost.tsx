@@ -6,7 +6,7 @@ import { UserAvatar } from '@components/users/UserAvatar';
 import { formatDateTime, formatLora, formatParamLabel, formatParamValue, formatRelativeTime, isWorkflowLoraList, splitGenerationParams } from '@core/generations/generations';
 import type { GenerationPrompt, GenerationRecord } from '@core/generations/generations';
 import { DynamicRouteDefs } from '@core/router/routes';
-import { downloadFile } from '@core/utils/files';
+import { saveFile } from '@core/utils/files';
 import { toOutputUrl } from '@core/workflows/outputs';
 import { makeWorkflowPrefillState } from '@core/workflows/params';
 import { cn } from 'cn';
@@ -158,11 +158,7 @@ const DownloadOutputsButton: FC<{ urls: string[] }> = ({ urls }) => {
   const handleDownload = async (): Promise<void> => {
     setIsDownloading(true);
     await Promise.all(urls.map(async (url) => {
-      try {
-        await downloadFile(url);
-      } catch {
-        window.open(url, '_blank', 'noopener');
-      }
+      await saveFile(url);
     }));
     setIsDownloading(false);
   };

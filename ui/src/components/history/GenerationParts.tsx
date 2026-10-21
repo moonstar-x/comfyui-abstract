@@ -1,6 +1,7 @@
 import { AudioPlayer } from '@components/audio/AudioPlayer';
 import type { AudioPlayerProps } from '@components/audio/AudioPlayer';
 import { useDeleteGeneration } from '@components/history/hooks/useGenerations';
+import { DownloadLink } from '@components/ui/app/DownloadLink';
 import { CATEGORY_TILE_CLASSES, findWorkflowNavItem } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
 import { Button } from '@components/ui/third-party/shadcn/button';
@@ -88,10 +89,10 @@ export const AudioOutputs: FC<AudioOutputsProps> = ({ hasDownloadLinks, urls, va
       <li className="flex items-center gap-2 rounded-md border bg-muted/40 p-2" key={url}>
         <AudioPlayer className="min-w-0 flex-1" label={`Output ${(index + 1).toString()}`} preload="none" src={url} variant={variant} />
         {hasDownloadLinks && (
-          <a download className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" href={url}>
+          <DownloadLink className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground" url={url}>
             <Download aria-hidden="true" className="size-4" />
             <span className="sr-only">Download</span>
-          </a>
+          </DownloadLink>
         )}
       </li>
     ))}

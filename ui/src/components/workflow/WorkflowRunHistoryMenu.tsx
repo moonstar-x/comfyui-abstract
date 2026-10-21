@@ -4,7 +4,7 @@ import { useDeleteGeneration } from '@components/history/hooks/useGenerations';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@components/ui/third-party/shadcn/dropdown-menu';
 import type { GenerationRecord } from '@core/generations/generations';
-import { downloadFile } from '@core/utils/files';
+import { saveFile } from '@core/utils/files';
 import type { WorkflowOutputKind } from '@core/workflows/outputs';
 import { cn } from 'cn';
 import { Download, EllipsisVertical, Trash2 } from 'lucide-react';
@@ -28,15 +28,6 @@ export const WorkflowRunHistoryMenu: FC<WorkflowRunHistoryMenuProps> = ({ classN
   // The dialog opens from a menu item that is gone once the menu closes, so focus goes back to the trigger instead.
   const triggerRef = useRef<HTMLButtonElement>(null);
   const fileCount = generation.outputs.length;
-
-  // A file that can't be fetched is opened in a new tab instead, so it can still be saved from there.
-  const handleDownload = async (): Promise<void> => {
-    try {
-      await downloadFile(url);
-    } catch {
-      window.open(url, '_blank', 'noopener');
-    }
-  };
 
   const handleDeleteClick = (): void => {
     reset();
@@ -70,7 +61,7 @@ export const WorkflowRunHistoryMenu: FC<WorkflowRunHistoryMenuProps> = ({ classN
           <EllipsisVertical aria-hidden="true" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-auto min-w-36">
-          <DropdownMenuItem onClick={() => { void handleDownload(); }}>
+          <DropdownMenuItem onClick={() => { void saveFile(url); }}>
             <Download />
             Download
           </DropdownMenuItem>

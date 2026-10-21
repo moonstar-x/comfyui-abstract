@@ -53,3 +53,14 @@ export const downloadFile = async (url: string): Promise<void> => {
     URL.revokeObjectURL(objectUrl);
   }, 0);
 };
+
+/**
+ * Saves the file like downloadFile, but a file that can't be fetched is opened in a new tab instead, so it can still be saved from there.
+ */
+export const saveFile = async (url: string): Promise<void> => {
+  try {
+    await downloadFile(url);
+  } catch {
+    window.open(url, '_blank', 'noopener');
+  }
+};
