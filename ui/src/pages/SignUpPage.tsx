@@ -3,6 +3,7 @@ import { AuthFormField } from '@components/auth/AuthFormField';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { PASSWORD_MIN_LENGTH, validatePasswordLength } from '@core/auth/validation';
 import { RouteDefs } from '@core/router/routes';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import { useMutation } from '@tanstack/react-query';
 import { UserPlus } from 'lucide-react';
 import { useState } from 'react';
@@ -47,6 +48,7 @@ const validate = ({ username, password, confirmPassword }: SignUpValues): SignUp
 };
 
 const SignUpPage: FC = () => {
+  useDocumentTitle('Sign up');
   const { signUp } = useAuth();
   const location = useLocation();
   const state: unknown = location.state;

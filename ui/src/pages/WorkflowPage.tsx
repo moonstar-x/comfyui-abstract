@@ -9,6 +9,7 @@ import { WORKFLOW_MODEL_SEARCH_PARAM } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
 import { findWorkflowModel, isWorkflowType } from '@core/workflows/definitions';
 import { getWorkflowPrefill } from '@core/workflows/params';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import NotFoundPage from '@pages/NotFoundPage';
 import type { WorkflowType } from '@services/websocket/messages/client';
 import type { FC, ReactNode } from 'react';
@@ -30,6 +31,8 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const runner = useRunWorkflow();
 
   const match = findNavMatch(pathname);
+  const title = match?.item.title ?? type;
+  useDocumentTitle(title);
   const models = definition?.models ?? [];
   const model = definition === undefined
     ? null
@@ -75,7 +78,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
           {match !== null && match.section !== null && (
             <Badge className={CATEGORY_TILE_CLASSES[match.item.category]}>{match.section}</Badge>
           )}
-          <h1 className="text-2xl font-semibold tracking-tight">{match?.item.title ?? type}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
         </div>
 
         <WorkflowModelPicker disabled={runner.isSubmitting || runner.isRunning} models={models} value={model?.alias ?? null} onChange={handleModelChange} />

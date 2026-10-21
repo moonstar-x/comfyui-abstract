@@ -1,10 +1,12 @@
 import { Button } from '@components/ui/third-party/shadcn/button';
 import { RouteDefs } from '@core/router/routes';
+import { useDocumentTitle } from '@hooks/useDocumentTitle';
 import { ArrowLeft, Compass } from 'lucide-react';
 import type { FC } from 'react';
 import { Link, useLocation } from 'react-router';
 
 const NotFoundPage: FC = () => {
+  useDocumentTitle('Page not found');
   const { pathname } = useLocation();
 
   return (
