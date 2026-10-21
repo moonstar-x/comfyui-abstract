@@ -1,0 +1,74 @@
+name: '#Callable - (global): Publish'
+
+on:
+  workflow_call:
+    inputs:
+      dockerhub_username:
+        required: true
+        type: string
+      machine_account_user:
+        required: true
+        type: string
+    secrets:
+      dockerhub_token:
+        required: true
+      machine_account_token:
+        required: true
+
+jobs:
+  publish:
+    name: Publish Image
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout the Repository
+        uses: actions/checkout@v7
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ inputs.dockerhub_username }}
+          password: ${{ secrets.dockerhub_token }}
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ inputs.machine_account_user }}
+          password: ${{ secrets.machine_account_token }}
+
+      - name: Extract Image Metadata
+        uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: |
+            ${{ inputs.dockerhub_username }}/${{ github.event.repository.name }}
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
+
+      - name: Build and Push Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

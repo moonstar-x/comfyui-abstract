@@ -1,0 +1,23 @@
+name: On Push (main)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  filter:
+    name: Filter Paths
+    uses: ./.github/workflows/callable-global-filter-paths.yml
+
+  api-test:
+    name: Run Tests (api)
+    needs:
+      - filter
+    uses: ./.github/workflows/callable-api-test.yml
+
+  ui-test:
+    name: Run Tests (ui)
+    needs:
+      - filter
+    uses: ./.github/workflows/callable-ui-test.yml
