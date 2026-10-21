@@ -9,6 +9,7 @@ import { WORKFLOW_MODEL_SEARCH_PARAM } from '@core/router/routes';
 import type { Nullable } from '@core/utils/types';
 import { findWorkflowModel, isWorkflowType } from '@core/workflows/definitions';
 import { getWorkflowPrefill } from '@core/workflows/params';
+import NotFoundPage from '@pages/NotFoundPage';
 import type { WorkflowType } from '@services/websocket/messages/client';
 import type { FC, ReactNode } from 'react';
 import { useLocation, useParams, useSearchParams } from 'react-router';
@@ -88,16 +89,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
 const WorkflowPage: FC = () => {
   const { id } = useParams();
   if (!isWorkflowType(id)) {
-    return (
-      <div className="flex flex-1 flex-col gap-5 p-4 page-md:p-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Workflow not found</h1>
-        <Placeholder>
-          There is no workflow named
-          {' '}
-          {id}
-        </Placeholder>
-      </div>
-    );
+    return <NotFoundPage />;
   }
 
   // Keyed by type so the selected model and form state don't leak between workflows.
