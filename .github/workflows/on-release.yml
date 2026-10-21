@@ -8,6 +8,20 @@ on:
 run-name: Release ${{ github.event.release.tag_name }} by @${{ github.actor }}
 
 jobs:
+  version:
+    name: Resolve Version
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Strip Tag Prefix
+        id: version
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: echo "version=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+
   api-test:
     name: Run Tests (api)
     uses: ./.github/workflows/callable-api-test.yml
@@ -20,6 +34,7 @@ jobs:
     name: Publish Image
     uses: ./.github/workflows/callable-global-publish.yml
     needs:
+      - version
       - api-test
       - ui-test
     permissions:
@@ -28,6 +43,9 @@ jobs:
     with:
       dockerhub_username: ${{ vars.DOCKERHUB_USERNAME }}
       machine_account_user: ${{ vars.MACHINE_ACCOUNT_USER }}
+      tags: |
+        latest
+        ${{ needs.version.outputs.version }}
     secrets:
       dockerhub_token: ${{ secrets.DOCKERHUB_TOKEN }}
       machine_account_token: ${{ secrets.MACHINE_ACCOUNT_TOKEN }}

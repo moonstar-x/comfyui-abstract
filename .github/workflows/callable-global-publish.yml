@@ -9,6 +9,10 @@ on:
       machine_account_user:
         required: true
         type: string
+      tags:
+        required: true
+        type: string
+        description: Newline-separated list of tags to publish the image with (e.g. latest, 1.0.0).
     secrets:
       dockerhub_token:
         required: true
@@ -47,6 +51,17 @@ jobs:
           username: ${{ inputs.machine_account_user }}
           password: ${{ secrets.machine_account_token }}
 
+      - name: Resolve Image Tags
+        id: tags
+        env:
+          TAGS: ${{ inputs.tags }}
+        run: |
+          {
+            echo 'tags<<EOF'
+            echo "$TAGS" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;/^$/d;s/^/type=raw,value=/'
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Extract Image Metadata
         uses: docker/metadata-action@v6
         id: meta
@@ -54,12 +69,9 @@ jobs:
           images: |
             ${{ inputs.dockerhub_username }}/${{ github.event.repository.name }}
             ghcr.io/${{ github.repository }}
-          tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha
+          flavor: |
+            latest=false
+          tags: ${{ steps.tags.outputs.tags }}
 
       - name: Build and Push Image
         uses: docker/build-push-action@v7
