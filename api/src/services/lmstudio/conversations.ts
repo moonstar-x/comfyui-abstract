@@ -9,15 +9,17 @@ import {
   createUserMessage,
   deleteConversation,
   findMessages,
+  getConversationWorkflowContext,
   toPublicConversation,
   toPublicMessage,
   touchConversation
 } from '../database/repositories/conversations.js';
-import type { PublicConversation, PublicMessage } from '../database/repositories/conversations.js';
+import type { ConversationWorkflowContext, PublicConversation, PublicMessage } from '../database/repositories/conversations.js';
 import { streamChatCompletion } from './client.js';
-import type { LmStudioChatDelta, LmStudioChatUsage } from './client.js';
-import { getContextUsage, selectContextWindow, toTurnTokenCounts } from './context.js';
+import type { LmStudioChatDelta, LmStudioChatMessage, LmStudioChatUsage } from './client.js';
+import { estimateSystemPromptTokenCount, getContextUsage, selectContextWindow, toTurnTokenCounts } from './context.js';
 import type { ContextUsage } from './context.js';
+import { assertWorkflowContextExists, buildWorkflowSystemPrompt } from './workflowContext.js';
 
 export const LMSTUDIO_EVENTS = {
   /**
@@ -65,6 +67,10 @@ export interface SendLmStudioMessageData {
    */
   signal: AbortSignal;
   username: string;
+  /**
+   * The workflow page a new conversation is started from. Ignored when continuing a conversation, which keeps the context it was started with.
+   */
+  workflowContext: Nullable<ConversationWorkflowContext>;
 }
 
 interface SaveTurnData {
@@ -82,6 +88,10 @@ interface SaveTurnData {
   model: string;
   reasoning: string;
   reply: string;
+  /**
+   * Estimated tokens of the system prompt sent along with the message.
+   */
+  systemTokenCount: number;
   /**
    * Null when the reply was cut short before LM Studio reported it.
    */
@@ -108,7 +118,7 @@ const toConversationTitle = (content: string): string => {
 
 const saveTurn = async (data: SaveTurnData): Promise<LmStudioDoneEvent> => await database.tx(async (t) => {
   const { content, conversation, model, reasoning, reply } = data;
-  const tokenCounts = toTurnTokenCounts(data.usage, data.historyTokenCount, reply, reasoning);
+  const tokenCounts = toTurnTokenCounts(data.usage, data.systemTokenCount + data.historyTokenCount, reply, reasoning);
 
   const userMessage = await createUserMessage({ conversationId: conversation.id, content, tokenCount: tokenCounts.user }, t);
   const assistantMessage = await createAssistantMessage({
@@ -123,7 +133,7 @@ const saveTurn = async (data: SaveTurnData): Promise<LmStudioDoneEvent> => await
   return {
     conversation: toPublicConversation(updatedConversation),
     messages: [userMessage, assistantMessage].map((message) => toPublicMessage(message)),
-    context: getContextUsage([...data.fullHistory, userMessage, assistantMessage], data.contextLength)
+    context: getContextUsage([...data.fullHistory, userMessage, assistantMessage], data.contextLength, data.systemTokenCount)
   };
 });
 
@@ -175,24 +185,38 @@ async function* streamReply(deltas: AsyncGenerator<LmStudioChatDelta, void, unde
   }
 }
 
+const getSystemPrompt = (workflowContext: Nullable<ConversationWorkflowContext>): Nullable<string> => workflowContext === null
+  ? null
+  : buildWorkflowSystemPrompt(workflowContext);
+
 /**
  * Sends a message to LM Studio along with as much of the history of its conversation as fits in the context, using the model in the config.
+ * A conversation started from a workflow page is sent with a system prompt that describes that workflow and model.
  * Resolves once LM Studio accepts the request, so errors such as LM Studio being unreachable are thrown before anything is streamed.
  */
-export const sendLmStudioMessage = async ({ content, conversation, signal, username }: SendLmStudioMessageData): Promise<AsyncIterable<ResponseEvent>> => {
+export const sendLmStudioMessage = async (data: SendLmStudioMessageData): Promise<AsyncIterable<ResponseEvent>> => {
+  const { content, conversation, signal, username } = data;
   const { model, contextLength } = getConfig().lmstudio;
+  const workflowContext = conversation ? getConversationWorkflowContext(conversation) : data.workflowContext;
+  if (!conversation && workflowContext !== null) {
+    assertWorkflowContextExists(workflowContext);
+  }
+
+  const systemPrompt = getSystemPrompt(workflowContext);
+  const systemTokenCount = estimateSystemPromptTokenCount(systemPrompt);
   const fullHistory = conversation ? await findMessages(conversation.id) : [];
-  const { history, historyTokenCount } = selectContextWindow(fullHistory, content, contextLength);
+  const { history, historyTokenCount } = selectContextWindow(fullHistory, content, contextLength, systemTokenCount);
 
   // Reasoning is left out of the history, since models only expect their own past replies.
-  const messages = [
+  const messages: LmStudioChatMessage[] = [
+    ...systemPrompt === null ? [] : [{ role: 'system' as const, content: systemPrompt }],
     ...history.map((message) => ({ role: message.role, content: message.content })),
-    { role: 'user' as const, content }
+    { role: 'user', content }
   ];
 
   const deltas = await streamChatCompletion(model, messages, signal);
   // Only created once LM Studio accepts the request, so a rejected message leaves nothing behind.
-  const target = conversation ?? await createConversation(username, toConversationTitle(content));
+  const target = conversation ?? await createConversation({ username, title: toConversationTitle(content), workflowContext });
   return streamReply(deltas, {
     content,
     contextLength,
@@ -201,14 +225,16 @@ export const sendLmStudioMessage = async ({ content, conversation, signal, usern
     historyTokenCount,
     isNewConversation: conversation === null,
     model,
+    systemTokenCount,
     username
   }, signal);
 };
 
 /**
- * How full the context is with the messages of a conversation, using the context length in the config.
+ * How full the context is with the system prompt and the messages of a conversation, using the context length in the config.
  */
-export const getConversationContextUsage = (messages: MessageRow[]): ContextUsage => {
+export const getConversationContextUsage = (conversation: ConversationRow, messages: MessageRow[]): ContextUsage => {
   const { contextLength } = getConfig().lmstudio;
-  return getContextUsage(messages, contextLength);
+  const systemTokenCount = estimateSystemPromptTokenCount(getSystemPrompt(getConversationWorkflowContext(conversation)));
+  return getContextUsage(messages, contextLength, systemTokenCount);
 };

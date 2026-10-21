@@ -4,6 +4,15 @@ import { ApiError, ApiErrorCodes, apiRequest, apiRequestStream, apiRequestWithMe
 export type MessageRole = 'assistant' | 'user';
 
 /**
+ * The workflow page a conversation was started from, whose instructions the model is told about.
+ */
+export interface WorkflowContext {
+  // Alias of the model in the API config.
+  model: string;
+  type: string;
+}
+
+/**
  * A conversation of the current user with the LM Studio model.
  */
 export interface ConversationRecord {
@@ -14,6 +23,8 @@ export interface ConversationRecord {
   title: string;
   // Bumped by every message, so the most recently active conversations come first.
   updatedAt: string;
+  // Null when the conversation was not started from a workflow page.
+  workflowContext: Nullable<WorkflowContext>;
 }
 
 export interface MessageRecord {
@@ -56,10 +67,15 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 
 const isNullableString = (value: unknown): value is Nullable<string> => value === null || typeof value === 'string';
 
+const isWorkflowContext = (value: unknown): value is WorkflowContext => isRecord(value) &&
+  typeof value['model'] === 'string' &&
+  typeof value['type'] === 'string';
+
 const isConversationRecord = (value: unknown): value is ConversationRecord => isRecord(value) &&
   typeof value['id'] === 'string' &&
   typeof value['title'] === 'string' &&
   isNullableString(value['pinnedAt']) &&
+  (value['workflowContext'] === null || isWorkflowContext(value['workflowContext'])) &&
   typeof value['createdAt'] === 'string' &&
   typeof value['updatedAt'] === 'string';
 
@@ -216,13 +232,16 @@ export interface SendMessageData {
   content: string;
   // Starts a new conversation when omitted.
   conversationId?: string | undefined;
+  // The workflow page a new conversation is started from. Only allowed without a conversationId.
+  workflowContext?: undefined | WorkflowContext;
 }
 
 /**
  * Sends a message and yields the reply as the API streams it. Aborting the signal stops the reply, which the API keeps as far as it got.
  */
-export async function* streamMessage({ content, conversationId }: SendMessageData, signal: AbortSignal): AsyncGenerator<MessageStreamEvent, void, undefined> {
-  const body = await apiRequestStream('/messages', { method: 'POST', body: { content, conversationId }, isAuthenticated: true, signal });
+export async function* streamMessage(data: SendMessageData, signal: AbortSignal): AsyncGenerator<MessageStreamEvent, void, undefined> {
+  const { content, conversationId, workflowContext } = data;
+  const body = await apiRequestStream('/messages', { method: 'POST', body: { content, conversationId, workflowContext }, isAuthenticated: true, signal });
   const decoder = new TextDecoder();
   let buffer = '';
 

@@ -1,3 +1,4 @@
+import { useChatPageWorkflowContext } from '@components/chat/ChatContext';
 import { CATEGORY_TILE_CLASSES, findNavMatch } from '@components/ui/app/navigation';
 import { Badge } from '@components/ui/third-party/shadcn/badge';
 import { useRunWorkflow } from '@components/websocket/hooks/useRunWorkflow';
@@ -32,6 +33,7 @@ const WorkflowPageContent: FC<{ type: WorkflowType }> = ({ type }) => {
   const model = definition === undefined
     ? null
     : findWorkflowModel(definition, searchParams.get(WORKFLOW_MODEL_SEARCH_PARAM)) ?? models[0] ?? null;
+  useChatPageWorkflowContext(model === null ? null : { type, model: model.alias });
 
   const handleModelChange = (next: Nullable<string>): void => {
     runner.reset();

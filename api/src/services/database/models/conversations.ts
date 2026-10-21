@@ -17,6 +17,14 @@ export interface ConversationRow {
   title: string;
   updated_at: Date;
   username: string;
+  /**
+   * Alias of the model of the workflow the conversation was started from, or null when it was not started from a workflow page.
+   */
+  workflow_model: null | string;
+  /**
+   * Type of the workflow the conversation was started from, or null when it was not started from a workflow page.
+   */
+  workflow_type: null | string;
 }
 
 export interface MessageRow {

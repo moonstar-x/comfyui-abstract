@@ -12,6 +12,7 @@ import { SendMessageBodySchema } from '../../services/lmstudio/schemas.js';
 
 /**
  * Sends a message to LM Studio, continuing a conversation of the current user or starting a new one when no conversationId is given.
+ * A new conversation may be started with a workflowContext, the workflow page it was started from, whose instructions the model is then told about.
  * The reply is streamed as server-sent events: a "conversation" event carries the conversation first, "reasoning" events carry pieces of
  * what a reasoning model thinks before it replies, "delta" events carry pieces of the reply, then a "done" event carries the saved
  * conversation and messages, or an "error" event if the reply failed midway. Errors before the reply starts are regular error responses.
@@ -23,7 +24,7 @@ export default class PostMessageController extends PostController {
 
   public override async handle(req: Request, res: AuthenticatedResponse): Promise<ResponseBuilder> {
     const { username } = res.locals.user;
-    const { content, conversationId } = parseBody(SendMessageBodySchema, req.body);
+    const { content, conversationId, workflowContext } = parseBody(SendMessageBodySchema, req.body);
 
     const conversation = conversationId === undefined ? null : await findConversationById(conversationId);
     if (conversationId !== undefined && !conversation) {
@@ -40,7 +41,13 @@ export default class PostMessageController extends PostController {
       abortController.abort();
     });
 
-    const events = await sendLmStudioMessage({ content, conversation, signal: abortController.signal, username });
+    const events = await sendLmStudioMessage({
+      content,
+      conversation,
+      signal: abortController.signal,
+      username,
+      workflowContext: workflowContext ?? null
+    });
     return new ResponseBuilder().withEventStream(events);
   }
 }

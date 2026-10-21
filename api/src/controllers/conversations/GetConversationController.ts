@@ -38,7 +38,7 @@ export default class GetConversationController extends GetController {
     return new ResponseBuilder().withData({
       ...toPublicConversation(conversation),
       messages: messages.map((message) => toPublicMessage(message)),
-      context: getConversationContextUsage(messages)
+      context: getConversationContextUsage(conversation, messages)
     });
   }
 }

@@ -46,7 +46,7 @@ export interface ContextUsage {
    */
   trimmedMessageCount: number;
   /**
-   * Tokens of the history, partly estimated for messages LM Studio did not report a token count for.
+   * Tokens of the system prompt and the history, partly estimated for messages LM Studio did not report a token count for.
    */
   usedTokens: number;
 }
@@ -57,6 +57,11 @@ export interface TurnTokenCounts {
 }
 
 const estimateTokenCount = (content: string): number => Math.ceil(content.length / ESTIMATED_CHARACTERS_PER_TOKEN) + ESTIMATED_MESSAGE_OVERHEAD_TOKENS;
+
+/**
+ * Tokens of the system prompt, estimated since LM Studio only reports the prompt as a whole.
+ */
+export const estimateSystemPromptTokenCount = (systemPrompt: Nullable<string>): number => systemPrompt === null ? 0 : estimateTokenCount(systemPrompt);
 
 const getTokenCount = (message: MessageRow): number => message.token_count ?? estimateTokenCount(message.content);
 
@@ -89,11 +94,16 @@ const fitHistory = (history: MessageRow[], budget: number): ContextWindow => {
 };
 
 /**
- * Picks the latest messages of the history that fit in the context along with the new message. Older messages stay saved,
- * the model just no longer sees them. Throws when the new message alone does not fit.
+ * Picks the latest messages of the history that fit in the context along with the system prompt and the new message. Older messages stay saved,
+ * the model just no longer sees them. Throws when the system prompt and the new message alone do not fit.
  */
-export const selectContextWindow = (history: MessageRow[], content: string, contextLength: number): ContextWindow => {
-  const budget = getPromptBudget(contextLength);
+export const selectContextWindow = (history: MessageRow[], content: string, contextLength: number, systemTokenCount: number): ContextWindow => {
+  const budget = getPromptBudget(contextLength) - systemTokenCount;
+  if (budget <= 0) {
+    const message = 'The instructions of the workflow of this chat are too long for the context of the model. Start a new chat from another page.';
+    throw new BadRequestError(message, ErrorCodes.MESSAGE_TOO_LONG);
+  }
+
   const contentTokenCount = estimateTokenCount(content);
   if (contentTokenCount > budget) {
     throw new BadRequestError(`The message is too long for the context of the model. Keep it under about ${(budget * ESTIMATED_CHARACTERS_PER_TOKEN).toString()} characters.`, ErrorCodes.MESSAGE_TOO_LONG);
@@ -102,27 +112,29 @@ export const selectContextWindow = (history: MessageRow[], content: string, cont
   return fitHistory(history, budget - contentTokenCount);
 };
 
-export const getContextUsage = (history: MessageRow[], contextLength: number): ContextUsage => {
-  const window = fitHistory(history, getPromptBudget(contextLength));
+export const getContextUsage = (history: MessageRow[], contextLength: number, systemTokenCount: number): ContextUsage => {
+  const window = fitHistory(history, Math.max(getPromptBudget(contextLength) - systemTokenCount, 0));
+  const usedTokens = systemTokenCount + window.historyTokenCount;
   return {
     contextLength,
-    usedTokens: window.historyTokenCount,
-    percentage: Math.min(Math.round(window.historyTokenCount / contextLength * 100), 100),
+    usedTokens,
+    percentage: Math.min(Math.round(usedTokens / contextLength * 100), 100),
     trimmedMessageCount: history.length - window.history.length
   };
 };
 
 /**
- * Works out the tokens the new message and its reply will take up as history from the usage of the reply. The prompt holds the history
- * and the new message, so the new message is whatever the history does not account for. Reasoning is never sent back, so it is left out of the reply.
+ * Works out the tokens the new message and its reply will take up as history from the usage of the reply. The prompt holds the system prompt,
+ * the history and the new message, so the new message is whatever the system prompt and the history do not account for.
+ * Reasoning is never sent back, so it is left out of the reply.
  */
-export const toTurnTokenCounts = (usage: Nullable<LmStudioChatUsage>, historyTokenCount: number, reply: string, reasoning: string): TurnTokenCounts => {
+export const toTurnTokenCounts = (usage: Nullable<LmStudioChatUsage>, promptTokenCount: number, reply: string, reasoning: string): TurnTokenCounts => {
   if (!usage) {
     return { user: null, reply: null };
   }
 
   const { promptTokens, completionTokens, reasoningTokens } = usage;
-  const userTokenCount = promptTokens - historyTokenCount;
+  const userTokenCount = promptTokens - promptTokenCount;
 
   let replyTokenCount = completionTokens;
   if (reasoningTokens !== null && reasoningTokens > 0) {

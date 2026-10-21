@@ -1,7 +1,7 @@
 import { addConversationTurn, invalidateConversation, invalidateConversationList } from '@components/chat/hooks/useConversations';
 import type { Nullable } from '@core/utils/types';
 import { streamMessage } from '@services/api/conversations';
-import type { DoneStreamEvent, MessageStreamEvent } from '@services/api/conversations';
+import type { DoneStreamEvent, MessageStreamEvent, WorkflowContext } from '@services/api/conversations';
 import { useQueryClient } from '@tanstack/react-query';
 import type { QueryClient } from '@tanstack/react-query';
 import { createContext, use, useEffect, useMemo, useRef, useState } from 'react';
@@ -27,6 +27,8 @@ export interface ChatReply {
   // The conversation the message was sent to, or null for a new chat.
   targetConversationId: Nullable<string>;
   userContent: string;
+  // The workflow page a new chat was started from, null when continuing a conversation.
+  workflowContext: Nullable<WorkflowContext>;
 }
 
 interface ChatView {
@@ -43,6 +45,8 @@ interface ContextValue {
   discardReply: () => void;
   isOpen: boolean;
   openConversation: (id: string) => void;
+  // The workflow and model on the page, which a new chat is started with. Null on any other page.
+  pageWorkflowContext: Nullable<WorkflowContext>;
   pane: ChatPane;
   reply: Nullable<ChatReply>;
   retry: () => void;
@@ -61,6 +65,11 @@ interface ContextValue {
 }
 
 const ChatContext: Context<Nullable<ContextValue>> = createContext<Nullable<ContextValue>>(null);
+
+// Kept apart from the chat state, so the page that sets it doesn't re-render with every piece of a streaming reply.
+const PageWorkflowSetterContext: Context<Nullable<Dispatch<SetStateAction<Nullable<WorkflowContext>>>>> = createContext<
+  Nullable<Dispatch<SetStateAction<Nullable<WorkflowContext>>>>
+>(null);
 
 const WIDTH_STORAGE_KEY = 'comfyui-abstract-chat-width';
 const DEFAULT_WIDTH = 400;
@@ -214,6 +223,7 @@ export const ChatProvider: FC<Props> = ({ children }) => {
   const [reply, setReply] = useState<Nullable<ChatReply>>(null);
   const [thoughtDurations, setThoughtDurations] = useState<ReadonlyMap<string, number>>(() => new Map());
   const [width, setWidth] = useState(readStoredWidth);
+  const [pageWorkflowContext, setPageWorkflowContext] = useState<Nullable<WorkflowContext>>(null);
   const abortRef = useRef<Nullable<AbortController>>(null);
 
   // Stops the reply when the user logs out, which unmounts the layout.
@@ -221,7 +231,7 @@ export const ChatProvider: FC<Props> = ({ children }) => {
     abortRef.current?.abort();
   }, []);
 
-  const runReply = async (content: string, targetConversationId: Nullable<string>): Promise<void> => {
+  const runReply = async (content: string, targetConversationId: Nullable<string>, workflowContext: Nullable<WorkflowContext>): Promise<void> => {
     const controller = new AbortController();
     abortRef.current = controller;
     const isCurrent = (): boolean => abortRef.current === controller;
@@ -245,11 +255,16 @@ export const ChatProvider: FC<Props> = ({ children }) => {
       savedMessageIds: [],
       status: 'streaming',
       targetConversationId,
-      userContent: content
+      userContent: content,
+      workflowContext
     });
 
     try {
-      const events = streamMessage({ content, conversationId: targetConversationId ?? undefined }, controller.signal);
+      const events = streamMessage({
+        content,
+        conversationId: targetConversationId ?? undefined,
+        workflowContext: workflowContext ?? undefined
+      }, controller.signal);
       for await (const event of events) {
         run.handle(event);
       }
@@ -284,15 +299,17 @@ export const ChatProvider: FC<Props> = ({ children }) => {
       setView((current) => ({ conversationId: id, key: current.key + 1, pane: 'conversation' }));
     },
     pane: view.pane,
+    pageWorkflowContext,
     reply,
     retry: (): void => {
       if (reply?.status === 'failed') {
-        void runReply(reply.userContent, reply.targetConversationId);
+        void runReply(reply.userContent, reply.targetConversationId, reply.workflowContext);
       }
     },
     send: (content): void => {
       if (reply?.status !== 'streaming') {
-        void runReply(content, view.conversationId);
+        // Only a new chat takes the context of the page, a conversation keeps the one it was started with.
+        void runReply(content, view.conversationId, view.conversationId === null ? pageWorkflowContext : null);
       }
     },
     setOpen: setIsOpen,
@@ -317,9 +334,15 @@ export const ChatProvider: FC<Props> = ({ children }) => {
     width
   // runReply only reads refs, setters and the query client, which never change.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [isOpen, reply, thoughtDurations, view, width]);
+  }), [isOpen, pageWorkflowContext, reply, thoughtDurations, view, width]);
 
-  return <ChatContext value={value}>{children}</ChatContext>;
+  return (
+    <ChatContext value={value}>
+      <PageWorkflowSetterContext value={setPageWorkflowContext}>
+        {children}
+      </PageWorkflowSetterContext>
+    </ChatContext>
+  );
 };
 
 export const useChat = (): ContextValue => {
@@ -340,4 +363,25 @@ export const isReplyShownIn = (reply: Nullable<ChatReply>, conversationId: Nulla
   }
 
   return reply.status !== 'saved' || reply.savedMessageIds.some((id) => !messageIds.includes(id));
+};
+
+export const isSameWorkflowContext = (a: Nullable<WorkflowContext>, b: Nullable<WorkflowContext>): boolean => a?.type === b?.type && a?.model === b?.model;
+
+/**
+ * Tells the chat which workflow and model the page shows, so a new chat started from it knows about them. Cleared once the page goes away.
+ */
+export const useChatPageWorkflowContext = (context: Nullable<WorkflowContext>): void => {
+  const setPageWorkflowContext = use(PageWorkflowSetterContext);
+  if (setPageWorkflowContext === null) {
+    throw new Error('You must call useChatPageWorkflowContext inside of a ChatProvider.');
+  }
+
+  const type = context?.type ?? null;
+  const model = context?.model ?? null;
+  useEffect(() => {
+    setPageWorkflowContext(type === null || model === null ? null : { type, model });
+    return (): void => {
+      setPageWorkflowContext(null);
+    };
+  }, [model, setPageWorkflowContext, type]);
 };

@@ -1,8 +1,9 @@
-import { isReplyShownIn, useChat } from '@components/chat/ChatContext';
+import { isReplyShownIn, isSameWorkflowContext, useChat } from '@components/chat/ChatContext';
 import { AssistantMessage, UserMessage } from '@components/chat/ChatMessage';
 import { ChatPaneHeader } from '@components/chat/ChatPaneHeader';
 import { ChatPinButton } from '@components/chat/ChatPinButton';
 import { ChatPromptInput } from '@components/chat/ChatPromptInput';
+import { ChatWorkflowContextBanner } from '@components/chat/ChatWorkflowContextBanner';
 import { useConversation } from '@components/chat/hooks/useConversations';
 import { Button } from '@components/ui/third-party/shadcn/button';
 import {
@@ -16,6 +17,7 @@ import {
 import type { Nullable } from '@core/utils/types';
 import { useIsMobile } from '@hooks/useMobile';
 import { ApiError } from '@services/api/client';
+import type { WorkflowContext } from '@services/api/conversations';
 import { ArrowLeft, LoaderCircle, MessagesSquare } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type { FC, ReactNode } from 'react';
@@ -40,7 +42,20 @@ export interface ChatConversationPaneProps {
  * The messages of a conversation, or of a new chat, with the field to send the next one.
  */
 export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }) => {
-  const { conversationId, discardReply, isOpen, reply, retry, send, showList, stop, thoughtDurations, viewKey } = useChat();
+  const {
+    conversationId,
+    discardReply,
+    isOpen,
+    pageWorkflowContext,
+    reply,
+    retry,
+    send,
+    showList,
+    startNewChat,
+    stop,
+    thoughtDurations,
+    viewKey
+  } = useChat();
   const { data, error, isPending } = useConversation(conversationId);
   const isMobile = useIsMobile();
   const textareaRef = useRef<Nullable<HTMLTextAreaElement>>(null);
@@ -54,6 +69,8 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
   const messages = data?.messages ?? [];
   const isReplyShown = isReplyShownIn(reply, conversationId, messages.map((message) => message.id));
   const isStreaming = reply?.status === 'streaming';
+  // A new chat with nothing sent yet will take the context of the page once its first message is.
+  const isWorkflowContextPending = conversationId === null && !isReplyShown;
 
   // Focused whenever a chat opens on desktop. On mobile it would pop up the keyboard over the messages.
   useEffect(() => {
@@ -75,6 +92,20 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
 
     return conversationId === null ? 'New chat' : '';
   };
+
+  const getWorkflowContext = (): Nullable<WorkflowContext> => {
+    if (data !== undefined) {
+      return data.workflowContext;
+    }
+
+    if (isReplyShown) {
+      return reply.workflowContext;
+    }
+
+    return isWorkflowContextPending ? pageWorkflowContext : null;
+  };
+
+  const workflowContext = getWorkflowContext();
 
   const renderMessages = (): ReactNode => {
     if (error !== null && !isReplyShown) {
@@ -162,6 +193,15 @@ export const ChatConversationPane: FC<ChatConversationPaneProps> = ({ isActive }
         )}
       />
       <div className="flex min-h-0 flex-1 flex-col">
+        {workflowContext !== null && (
+          <ChatWorkflowContextBanner
+            context={workflowContext}
+            isPending={isWorkflowContextPending}
+            isStale={!isWorkflowContextPending && !isSameWorkflowContext(workflowContext, pageWorkflowContext)}
+            // A new chat rather than switching this one, so its history isn't mixed with a context it no longer applies to.
+            onUseCurrentPage={pageWorkflowContext === null ? undefined : startNewChat}
+          />
+        )}
         {renderMessages()}
       </div>
       <ChatPromptInput

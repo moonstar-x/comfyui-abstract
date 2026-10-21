@@ -4,6 +4,17 @@ import type { DatabaseConnection } from '../client/postgres.js';
 import { MESSAGE_ROLES } from '../models/conversations.js';
 import type { ConversationRow, MessageRole, MessageRow } from '../models/conversations.js';
 
+/**
+ * The workflow page a conversation was started from.
+ */
+export interface ConversationWorkflowContext {
+  /**
+   * Alias of the model in the config.
+   */
+  model: string;
+  type: string;
+}
+
 export interface PublicConversation {
   createdAt: Date;
   id: string;
@@ -11,6 +22,7 @@ export interface PublicConversation {
   title: string;
   updatedAt: Date;
   username: string;
+  workflowContext: Nullable<ConversationWorkflowContext>;
 }
 
 export interface PublicMessage {
@@ -41,11 +53,17 @@ export interface FindConversationsFilter {
   username: string;
 }
 
+export const getConversationWorkflowContext = (conversation: ConversationRow): Nullable<ConversationWorkflowContext> => {
+  const { workflow_model: model, workflow_type: type } = conversation;
+  return model === null || type === null ? null : { model, type };
+};
+
 export const toPublicConversation = (conversation: ConversationRow): PublicConversation => ({
   id: conversation.id,
   username: conversation.username,
   title: conversation.title,
   pinnedAt: conversation.pinned_at,
+  workflowContext: getConversationWorkflowContext(conversation),
   createdAt: conversation.created_at,
   updatedAt: conversation.updated_at
 });
@@ -61,9 +79,15 @@ export const toPublicMessage = (message: MessageRow): PublicMessage => ({
   createdAt: message.created_at
 });
 
-export const createConversation = async (username: string, title: string, connection: DatabaseConnection = database): Promise<ConversationRow> => {
-  const query = 'INSERT INTO conversations(username, title) VALUES($1, $2) RETURNING *';
-  return await connection.one<ConversationRow>(query, [username, title]);
+export interface CreateConversationData {
+  title: string;
+  username: string;
+  workflowContext: Nullable<ConversationWorkflowContext>;
+}
+
+export const createConversation = async ({ title, username, workflowContext }: CreateConversationData, connection: DatabaseConnection = database): Promise<ConversationRow> => {
+  const query = 'INSERT INTO conversations(username, title, workflow_type, workflow_model) VALUES($1, $2, $3, $4) RETURNING *';
+  return await connection.one<ConversationRow>(query, [username, title, workflowContext?.type ?? null, workflowContext?.model ?? null]);
 };
 
 export const findConversationById = async (id: string): Promise<Nullable<ConversationRow>> => {
