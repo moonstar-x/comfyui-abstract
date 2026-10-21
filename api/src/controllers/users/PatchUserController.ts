@@ -8,13 +8,13 @@ import { parseBody } from '../../app/http/validation.js';
 import { requireAuth } from '../../middleware/auth.js';
 import type { AuthenticatedResponse } from '../../middleware/auth.js';
 import { RESERVED_USERNAMES } from '../../services/auth/reserved.js';
-import { PictureUrlSchema } from '../../services/auth/schemas.js';
 import { findUserByUsername, toPublicUser, updateUser } from '../../services/database/repositories/users.js';
 import { deleteProfilePicture } from '../../services/users/pictures.js';
 
 // The password is changed through /users/me/password, which issues a new token.
+// Pictures are only set by uploading to /users/me/picture, so other users' browsers never load an arbitrary URL.
 const UpdateUserBodySchema = z.object({
-  pictureUrl: PictureUrlSchema
+  pictureUrl: z.null()
 });
 
 export default class PatchUserController extends PatchController {
