@@ -1,2 +1,2 @@
 ComfyUI-Crystools-MonitorOnly
-ComfUI-SimpleUtils
+ComfyUI-SimpleUtils
