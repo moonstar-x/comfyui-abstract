@@ -46,6 +46,7 @@ The server admin decides which ComfyUI workflows and models are available, and w
 | `ui/` | React 19 single-page app built with Vite, Tailwind CSS 4, shadcn/Base UI components, TanStack Query and React Router. |
 | `local/` | Docker Compose file that starts a PostgreSQL instance for local development. |
 | `Dockerfile` | Multi-stage build that compiles both packages and serves the UI from the API server. |
+| `docker-compose.yml` | Production stack with the app and a PostgreSQL database. |
 
 The REST API is mounted under `/api` and generated files are served from `/public`. Workflows run over the WebSocket at `/ws`. When `APP_BUILD_DIR` is set, the API also serves the built UI and falls back to its `index.html` for client-side routes.
 
@@ -61,13 +62,91 @@ The REST API is mounted under `/api` and generated files are served from `/publi
 
 ## Quick start (Docker)
 
-The image builds both packages and serves everything on a single port.
+The image contains both the API and the UI and serves everything on a single port. ComfyUI and LM Studio are not part of the stack and must already be running somewhere the container can reach.
 
-```bash
-docker build -t comfyui-abstract .
+### Docker Compose
+
+The `docker-compose.yml` at the root of the repository runs the `moonstar-x/comfyui-abstract` image with its own PostgreSQL database. You only need this file, not the rest of the repository:
+
+```yaml
+services:
+  app:
+    image: moonstar-x/comfyui-abstract:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    # Lets the app reach a ComfyUI or LM Studio server on the Docker host at host.docker.internal, also on Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      COMFYUI_URL: ${COMFYUI_URL:?Set COMFYUI_URL in .env}
+      LMSTUDIO_URL: ${LMSTUDIO_URL:?Set LMSTUDIO_URL in .env}
+      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: comfyui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DATABASE: comfyui
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    volumes:
+      - ./config.yml:/app/api/config.yml:ro
+      - ./model_instructions:/app/api/model_instructions:ro
+      - public:/app/api/public
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comfyui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: comfyui
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comfyui -d comfyui"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  public:
+  postgres:
 ```
 
-Prepare `config.yml` and, optionally, a `model_instructions/` directory (see [Configuration](#configuration)), then run:
+1. Next to `docker-compose.yml`, create a `.env` file with the values Compose fills in:
+
+   ```dotenv
+   COMFYUI_URL=http://host.docker.internal:8188
+   LMSTUDIO_URL=http://host.docker.internal:1234
+   POSTGRES_PASSWORD=change-me
+   JWT_SECRET=change-me-to-a-long-random-string
+   ENABLE_SIGNUP=true
+   ```
+
+   `host.docker.internal` points at the machine running Docker. Use the real host name or IP if ComfyUI or LM Studio run elsewhere. Generate `JWT_SECRET` with `openssl rand -base64 32`.
+
+2. Create `config.yml` next to it, for example by copying [`api/config.sample.yml`](api/config.sample.yml), and optionally a `model_instructions/` directory (see [Configuration](#configuration)). Create `config.yml` before the first start: if it's missing, Docker creates an empty directory in its place and the app fails to start.
+
+3. Start the stack:
+
+   ```bash
+   docker compose up -d
+   ```
+
+Open `http://localhost:4000`, create an account, then set `ENABLE_SIGNUP=false` in `.env` and run `docker compose up -d` again if you don't want anyone else to sign up.
+
+- The database and the generated files are kept in the `postgres` and `public` named volumes, so they survive `docker compose down`. `docker compose down -v` deletes them.
+- Changing the PostgreSQL password in `.env` after the first start doesn't change it in the existing database.
+- Other API settings from [Environment variables (API)](#environment-variables-api) can be added under `environment`.
+- To update, run `docker compose pull` and then `docker compose up -d`.
+
+### Docker run
+
+To use your own PostgreSQL server instead, run the image on its own. Prepare `config.yml` and, optionally, a `model_instructions/` directory (see [Configuration](#configuration)), then run:
 
 ```bash
 docker run -d --name comfyui-abstract \
@@ -83,7 +162,7 @@ docker run -d --name comfyui-abstract \
   -v "$PWD/config.yml:/app/api/config.yml:ro" \
   -v "$PWD/model_instructions:/app/api/model_instructions:ro" \
   -v comfyui-abstract-public:/app/api/public \
-  comfyui-abstract
+  moonstar-x/comfyui-abstract:latest
 ```
 
 Open `http://localhost:4000`, create an account, then set `ENABLE_SIGNUP=false` if you don't want anyone else to sign up.
@@ -91,6 +170,7 @@ Open `http://localhost:4000`, create an account, then set `ENABLE_SIGNUP=false` 
 - `config.yml` and `model_instructions/` are excluded from the image and must be mounted at runtime.
 - `/app/api/public` holds generated outputs, temporary inputs and profile pictures. Mount a volume there so they survive container restarts.
 - Database migrations run automatically on startup.
+- To update, run `docker pull moonstar-x/comfyui-abstract:latest`, then remove the container with `docker rm -f comfyui-abstract` and run the command above again.
 - The container shuts down cleanly on `docker stop`. It stops accepting connections, lets in-flight requests finish within the default 10-second stop timeout, and then closes the database pool.
 
 ## Local development
@@ -297,7 +377,7 @@ All routes are under `/api`. Every route except `GET /health`, `POST /auth/login
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| `GET` | `/health` | Health check. |
+| `GET` | `/health` | Whether the API, ComfyUI and the database are up. Returns `503` if ComfyUI or the database is down. Used by the Docker image's `HEALTHCHECK`. |
 | `POST` | `/auth/login` | Log in and receive a JWT. Limited to 20 attempts per IP and 10 per username every 15 minutes; over the limit it returns `429` with a `Retry-After` header. |
 | `POST` | `/users` | Sign up. Only works when `ENABLE_SIGNUP=true`. |
 | `PATCH` | `/users/me` | Remove your profile picture. |

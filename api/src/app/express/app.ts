@@ -1,3 +1,4 @@
+import type { Server as HttpServer } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import cors from 'cors';
@@ -69,4 +70,21 @@ export const createApp = async (): Promise<Express> => {
   app.use(handleExpressError);
 
   return app;
+};
+
+/**
+ * Starts the server on the given port, rejecting if it cannot be bound, such as when the port is already in use.
+ */
+export const listen = async (app: Express, port: number): Promise<HttpServer> => {
+  const { promise, resolve, reject } = Promise.withResolvers<HttpServer>();
+  const server = app.listen(port, (error) => {
+    if (error) {
+      reject(error);
+      return;
+    }
+
+    resolve(server);
+  });
+
+  return await promise;
 };

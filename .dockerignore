@@ -18,6 +18,8 @@ local
 # Config, mounted at runtime
 api/config.yml
 api/model_instructions
+config.yml
+model_instructions
 
 # Public Content
 api/public

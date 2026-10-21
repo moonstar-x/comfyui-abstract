@@ -24,3 +24,10 @@ export const database: pgPromise.IDatabase<object> = pgp({
  * The database itself or a transaction, so repository functions can run either standalone or as part of a transaction.
  */
 export type DatabaseConnection = pgPromise.IBaseProtocol<object>;
+
+/**
+ * Throws if the database cannot run a trivial query.
+ */
+export const pingDatabase = async (): Promise<void> => {
+  await database.one('SELECT 1');
+};

@@ -270,9 +270,10 @@ export class GenerationJobTracker extends EventEmitter<GenerationJobTrackerEvent
     this._comfyUi.on('prompt_step', this.handlePromptStep);
     this._comfyUi.on('prompt_finished', this.handlePromptFinished);
 
+    // Unreferenced so the sweep alone does not keep the process alive when the rest of the startup fails.
     this._sweepTimer = setInterval(() => {
       void this.sweep();
-    }, SWEEP_INTERVAL_MS);
+    }, SWEEP_INTERVAL_MS).unref();
   }
 
   public stop(): void {

@@ -36,3 +36,16 @@ export const connectComfyUiClient = async (): Promise<ComfyApi> => {
     }
   }
 };
+
+// The trailing slash keeps any path of the base URL, such as one added by a reverse proxy.
+const SYSTEM_STATS_URL = new URL('system_stats', COMFYUI_URL.endsWith('/') ? COMFYUI_URL : `${COMFYUI_URL}/`);
+
+/**
+ * Throws if ComfyUI does not answer its lightweight system stats route, without opening a websocket like a full client would.
+ */
+export const pingComfyUi = async (signal: AbortSignal): Promise<void> => {
+  const response = await fetch(SYSTEM_STATS_URL, { signal });
+  if (!response.ok) {
+    throw new Error(`ComfyUI answered the system stats request with status ${response.status.toString()}.`);
+  }
+};
