@@ -1,0 +1,46 @@
+services:
+  app:
+    image: moonstar-x/comfyui-abstract:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    # Lets the app reach a ComfyUI or LM Studio server on the Docker host at host.docker.internal, also on Linux.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      COMFYUI_URL: ${COMFYUI_URL:?Set COMFYUI_URL in .env}
+      LMSTUDIO_URL: ${LMSTUDIO_URL:?Set LMSTUDIO_URL in .env}
+      LMSTUDIO_API_KEY: ${LMSTUDIO_API_KEY:-}
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: comfyui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DATABASE: comfyui
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
+      ENABLE_SIGNUP: ${ENABLE_SIGNUP:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+    volumes:
+      - ./config.yml:/app/api/config.yml:ro
+      - ./model_instructions:/app/api/model_instructions:ro
+      - public:/app/api/public
+
+  postgres:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comfyui
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: comfyui
+    volumes:
+      - postgres:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comfyui -d comfyui"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  public:
+  postgres:

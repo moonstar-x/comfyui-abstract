@@ -13,6 +13,8 @@ ui/node_modules
 # Config
 api/config.yml
 api/model_instructions
+/config.yml
+/model_instructions
 
 # Builds
 ui/dist
