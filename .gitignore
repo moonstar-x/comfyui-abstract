@@ -16,6 +16,7 @@ api/model_instructions
 
 # Builds
 ui/dist
+api/dist
 
 # Public Content
 api/public

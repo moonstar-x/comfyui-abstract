@@ -1,5 +1,6 @@
 declare namespace NodeJS {
   interface ProcessEnv {
+    APP_BUILD_DIR?: string;
     COMFYUI_UPLOAD_SUBFOLDER?: string;
     COMFYUI_URL?: string;
     ENABLE_SIGNUP?: string;

@@ -1,11 +1,14 @@
-const getRequired = (key: keyof ImportMetaEnv): string => {
+const getString = (key: keyof ImportMetaEnv, defaultValue: string): string => {
   const value = import.meta.env[key];
-  if (typeof value !== 'string' || value === '') {
-    throw new Error(`Missing required environment variable ${key}.`);
-  }
-
-  return value;
+  return typeof value === 'string' && value !== '' ? value : defaultValue;
 };
 
-export const API_URL: string = getRequired('VITE_API_URL');
-export const WS_URL: string = getRequired('VITE_WS_URL');
+const getDefaultWsUrl = (): string => {
+  const url = new URL('/ws', location.origin);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  return url.href;
+};
+
+// Default to the page's own origin for when the API serves the UI itself.
+export const API_URL: string = getString('VITE_API_URL', location.origin);
+export const WS_URL: string = getString('VITE_WS_URL', getDefaultWsUrl());

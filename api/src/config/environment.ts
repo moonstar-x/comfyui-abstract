@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import type { Nullable } from '../utils/types.js';
 // eslint-disable-next-line import-x/no-unassigned-import
 import 'dotenv/config';
 
@@ -15,6 +16,11 @@ const getRequired = (key: string): string => {
 const getString = (key: string, defaultValue: string): string => {
   const value = process.env[key];
   return typeof value === 'string' && value !== '' ? value : defaultValue;
+};
+
+const getOptionalPath = (key: string): Nullable<string> => {
+  const value = process.env[key];
+  return typeof value === 'string' && value !== '' ? path.resolve(value) : null;
 };
 
 const getInteger = (key: string, defaultValue: number): number => {
@@ -83,6 +89,10 @@ export const LMSTUDIO_URL: string = getRequired('LMSTUDIO_URL');
 export const LMSTUDIO_API_KEY: string = getString('LMSTUDIO_API_KEY', '');
 
 export const PUBLIC_DIRECTORY: string = path.resolve(getString('PUBLIC_DIRECTORY', 'public'));
+/**
+ * Directory with the built UI. When set, the server also serves the UI and lets it handle every route outside the API.
+ */
+export const APP_BUILD_DIR: Nullable<string> = getOptionalPath('APP_BUILD_DIR');
 
 export const CONFIG_FILE: string = path.resolve(getString('CONFIG_FILE', 'config.yml'));
 export const MODEL_INSTRUCTIONS_DIRECTORY: string = path.resolve(getString('MODEL_INSTRUCTIONS_DIRECTORY', 'model_instructions'));

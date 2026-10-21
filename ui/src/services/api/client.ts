@@ -94,9 +94,12 @@ const buildRequestInit = ({ body, file, isAuthenticated = false, method = 'GET',
   return init;
 };
 
+// Keep in sync with API_ROUTE in api/src/app/express/app.ts.
+const API_ROUTE = '/api';
+
 const send = async (path: string, init: RequestInit): Promise<Response> => {
   try {
-    return await fetch(new URL(path, API_URL), init);
+    return await fetch(new URL(`${API_ROUTE}${path}`, API_URL), init);
   } catch (error) {
     // Aborting is not a connection problem, so the caller gets the abort as is.
     if (init.signal?.aborted === true) {
