@@ -1,6 +1,6 @@
 services:
   app:
-    image: moonstar-x/comfyui-abstract:latest
+    image: ghcr.io/moonstar-x/comfyui-abstract:latest
     restart: unless-stopped
     depends_on:
       postgres:

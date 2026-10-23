@@ -66,12 +66,12 @@ The image contains both the API and the UI and serves everything on a single por
 
 ### Docker Compose
 
-The `docker-compose.yml` at the root of the repository runs the `moonstar-x/comfyui-abstract` image with its own PostgreSQL database. You only need this file, not the rest of the repository:
+The `docker-compose.yml` at the root of the repository runs the `ghcr.io/moonstar-x/comfyui-abstract` image with its own PostgreSQL database. You only need this file, not the rest of the repository:
 
 ```yaml
 services:
   app:
-    image: moonstar-x/comfyui-abstract:latest
+    image: ghcr.io/moonstar-x/comfyui-abstract:latest
     restart: unless-stopped
     depends_on:
       postgres:
@@ -162,7 +162,7 @@ docker run -d --name comfyui-abstract \
   -v "$PWD/config.yml:/app/api/config.yml:ro" \
   -v "$PWD/model_instructions:/app/api/model_instructions:ro" \
   -v comfyui-abstract-public:/app/api/public \
-  moonstar-x/comfyui-abstract:latest
+  ghcr.io/moonstar-x/comfyui-abstract:latest
 ```
 
 Open `http://localhost:4000`, create an account, then set `ENABLE_SIGNUP=false` if you don't want anyone else to sign up.
@@ -170,7 +170,7 @@ Open `http://localhost:4000`, create an account, then set `ENABLE_SIGNUP=false` 
 - `config.yml` and `model_instructions/` are excluded from the image and must be mounted at runtime.
 - `/app/api/public` holds generated outputs, temporary inputs and profile pictures. Mount a volume there so they survive container restarts.
 - Database migrations run automatically on startup.
-- To update, run `docker pull moonstar-x/comfyui-abstract:latest`, then remove the container with `docker rm -f comfyui-abstract` and run the command above again.
+- To update, run `docker pull ghcr.io/moonstar-x/comfyui-abstract:latest`, then remove the container with `docker rm -f comfyui-abstract` and run the command above again.
 - The container shuts down cleanly on `docker stop`. It stops accepting connections, lets in-flight requests finish within the default 10-second stop timeout, and then closes the database pool.
 
 ## Local development
